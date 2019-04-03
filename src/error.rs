@@ -23,6 +23,14 @@ pub struct DecodeError {
 }
 
 impl DecodeError {
+    pub fn new(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
+        DecodeError {
+            kind,
+            position,
+            context,
+        }
+    }
+
     pub fn kind(&self) -> DecodeErrorKind {
         self.kind
     }
@@ -41,7 +49,13 @@ impl std::error::Error for DecodeError {}
 
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} at {} in {}", self.kind(), self.position(), self.context())
+        write!(
+            f,
+            "{} at {} in {}",
+            self.kind(),
+            self.position(),
+            self.context()
+        )
     }
 }
 
