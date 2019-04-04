@@ -150,6 +150,11 @@ impl fmt::Display for MStr {
             }
         }
 
+        if i != start {
+            // safe since everything from start to i is non-zero ascii
+            f.write_str(unsafe { str::from_utf8_unchecked(&self.inner[start..i]) })?;
+        }
+
         Ok(())
     }
 }
