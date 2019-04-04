@@ -77,11 +77,10 @@ impl MString {
     }
 
     /// Creates an empty string with capacity.
-    /// The capacity is of type [u16] since a string in bytecode can't be larger than that.
     #[inline]
-    pub fn with_capacity(cap: u16) -> MString {
+    pub fn with_capacity(cap: usize) -> MString {
         MString {
-            buf: Vec::with_capacity(cap as usize),
+            buf: Vec::with_capacity(cap),
         }
     }
 
