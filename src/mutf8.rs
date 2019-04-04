@@ -5,6 +5,7 @@ use std::{
     borrow::{Borrow, ToOwned},
     char,
     fmt::{self, Write},
+    iter::FromIterator,
     ops::Deref,
     str,
 };
@@ -91,6 +92,14 @@ impl MString {
         } else {
             Err(DecodeError::new(DecodeErrorKind::InvalidMutf8))
         }
+    }
+
+    /// Pushes a character to the string.
+    /// It might cause a reallocation.
+    pub fn push(&mut self, ch: char) {
+        let mut buf = [0; 6];
+        let size = encode_char(ch, &mut buf);
+        self.buf.extend_from_slice(&buf[..size]);
     }
 }
 
@@ -255,4 +264,66 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, char) {
     let c2 = u32::from(v[1] & 0b0011_1111) << 6;
     let c3 = u32::from(v[2] & 0b0011_1111);
     (3, char::from_u32_unchecked(c1 | c2 | c3))
+}
+
+impl From<&str> for MString {
+    fn from(s: &str) -> MString {
+        let mut buf = MString::with_capacity(s.len());
+        buf.extend(s.chars());
+        buf
+    }
+}
+
+impl FromIterator<char> for MString {
+    fn from_iter<I>(iter: I) -> MString
+    where
+        I: IntoIterator<Item = char>,
+    {
+        let mut buf = MString::new();
+        buf.extend(iter);
+        buf
+    }
+}
+
+impl Extend<char> for MString {
+    fn extend<I: IntoIterator<Item = char>>(&mut self, iter: I) {
+        let iter = iter.into_iter();
+        let (lower_bound, _) = iter.size_hint();
+        self.buf.reserve(lower_bound);
+        for ch in iter {
+            self.push(ch);
+        }
+    }
+}
+
+/// Encodes a char to a modified UTF-8 buffer and returns its size.
+/// The buffer must at least be of the length which the char will take up.
+fn encode_char(ch: char, buf: &mut [u8]) -> usize {
+    let ch = ch as u32;
+    match ch {
+        0x01..=0x7F => {
+            buf[0] = ch as u8;
+            1
+        }
+        0 | 0x80..=0x7FF => {
+            buf[0] = (0b1110_0000 | (ch >> 6)) as u8;
+            buf[1] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
+            2
+        }
+        0x800..=0xFFFF => {
+            buf[0] = (0b1111_0000 | (ch >> 12)) as u8;
+            buf[1] = (0b1100_0000 | ((ch >> 6) & 0b0011_1111)) as u8;
+            buf[2] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
+            3
+        }
+        _ => {
+            buf[0] = 0b1110_1101;
+            buf[1] = (0b1010_0000 | ((ch >> 16) & 0b0000_1111)) as u8;
+            buf[2] = (0b1100_0000 | ((ch >> 10) & 0b0011_1111)) as u8;
+            buf[3] = 0b1110_1101;
+            buf[4] = (0b1011_0000 | ((ch >> 6) & 0b0000_1111)) as u8;
+            buf[5] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
+            6
+        }
+    }
 }
