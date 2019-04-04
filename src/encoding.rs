@@ -20,7 +20,7 @@ impl<'a> Decoder<'a> {
     /// It will have its own context.
     pub fn limit(&self, count: usize, ctx: Context) -> Result<Decoder<'a>, DecodeError> {
         if count > self.buf.len() {
-            Err(DecodeError::new(
+            Err(DecodeError::with_info(
                 DecodeErrorKind::UnexpectedEoi,
                 self.file_position,
                 self.ctx,
@@ -37,7 +37,7 @@ impl<'a> Decoder<'a> {
     /// Advances by a specific number of bytes.
     pub fn advance(&mut self, count: usize) -> Result<(), DecodeError> {
         if count > self.buf.len() {
-            Err(DecodeError::new(
+            Err(DecodeError::with_info(
                 DecodeErrorKind::UnexpectedEoi,
                 self.file_position,
                 self.ctx,
@@ -52,7 +52,7 @@ impl<'a> Decoder<'a> {
     /// Reads bytes into the buffer supplied and advances.
     pub fn read_bytes(&mut self, buf: &mut [u8]) -> Result<(), DecodeError> {
         if buf.len() > self.buf.len() {
-            Err(DecodeError::new(
+            Err(DecodeError::with_info(
                 DecodeErrorKind::UnexpectedEoi,
                 self.file_position,
                 self.ctx,

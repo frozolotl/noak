@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecodeErrorKind {
     UnexpectedEoi,
+    InvalidMutf8,
 }
 
 impl fmt::Display for DecodeErrorKind {
@@ -11,6 +12,7 @@ impl fmt::Display for DecodeErrorKind {
 
         match *self {
             UnexpectedEoi => write!(f, "unexpected end of input"),
+            InvalidMutf8 => write!(f, "invalid modified utf8"),
         }
     }
 }
@@ -18,15 +20,23 @@ impl fmt::Display for DecodeErrorKind {
 #[derive(Debug, Clone)]
 pub struct DecodeError {
     kind: DecodeErrorKind,
-    position: usize,
+    position: Option<usize>,
     context: Context,
 }
 
 impl DecodeError {
-    pub fn new(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
+    pub fn new(kind: DecodeErrorKind) -> DecodeError {
         DecodeError {
             kind,
-            position,
+            position: None,
+            context: Context::None,
+        }
+    }
+
+    pub fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
+        DecodeError {
+            kind,
+            position: Some(position),
             context,
         }
     }
@@ -36,7 +46,7 @@ impl DecodeError {
     }
 
     /// The absolute byte position at which the error occurred.
-    pub fn position(&self) -> usize {
+    pub fn position(&self) -> Option<usize> {
         self.position
     }
 
@@ -49,19 +59,25 @@ impl std::error::Error for DecodeError {}
 
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{} at {} in {}",
-            self.kind(),
-            self.position(),
-            self.context()
-        )
+        if let Some(pos) = self.position() {
+            write!(
+                f,
+                "{} at {} in {}",
+                self.kind(),
+                pos,
+                self.context()
+            )
+        } else {
+            write!(f, "{}", self.kind())
+        }
     }
 }
 
 /// The context in which a error occurred in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Context {
+    /// No context.
+    None,
     /// Either the `0xCAFEBABE` prefix or the major and minor versions.
     Start,
     /// The constant pool along with the index into it.
@@ -74,6 +90,7 @@ impl fmt::Display for Context {
         use Context::*;
 
         match *self {
+            None => write!(f, "none"),
             Start => write!(f, "start"),
             ConstantPool(index) => write!(f, "constant pool at {}", index),
         }
