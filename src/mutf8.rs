@@ -17,7 +17,7 @@ impl MStr {
         if is_mutf8_valid(v) {
             Ok(unsafe { MStr::from_mutf8_unchecked(v) })
         } else {
-            Err(DecodeError::new(DecodeErrorKind::UnexpectedEoi))
+            Err(DecodeError::new(DecodeErrorKind::InvalidMutf8))
         }
     }
 
@@ -110,6 +110,15 @@ impl MString {
     pub fn with_capacity(cap: u16) -> MString {
         MString {
             buf: Vec::with_capacity(cap as usize),
+        }
+    }
+
+    /// Creates a new string from a modified UTF-8 byte vector.
+    pub fn from_vec(buf: Vec<u8>) -> Result<MString, DecodeError> {
+        if is_mutf8_valid(&buf) {
+            Ok(MString { buf })
+        } else {
+            Err(DecodeError::new(DecodeErrorKind::InvalidMutf8))
         }
     }
 }
