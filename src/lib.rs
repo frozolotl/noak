@@ -1,3 +1,6 @@
-mod encoding;
-mod mutf8;
 mod error;
+mod encoding;
+pub mod mutf8;
+mod header;
+
+pub use header::*;
