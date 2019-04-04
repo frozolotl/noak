@@ -36,6 +36,11 @@ impl MStr {
     }
 
     #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         &self.inner
     }
@@ -65,6 +70,7 @@ impl MStr {
 }
 
 /// A Modified UTF-8 string, but owned, like [String].
+#[derive(Default)]
 pub struct MString {
     buf: Vec<u8>,
 }
