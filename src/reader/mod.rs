@@ -23,7 +23,6 @@ fn read_header(decoder: &mut Decoder) -> Result<Version, DecodeError> {
     const MAGIC: u32 = 0xCAFE_BABE;
 
     let magic: u32 = decoder.read()?;
-    println!("{:x}", magic);
     if magic == MAGIC {
         let major = decoder.read()?;
         let minor = decoder.read()?;
