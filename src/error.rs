@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecodeErrorKind {
     UnexpectedEoi,
+    InvalidPrefix,
     InvalidMutf8,
 }
 
@@ -12,6 +13,7 @@ impl fmt::Display for DecodeErrorKind {
 
         match *self {
             UnexpectedEoi => write!(f, "unexpected end of input"),
+            InvalidPrefix => write!(f, "invalid file prefix"),
             InvalidMutf8 => write!(f, "invalid modified utf8"),
         }
     }

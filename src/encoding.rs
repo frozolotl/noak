@@ -2,7 +2,6 @@ use crate::error::{Context, DecodeError, DecodeErrorKind};
 
 pub struct Decoder<'a> {
     buf: &'a [u8],
-    /// The position inside the file, *not* this decoder.
     file_position: usize,
     ctx: Context,
 }
@@ -14,6 +13,15 @@ impl<'a> Decoder<'a> {
             file_position: 0,
             ctx,
         }
+    }
+
+    /// The position inside the file, *not* this decoder.
+    pub fn file_position(&self) -> usize {
+        self.file_position
+    }
+
+    pub fn set_context(&mut self, ctx: Context) {
+        self.ctx = ctx;
     }
 
     /// Creates a new decoder which is limited to the current location and has the length of `count`.
@@ -58,8 +66,8 @@ impl<'a> Decoder<'a> {
                 self.ctx,
             ))
         } else {
-            buf.copy_from_slice(self.buf);
-            self.buf = &self.buf[..buf.len()];
+            buf.copy_from_slice(&self.buf[..buf.len()]);
+            self.buf = &self.buf[buf.len()..];
             self.file_position += buf.len();
             Ok(())
         }
