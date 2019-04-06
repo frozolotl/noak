@@ -101,9 +101,7 @@ pub enum Context {
     None,
     /// Either the `0xCAFEBABE` prefix or the major and minor versions.
     Start,
-    /// The constant pool along with the index into it.
-    /// The index starts at 0.
-    ConstantPool(u16),
+    ConstantPool,
 }
 
 impl fmt::Display for Context {
@@ -113,7 +111,7 @@ impl fmt::Display for Context {
         match *self {
             None => write!(f, "none"),
             Start => write!(f, "start"),
-            ConstantPool(index) => write!(f, "constant pool at {}", index),
+            ConstantPool => write!(f, "constant pool"),
         }
     }
 }

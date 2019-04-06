@@ -1,4 +1,4 @@
-mod cpool;
+pub mod cpool;
 
 use crate::encoding::*;
 use crate::error::*;

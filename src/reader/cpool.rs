@@ -1,6 +1,7 @@
 use crate::encoding::*;
 use crate::error::*;
 use crate::mutf8::MaybeMUtf8;
+use std::fmt;
 
 pub struct ConstantPool<'a> {
     content: Vec<Option<Item<'a>>>,
@@ -9,15 +10,15 @@ pub struct ConstantPool<'a> {
 impl<'a> ConstantPool<'a> {
     pub fn get(&self, at: Index) -> Result<&Item<'a>, DecodeError> {
         let pos = at.0 as usize;
-        if pos < self.content.len() {
-            if let Some(item) = &self.content[pos] {
+        if pos != 0 && pos <= self.content.len() {
+            if let Some(item) = &self.content[pos - 1] {
                 return Ok(item);
             }
         }
 
         Err(DecodeError::with_context(
             DecodeErrorKind::InvalidIndex,
-            Context::ConstantPool(at.0),
+            Context::ConstantPool,
         ))
     }
 
@@ -60,9 +61,21 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
     }
 }
 
-/// An index into the constant pool.
+/// A 1-based index into the constant pool.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Index(u16);
+
+impl Index {
+    pub fn new(index: u16) -> Index {
+        Index(index)
+    }
+}
+
+impl fmt::Display for Index {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
 
 impl<'a> Decode<'a> for Index {
     fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
