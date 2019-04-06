@@ -112,6 +112,7 @@ impl<'a> Decode<'a> for Item<'a> {
             8 => Ok(Item::String { string: decoder.read()? }),
             9 => Ok(Item::FieldRef { class: decoder.read()?, name_and_type: decoder.read()? }),
             10 => Ok(Item::MethodRef { class: decoder.read()?, name_and_type: decoder.read()? }),
+            12 => Ok(Item::NameAndType { name: decoder.read()?, descriptor: decoder.read()? }),
             11 => Ok(Item::InterfaceMethodRef { class: decoder.read()?, name_and_type: decoder.read()? }),
             15 => Ok(Item::MethodHandle { kind: decoder.read()?, reference: decoder.read()? }),
             16 => Ok(Item::MethodType { descriptor: decoder.read()? }),
