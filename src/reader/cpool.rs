@@ -1,6 +1,6 @@
+use crate::encoding::*;
 use crate::error::*;
 use crate::mutf8::MaybeMUtf8;
-use crate::encoding::*;
 
 pub struct ConstantPool<'a> {
     content: Vec<Option<Item<'a>>>,
@@ -11,17 +11,18 @@ impl<'a> ConstantPool<'a> {
         let pos = at.0 as usize;
         if pos < self.content.len() {
             if let Some(item) = &self.content[pos] {
-                return Ok(item)
+                return Ok(item);
             }
         }
 
-        Err(DecodeError::with_context(DecodeErrorKind::InvalidIndex, Context::ConstantPool(at.0)))
+        Err(DecodeError::with_context(
+            DecodeErrorKind::InvalidIndex,
+            Context::ConstantPool(at.0),
+        ))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Item<'a>> {
-        self.content
-            .iter()
-            .filter_map(|opt| opt.as_ref())
+        self.content.iter().filter_map(|opt| opt.as_ref())
     }
 }
 
@@ -108,19 +109,53 @@ impl<'a> Decode<'a> for Item<'a> {
             4 => Ok(Item::Float(decoder.read()?)),
             5 => Ok(Item::Long(decoder.read()?)),
             6 => Ok(Item::Double(decoder.read()?)),
-            7 => Ok(Item::Class { name: decoder.read()? }),
-            8 => Ok(Item::String { string: decoder.read()? }),
-            9 => Ok(Item::FieldRef { class: decoder.read()?, name_and_type: decoder.read()? }),
-            10 => Ok(Item::MethodRef { class: decoder.read()?, name_and_type: decoder.read()? }),
-            12 => Ok(Item::NameAndType { name: decoder.read()?, descriptor: decoder.read()? }),
-            11 => Ok(Item::InterfaceMethodRef { class: decoder.read()?, name_and_type: decoder.read()? }),
-            15 => Ok(Item::MethodHandle { kind: decoder.read()?, reference: decoder.read()? }),
-            16 => Ok(Item::MethodType { descriptor: decoder.read()? }),
-            17 => Ok(Item::Dynamic { bootstrap_method_attr: decoder.read()?, name_and_type: decoder.read()? }),
-            18 => Ok(Item::InvokeDynamic { bootstrap_method_attr: decoder.read()?, name_and_type: decoder.read()? }),
-            19 => Ok(Item::Module { name: decoder.read()? }),
-            20 => Ok(Item::Package { name: decoder.read()? }),
-            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder))
+            7 => Ok(Item::Class {
+                name: decoder.read()?,
+            }),
+            8 => Ok(Item::String {
+                string: decoder.read()?,
+            }),
+            9 => Ok(Item::FieldRef {
+                class: decoder.read()?,
+                name_and_type: decoder.read()?,
+            }),
+            10 => Ok(Item::MethodRef {
+                class: decoder.read()?,
+                name_and_type: decoder.read()?,
+            }),
+            11 => Ok(Item::InterfaceMethodRef {
+                class: decoder.read()?,
+                name_and_type: decoder.read()?,
+            }),
+            12 => Ok(Item::NameAndType {
+                name: decoder.read()?,
+                descriptor: decoder.read()?,
+            }),
+            15 => Ok(Item::MethodHandle {
+                kind: decoder.read()?,
+                reference: decoder.read()?,
+            }),
+            16 => Ok(Item::MethodType {
+                descriptor: decoder.read()?,
+            }),
+            17 => Ok(Item::Dynamic {
+                bootstrap_method_attr: decoder.read()?,
+                name_and_type: decoder.read()?,
+            }),
+            18 => Ok(Item::InvokeDynamic {
+                bootstrap_method_attr: decoder.read()?,
+                name_and_type: decoder.read()?,
+            }),
+            19 => Ok(Item::Module {
+                name: decoder.read()?,
+            }),
+            20 => Ok(Item::Package {
+                name: decoder.read()?,
+            }),
+            _ => Err(DecodeError::from_decoder(
+                DecodeErrorKind::InvalidTag,
+                decoder,
+            )),
         }
     }
 }
@@ -153,7 +188,10 @@ impl<'a> Decode<'a> for MethodKind {
             7 => Ok(InvokeSpecial),
             8 => Ok(NewInvokeSpecial),
             9 => Ok(InvokeInterface),
-            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder))
+            _ => Err(DecodeError::from_decoder(
+                DecodeErrorKind::InvalidTag,
+                decoder,
+            )),
         }
     }
 }

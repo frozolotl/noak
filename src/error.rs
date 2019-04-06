@@ -1,5 +1,5 @@
-use std::fmt;
 use crate::encoding::Decoder;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecodeErrorKind {
@@ -85,13 +85,7 @@ impl std::error::Error for DecodeError {}
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(pos) = self.position() {
-            write!(
-                f,
-                "{} at {} in {}",
-                self.kind(),
-                pos,
-                self.context()
-            )
+            write!(f, "{} at {} in {}", self.kind(), pos, self.context())
         } else {
             write!(f, "{}", self.kind())
         }

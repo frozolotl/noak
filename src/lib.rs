@@ -1,7 +1,7 @@
-mod error;
 mod encoding;
-pub mod mutf8;
+mod error;
 mod header;
+pub mod mutf8;
 mod reader;
 
 pub use header::*;
