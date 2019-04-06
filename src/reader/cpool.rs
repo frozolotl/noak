@@ -304,5 +304,7 @@ mod tests {
         assert_eq!(pool.get(Index::new(2)).unwrap(), &Item::Long(3));
         assert_eq!(pool.get(Index::new(4)).unwrap(), &Item::Integer(4));
         assert!(pool.get(Index::new(3)).is_err());
+        assert!(pool.get(Index::new(0)).is_err());
+        assert!(pool.get(Index::new(5)).is_err());
     }
 }
