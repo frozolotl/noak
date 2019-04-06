@@ -36,7 +36,7 @@ impl Index {
     }
 }
 
-impl Decode for Index {
+impl<'a> Decode<'a> for Index {
     fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
         Ok(Index(decoder.read()?))
     }
@@ -95,8 +95,8 @@ pub enum Item<'a> {
     },
 }
 
-impl<'a> Decode for Item<'a> {
-    fn decode(decoder: &mut Decoder) -> Result<Item<'a>, DecodeError> {
+impl<'a> Decode<'a> for Item<'a> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Item<'a>, DecodeError> {
         let tag: u8 = decoder.read()?;
         match tag {
             1 => {
@@ -137,7 +137,7 @@ pub enum MethodKind {
     InvokeInterface,
 }
 
-impl Decode for MethodKind {
+impl<'a> Decode<'a> for MethodKind {
     fn decode(decoder: &mut Decoder) -> Result<MethodKind, DecodeError> {
         let tag: u8 = decoder.read()?;
         use MethodKind::*;

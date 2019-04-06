@@ -78,7 +78,7 @@ impl<'a> Decoder<'a> {
     }
 
     /// Advances by `count` and returns `count` bytes.
-    pub fn split_bytes_off(&self, count: usize) -> Result<&[u8], DecodeError> {
+    pub fn split_bytes_off(&mut self, count: usize) -> Result<&'a [u8], DecodeError> {
         if count > self.buf.len() {
             Err(DecodeError::with_info(
                 DecodeErrorKind::UnexpectedEoi,
@@ -93,19 +93,19 @@ impl<'a> Decoder<'a> {
         }
     }
 
-    pub fn read<T: Decode>(&mut self) -> Result<T, DecodeError> {
+    pub fn read<T: Decode<'a>>(&mut self) -> Result<T, DecodeError> {
         T::decode(self)
     }
 }
 
-pub trait Decode: Sized {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError>;
+pub trait Decode<'a>: Sized + 'a {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError>;
 }
 
 macro_rules! impl_decode {
     ($($t:ty => $buf:expr,)*) => {
         $(
-            impl Decode for $t {
+            impl<'a> Decode<'a> for $t {
                 fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
                     let mut buf = $buf;
                     decoder.read_bytes(&mut buf)?;
@@ -125,14 +125,14 @@ impl_decode! {
     u128 => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i128 => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 }
 
-impl Decode for f32 {
+impl<'a> Decode<'a> for f32 {
     fn decode(decoder: &mut Decoder) -> Result<f32, DecodeError> {
         let bits = decoder.read()?;
         Ok(f32::from_bits(bits))
     }
 }
 
-impl Decode for f64 {
+impl<'a> Decode<'a> for f64 {
     fn decode(decoder: &mut Decoder) -> Result<f64, DecodeError> {
         let bits = decoder.read()?;
         Ok(f64::from_bits(bits))
