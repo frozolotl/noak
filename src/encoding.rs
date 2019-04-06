@@ -77,6 +77,22 @@ impl<'a> Decoder<'a> {
         }
     }
 
+    /// Advances by `count` and returns `count` bytes.
+    pub fn split_bytes_off(&self, count: usize) -> Result<&[u8], DecodeError> {
+        if count > self.buf.len() {
+            Err(DecodeError::with_info(
+                DecodeErrorKind::UnexpectedEoi,
+                self.file_position,
+                self.ctx,
+            ))
+        } else {
+            let v = &self.buf[..count];
+            self.buf = &self.buf[count..];
+            self.file_position += count;
+            Ok(v)
+        }
+    }
+
     pub fn read<T: Decode>(&mut self) -> Result<T, DecodeError> {
         T::decode(self)
     }
@@ -107,4 +123,18 @@ impl_decode! {
     u64 => [0, 0, 0, 0, 0, 0, 0, 0], i64 => [0, 0, 0, 0, 0, 0, 0, 0],
     // this will probably never be needed, but why not
     u128 => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i128 => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+}
+
+impl Decode for f32 {
+    fn decode(decoder: &mut Decoder) -> Result<f32, DecodeError> {
+        let bits = decoder.read()?;
+        Ok(f32::from_bits(bits))
+    }
+}
+
+impl Decode for f64 {
+    fn decode(decoder: &mut Decoder) -> Result<f64, DecodeError> {
+        let bits = decoder.read()?;
+        Ok(f64::from_bits(bits))
+    }
 }

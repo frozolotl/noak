@@ -30,8 +30,15 @@ impl<'a> ConstantPool<'a> {
 pub struct Index(u16);
 
 impl Index {
+    #[inline]
     pub fn new(index: u16) -> Index {
         Index(index)
+    }
+}
+
+impl Decode for Index {
+    fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
+        Ok(Index(decoder.read()?))
     }
 }
 
@@ -42,7 +49,7 @@ pub enum Item<'a> {
     },
     FieldRef {
         class: Index,
-        name_type: Index,
+        name_and_type: Index,
     },
     MethodRef {
         class: Index,
@@ -63,9 +70,7 @@ pub enum Item<'a> {
         name: Index,
         descriptor: Index,
     },
-    Utf8 {
-        content: MaybeMUtf8<'a>,
-    },
+    Utf8(MaybeMUtf8<'a>),
     MethodHandle {
         kind: MethodKind,
         reference: Index,
@@ -88,6 +93,35 @@ pub enum Item<'a> {
     Package {
         name: Index,
     },
+}
+
+impl<'a> Decode for Item<'a> {
+    fn decode(decoder: &mut Decoder) -> Result<Item<'a>, DecodeError> {
+        let tag: u8 = decoder.read()?;
+        match tag {
+            1 => {
+                let len: u16 = decoder.read()?;
+                let buf = decoder.split_bytes_off(len as usize)?;
+                Ok(Item::Utf8(MaybeMUtf8::new(buf)))
+            }
+            3 => Ok(Item::Integer(decoder.read()?)),
+            4 => Ok(Item::Float(decoder.read()?)),
+            5 => Ok(Item::Long(decoder.read()?)),
+            6 => Ok(Item::Double(decoder.read()?)),
+            7 => Ok(Item::Class { name: decoder.read()? }),
+            8 => Ok(Item::String { string: decoder.read()? }),
+            9 => Ok(Item::FieldRef { class: decoder.read()?, name_and_type: decoder.read()? }),
+            10 => Ok(Item::MethodRef { class: decoder.read()?, name_and_type: decoder.read()? }),
+            11 => Ok(Item::InterfaceMethodRef { class: decoder.read()?, name_and_type: decoder.read()? }),
+            15 => Ok(Item::MethodHandle { kind: decoder.read()?, reference: decoder.read()? }),
+            16 => Ok(Item::MethodType { descriptor: decoder.read()? }),
+            17 => Ok(Item::Dynamic { bootstrap_method_attr: decoder.read()?, name_and_type: decoder.read()? }),
+            18 => Ok(Item::InvokeDynamic { bootstrap_method_attr: decoder.read()?, name_and_type: decoder.read()? }),
+            19 => Ok(Item::Module { name: decoder.read()? }),
+            20 => Ok(Item::Package { name: decoder.read()? }),
+            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder))
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
