@@ -1,3 +1,5 @@
+mod cpool;
+
 use crate::encoding::*;
 use crate::error::*;
 use crate::Version;

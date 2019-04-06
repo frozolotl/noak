@@ -5,6 +5,8 @@ pub enum DecodeErrorKind {
     UnexpectedEoi,
     InvalidPrefix,
     InvalidMutf8,
+    InvalidIndex,
+    TagMismatch,
 }
 
 impl fmt::Display for DecodeErrorKind {
@@ -15,6 +17,8 @@ impl fmt::Display for DecodeErrorKind {
             UnexpectedEoi => write!(f, "unexpected end of input"),
             InvalidPrefix => write!(f, "invalid file prefix"),
             InvalidMutf8 => write!(f, "invalid modified utf8"),
+            InvalidIndex => write!(f, "invalid index into a table or the constant pool"),
+            TagMismatch => write!(f, "tag mismatch"),
         }
     }
 }

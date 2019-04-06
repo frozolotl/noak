@@ -11,7 +11,7 @@ use std::{
 };
 
 /// A Modified UTF-8 string slice, like [str].
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MStr {
     inner: [u8],
 }
@@ -70,7 +70,7 @@ impl MStr {
 }
 
 /// A Modified UTF-8 string, but owned, like [String].
-#[derive(Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MString {
     buf: Vec<u8>,
 }
@@ -334,6 +334,32 @@ fn encode_char(ch: char, buf: &mut [u8]) -> usize {
             buf[4] = (0b1011_0000 | ((ch >> 6) & 0b0000_1111)) as u8;
             buf[5] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
             6
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum MaybeMUtf8<'a> {
+    Uninit(&'a [u8]),
+    MUtf8(&'a MStr),
+    Invalid,
+}
+
+impl<'a> MaybeMUtf8<'a> {
+    pub fn new(v: &'a [u8]) -> MaybeMUtf8<'a> {
+        MaybeMUtf8::Uninit(v)
+    }
+
+    /// Decodes the string if needed and returns an error if the bytes are invalid.
+    pub fn get(&mut self) -> Result<&'a MStr, DecodeError> {
+        match self {
+            MaybeMUtf8::Uninit(v) => {
+                let s = MStr::from_bytes(v)?;
+                *self = MaybeMUtf8::MUtf8(s);
+                Ok(s)
+            }
+            MaybeMUtf8::MUtf8(s) => Ok(s),
+            MaybeMUtf8::Invalid => Err(DecodeError::new(DecodeErrorKind::InvalidMutf8)),
         }
     }
 }
