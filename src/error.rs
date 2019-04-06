@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::encoding::Decoder;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecodeErrorKind {
@@ -41,11 +42,27 @@ impl DecodeError {
         }
     }
 
+    pub fn with_context(kind: DecodeErrorKind, context: Context) -> DecodeError {
+        DecodeError {
+            kind,
+            position: None,
+            context,
+        }
+    }
+
     pub fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
         DecodeError {
             kind,
             position: Some(position),
             context,
+        }
+    }
+
+    pub fn from_decoder(kind: DecodeErrorKind, decoder: &Decoder) -> DecodeError {
+        DecodeError {
+            kind,
+            position: Some(decoder.file_position()),
+            context: decoder.context(),
         }
     }
 

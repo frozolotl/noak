@@ -15,7 +15,7 @@ impl<'a> ConstantPool<'a> {
             }
         }
 
-        Err(DecodeError::new(DecodeErrorKind::InvalidIndex))
+        Err(DecodeError::with_context(DecodeErrorKind::InvalidIndex, Context::ConstantPool(at.0)))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Item<'a>> {
@@ -118,7 +118,7 @@ impl Decode for MethodKind {
             7 => Ok(InvokeSpecial),
             8 => Ok(NewInvokeSpecial),
             9 => Ok(InvokeInterface),
-            _ => Err(DecodeError::with_info(DecodeErrorKind::InvalidTag, decoder.file_position(), decoder.context()))
+            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder))
         }
     }
 }
