@@ -33,6 +33,33 @@ impl<'a> ConstantPool<'a> {
     }
 }
 
+impl<'a> Decode<'a> for ConstantPool<'a> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<ConstantPool<'a>, DecodeError> {
+        let length: u16 = decoder.read()?;
+        if length == 0 {
+            return Err(DecodeError::from_decoder(
+                DecodeErrorKind::InvalidLength,
+                decoder,
+            ));
+        }
+        let mut content = Vec::with_capacity(length as usize - 1);
+        for _ in 0..length - 1 {
+            let item = decoder.read()?;
+            let push_extra = if let Item::Long(_) | Item::Double(_) = item {
+                true
+            } else {
+                false
+            };
+            content.push(Some(item));
+            if push_extra {
+                content.push(None);
+            }
+        }
+
+        Ok(ConstantPool { content })
+    }
+}
+
 /// An index into the constant pool.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Index(u16);

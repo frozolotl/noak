@@ -7,6 +7,7 @@ pub enum DecodeErrorKind {
     InvalidPrefix,
     InvalidMutf8,
     InvalidIndex,
+    InvalidLength,
     TagMismatch,
     InvalidTag,
 }
@@ -20,6 +21,7 @@ impl fmt::Display for DecodeErrorKind {
             InvalidPrefix => write!(f, "invalid file prefix"),
             InvalidMutf8 => write!(f, "invalid modified utf8"),
             InvalidIndex => write!(f, "invalid index into a table or the constant pool"),
+            InvalidLength => write!(f, "invalid length of a table or the constant pool"),
             TagMismatch => write!(f, "tag mismatch"),
             InvalidTag => write!(f, "invalid tag"),
         }
