@@ -1,5 +1,6 @@
 use crate::error::*;
 use crate::mutf8::MaybeMUtf8;
+use crate::encoding::*;
 
 pub struct ConstantPool<'a> {
     content: Vec<Option<Item<'a>>>,
@@ -100,4 +101,24 @@ pub enum MethodKind {
     InvokeSpecial,
     NewInvokeSpecial,
     InvokeInterface,
+}
+
+impl Decode for MethodKind {
+    fn decode(decoder: &mut Decoder) -> Result<MethodKind, DecodeError> {
+        let tag: u8 = decoder.read()?;
+        use MethodKind::*;
+
+        match tag {
+            1 => Ok(GetField),
+            2 => Ok(GetStatic),
+            3 => Ok(PutField),
+            4 => Ok(PutStatic),
+            5 => Ok(InvokeVirtual),
+            6 => Ok(InvokeStatic),
+            7 => Ok(InvokeSpecial),
+            8 => Ok(NewInvokeSpecial),
+            9 => Ok(InvokeInterface),
+            _ => Err(DecodeError::with_info(DecodeErrorKind::InvalidTag, decoder.file_position(), decoder.context()))
+        }
+    }
 }

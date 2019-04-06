@@ -7,6 +7,7 @@ pub enum DecodeErrorKind {
     InvalidMutf8,
     InvalidIndex,
     TagMismatch,
+    InvalidTag,
 }
 
 impl fmt::Display for DecodeErrorKind {
@@ -19,6 +20,7 @@ impl fmt::Display for DecodeErrorKind {
             InvalidMutf8 => write!(f, "invalid modified utf8"),
             InvalidIndex => write!(f, "invalid index into a table or the constant pool"),
             TagMismatch => write!(f, "tag mismatch"),
+            InvalidTag => write!(f, "invalid tag"),
         }
     }
 }

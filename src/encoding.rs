@@ -20,6 +20,10 @@ impl<'a> Decoder<'a> {
         self.file_position
     }
 
+    pub fn context(&self) -> Context {
+        self.ctx
+    }
+
     pub fn set_context(&mut self, ctx: Context) {
         self.ctx = ctx;
     }
