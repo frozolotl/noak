@@ -338,7 +338,7 @@ fn encode_char(ch: char, buf: &mut [u8]) -> usize {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MaybeMUtf8<'a> {
     Uninit(&'a [u8]),
     MUtf8(&'a MStr),
