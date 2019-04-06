@@ -24,18 +24,18 @@ impl<'a> ConstantPool<'a> {
     pub fn iter(&self) -> impl Iterator<Item = &Item<'a>> {
         self.content.iter().filter_map(|opt| opt.as_ref())
     }
+
+    pub fn iter_indices(&self) -> impl Iterator<Item = (Index, &Item<'a>)> {
+        self.content
+            .iter()
+            .enumerate()
+            .filter_map(|(i, opt)| opt.as_ref().map(|item| (Index(i as u16), item)))
+    }
 }
 
 /// An index into the constant pool.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Index(u16);
-
-impl Index {
-    #[inline]
-    pub fn new(index: u16) -> Index {
-        Index(index)
-    }
-}
 
 impl<'a> Decode<'a> for Index {
     fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
