@@ -5,3 +5,4 @@ authors = ["frozolotl <frozolotl@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
+bitflags = "1.0"
