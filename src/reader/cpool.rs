@@ -6,7 +6,7 @@ pub struct ConstantPool<'a> {
 }
 
 impl<'a> ConstantPool<'a> {
-    fn get(&self, at: Index) -> Result<&Item<'a>, DecodeError> {
+    pub fn get(&self, at: Index) -> Result<&Item<'a>, DecodeError> {
         let pos = at.0 as usize;
         if pos < self.content.len() {
             if let Some(item) = &self.content[pos] {
@@ -15,6 +15,12 @@ impl<'a> ConstantPool<'a> {
         }
 
         Err(DecodeError::new(DecodeErrorKind::InvalidIndex))
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Item<'a>> {
+        self.content
+            .iter()
+            .filter_map(|opt| opt.as_ref())
     }
 }
 
