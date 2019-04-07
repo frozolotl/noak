@@ -51,15 +51,15 @@ mod tests {
 
     #[test]
     fn valid_header() {
-        let mut decoder = Decoder::new(
-            &[
+        #[rustfmt::skip]
+        let mut decoder = Decoder::new(&[
                 // magic bytes
-                0xCA, 0xFE, 0xBA, 0xBE, // major version
-                0x00, 0x38, // minor version
+                0xCA, 0xFE, 0xBA, 0xBE,
+                // major version
+                0x00, 0x38,
+                // minor version
                 0x00, 0x00,
-            ],
-            Context::Start,
-        );
+        ], Context::Start);
 
         let version = read_header(&mut decoder).unwrap();
         assert_eq!(
@@ -73,13 +73,11 @@ mod tests {
 
     #[test]
     fn invalid_header() {
-        let mut decoder = Decoder::new(
-            &[
+        #[rustfmt::skip]
+        let mut decoder = Decoder::new(&[
                 // invalid magic bytes
                 0xBE, 0xBA, 0xFE, 0xCA,
-            ],
-            Context::Start,
-        );
+        ], Context::Start);
 
         assert!(read_header(&mut decoder).is_err());
     }
