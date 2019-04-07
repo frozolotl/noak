@@ -46,6 +46,15 @@ impl<'a> Decoder<'a> {
         }
     }
 
+    /// Creates a new decoder with its own context.
+    pub fn with_context(&self, ctx: Context) -> Decoder<'a> {
+        Decoder {
+            buf: &self.buf,
+            file_position: self.file_position,
+            ctx,
+        }
+    }
+
     /// Advances by a specific number of bytes.
     pub fn advance(&mut self, count: usize) -> Result<(), DecodeError> {
         if count > self.buf.len() {
@@ -136,5 +145,73 @@ impl<'a> Decode<'a> for f64 {
     fn decode(decoder: &mut Decoder) -> Result<f64, DecodeError> {
         let bits = decoder.read()?;
         Ok(f64::from_bits(bits))
+    }
+}
+
+pub enum LazyDecode<'a, R> {
+    NotRead(Decoder<'a>),
+    Read(R),
+    Error(DecodeError),
+}
+
+impl<'a, R: Decode<'a>> LazyDecode<'a, R> {
+    pub fn get(&mut self) -> Result<&R, DecodeError> {
+        use LazyDecode::*;
+
+        match self {
+            NotRead(decoder) => match decoder.read() {
+                Ok(v) => {
+                    *self = Read(v);
+                    if let Read(v) = self {
+                        Ok(v)
+                    } else {
+                        unreachable!();
+                    }
+                }
+                Err(err) => {
+                    *self = Error(err.clone());
+                    Err(err)
+                }
+            },
+            Read(v) => Ok(v),
+            Error(err) => Err(err.clone()),
+        }
+    }
+}
+
+impl<'a, R> From<Decoder<'a>> for LazyDecode<'a, R> {
+    fn from(decoder: Decoder<'a>) -> LazyDecode<'a, R> {
+        LazyDecode::NotRead(decoder)
+    }
+}
+
+pub enum LazyDecodeRef<R> {
+    NotRead,
+    Read(R),
+    Error(DecodeError),
+}
+
+impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
+    pub fn get(&mut self, decoder: &mut Decoder<'a>) -> Result<&R, DecodeError> {
+        use LazyDecodeRef::*;
+
+        match self {
+            NotRead => match decoder.read() {
+                Ok(v) => {
+                    *self = Read(v);
+                    if let Read(v) = self {
+                        Ok(v)
+                    } else {
+                        unreachable!();
+                    }
+                }
+                Err(err) => {
+                    *self = Error(err.clone());
+                    Err(err)
+                }
+            },
+            Read(v) => Ok(v),
+            Error(err) => Err(err.clone()),
+        }
     }
 }

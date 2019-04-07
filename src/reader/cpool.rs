@@ -1,7 +1,7 @@
 use crate::encoding::*;
 use crate::error::*;
 use crate::mutf8::MaybeMUtf8;
-use std::fmt;
+use std::{fmt, num::NonZeroU16};
 
 pub struct ConstantPool<'a> {
     content: Vec<Option<Item<'a>>>,
@@ -9,7 +9,7 @@ pub struct ConstantPool<'a> {
 
 impl<'a> ConstantPool<'a> {
     pub fn get(&self, at: Index) -> Result<&Item<'a>, DecodeError> {
-        let pos = at.0 as usize;
+        let pos = at.0.get() as usize;
         if pos != 0 && pos <= self.content.len() {
             if let Some(item) = &self.content[pos - 1] {
                 return Ok(item);
@@ -27,10 +27,10 @@ impl<'a> ConstantPool<'a> {
     }
 
     pub fn iter_indices(&self) -> impl Iterator<Item = (Index, &Item<'a>)> {
-        self.content
-            .iter()
-            .enumerate()
-            .filter_map(|(i, opt)| opt.as_ref().map(|item| (Index(i as u16), item)))
+        self.content.iter().enumerate().filter_map(|(i, opt)| {
+            opt.as_ref()
+                .map(|item| (Index::new(i as u16 + 1).unwrap(), item))
+        })
     }
 }
 
@@ -64,11 +64,15 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
 
 /// A 1-based index into the constant pool.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Index(u16);
+pub struct Index(NonZeroU16);
 
 impl Index {
-    pub fn new(index: u16) -> Index {
-        Index(index)
+    pub fn new(index: u16) -> Result<Index, DecodeError> {
+        if let Some(v) = NonZeroU16::new(index) {
+            Ok(Index(v))
+        } else {
+            Err(DecodeError::new(DecodeErrorKind::InvalidIndex))
+        }
     }
 }
 
@@ -80,7 +84,9 @@ impl fmt::Display for Index {
 
 impl<'a> Decode<'a> for Index {
     fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
-        Ok(Index(decoder.read()?))
+        let index = Index::new(decoder.read()?)
+            .map_err(|err| DecodeError::from_decoder(err.kind(), decoder))?;
+        Ok(index)
     }
 }
 

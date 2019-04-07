@@ -3,32 +3,89 @@ pub mod cpool;
 use crate::encoding::*;
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
-use cpool::{ConstantPool, Index};
+use cpool::ConstantPool;
 
 pub struct Class<'a> {
+    read_level: ReadLevel,
+    decoder: Decoder<'a>,
     version: Version,
-    pool: ConstantPool<'a>,
+    pool: LazyDecodeRef<ConstantPool<'a>>,
     access_flags: AccessFlags,
+
+    this_class: Option<cpool::Index>,
+    super_class: Option<cpool::Index>,
 }
 
 impl<'a> Class<'a> {
-    pub fn read(v: &[u8]) -> Result<Class, DecodeError> {
+    pub fn new(v: &[u8]) -> Result<Class, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
-        decoder.set_context(Context::ConstantPool);
-        let pool = decoder.read()?;
-        let access_flags = AccessFlags::from_bits(decoder.read()?).unwrap();
 
         Ok(Class {
+            read_level: ReadLevel::Start,
+            decoder,
             version,
-            pool,
-            access_flags,
+            pool: LazyDecodeRef::NotRead,
+            access_flags: AccessFlags::empty(),
+            this_class: None,
+            super_class: None,
         })
     }
 
     pub fn version(&self) -> Version {
         self.version
     }
+
+    pub fn pool(&mut self) -> Result<&ConstantPool<'a>, DecodeError> {
+        self.pool.get(&mut self.decoder)
+    }
+
+    fn read_info(&mut self) -> Result<(), DecodeError> {
+        if self.read_level < ReadLevel::Info {
+            // advance the decoder
+            self.pool()?;
+
+            self.access_flags = AccessFlags::from_bits(self.decoder.read()?).unwrap();
+            self.this_class = Some(self.decoder.read()?);
+            self.super_class = Some(self.decoder.read()?);
+            self.read_level = ReadLevel::Info;
+        }
+
+        Ok(())
+    }
+
+    pub fn access_flags(&mut self) -> Result<AccessFlags, DecodeError> {
+        self.read_info()?;
+        Ok(self.access_flags)
+    }
+
+    pub fn this_class(&mut self) -> Result<cpool::Index, DecodeError> {
+        self.read_info()?;
+        Ok(self.this_class.unwrap())
+    }
+
+    pub fn super_class(&mut self) -> Result<cpool::Index, DecodeError> {
+        self.read_info()?;
+        Ok(self.super_class.unwrap())
+    }
+}
+
+/// How much of the class is already read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum ReadLevel {
+    // Version numbers
+    Start,
+    ConstantPool,
+    // Access Flags, Class Name, Super Class
+    Info,
+    // Interface table
+    Interfaces,
+    // The field table
+    Fields,
+    // The method table
+    Methods,
+    // The attribute table
+    Attributes,
 }
 
 fn read_header(decoder: &mut Decoder) -> Result<Version, DecodeError> {
