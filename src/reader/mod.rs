@@ -37,6 +37,7 @@ impl<'a> Class<'a> {
     }
 
     pub fn pool(&mut self) -> Result<&ConstantPool<'a>, DecodeError> {
+        self.read_level = ReadLevel::ConstantPool;
         self.pool.get(&mut self.decoder)
     }
 

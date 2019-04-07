@@ -301,7 +301,7 @@ mod tests {
         assert_eq!(
             iter.next(),
             Some(&Item::String {
-                string: Index::new(2),
+                string: Index::new(2).unwrap(),
             })
         );
         assert_eq!(iter.next(), None);
@@ -316,11 +316,11 @@ mod tests {
             Some(Item::Integer(4)),
         ];
         let pool = ConstantPool { content };
-        assert_eq!(pool.get(Index::new(1)).unwrap(), &Item::Integer(2));
-        assert_eq!(pool.get(Index::new(2)).unwrap(), &Item::Long(3));
-        assert_eq!(pool.get(Index::new(4)).unwrap(), &Item::Integer(4));
-        assert!(pool.get(Index::new(3)).is_err());
-        assert!(pool.get(Index::new(0)).is_err());
-        assert!(pool.get(Index::new(5)).is_err());
+        assert_eq!(pool.get(Index::new(1).unwrap()).unwrap(), &Item::Integer(2));
+        assert_eq!(pool.get(Index::new(2).unwrap()).unwrap(), &Item::Long(3));
+        assert_eq!(pool.get(Index::new(4).unwrap()).unwrap(), &Item::Integer(4));
+        assert!(pool.get(Index::new(3).unwrap()).is_err());
+        assert!(pool.get(Index::new(5).unwrap()).is_err());
+        assert!(Index::new(0).is_err());
     }
 }
