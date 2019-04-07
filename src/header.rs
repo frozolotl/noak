@@ -7,7 +7,7 @@ pub struct Version {
 }
 
 bitflags! {
-    struct AccessFlags: u16 {
+    pub struct AccessFlags: u16 {
         const PUBLIC = 1 << 0;
         const PRIVATE = 1 << 1;
         const PROTECTED = 1 << 2;

@@ -2,18 +2,25 @@ pub mod cpool;
 
 use crate::encoding::*;
 use crate::error::*;
-use crate::Version;
+use crate::header::{AccessFlags, Version};
+use cpool::{ConstantPool, Index};
 
-pub struct Class {
+pub struct Class<'a> {
     version: Version,
+    pool: ConstantPool<'a>,
+    access_flags: AccessFlags,
+
 }
 
-impl Class {
+impl<'a> Class<'a> {
     pub fn read(v: &[u8]) -> Result<Class, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
+        decoder.set_context(Context::ConstantPool);
+        let pool = decoder.read()?;
+        let access_flags = AccessFlags::from_bits(decoder.read()?).unwrap();
 
-        Ok(Class { version })
+        Ok(Class { version, pool, access_flags })
     }
 
     pub fn version(&self) -> Version {
@@ -28,10 +35,9 @@ fn read_header(decoder: &mut Decoder) -> Result<Version, DecodeError> {
         let minor = decoder.read()?;
         Ok(Version { major, minor })
     } else {
-        Err(DecodeError::with_info(
+        Err(DecodeError::from_decoder(
             DecodeErrorKind::InvalidPrefix,
-            decoder.file_position(),
-            Context::Start,
+            decoder,
         ))
     }
 }
