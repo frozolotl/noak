@@ -9,7 +9,6 @@ pub struct Class<'a> {
     version: Version,
     pool: ConstantPool<'a>,
     access_flags: AccessFlags,
-
 }
 
 impl<'a> Class<'a> {
@@ -20,7 +19,11 @@ impl<'a> Class<'a> {
         let pool = decoder.read()?;
         let access_flags = AccessFlags::from_bits(decoder.read()?).unwrap();
 
-        Ok(Class { version, pool, access_flags })
+        Ok(Class {
+            version,
+            pool,
+            access_flags,
+        })
     }
 
     pub fn version(&self) -> Version {

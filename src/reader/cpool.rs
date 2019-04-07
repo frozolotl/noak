@@ -16,7 +16,6 @@ impl<'a> ConstantPool<'a> {
             }
         }
 
-
         Err(DecodeError::with_context(
             DecodeErrorKind::InvalidIndex,
             Context::ConstantPool,
@@ -244,50 +243,58 @@ mod tests {
 
     #[test]
     fn empty() {
-        let mut decoder = Decoder::new(&[
-            // length
-            0x00, 0x01
-        ], Context::ConstantPool);
+        let mut decoder = Decoder::new(
+            &[
+                // length
+                0x00, 0x01,
+            ],
+            Context::ConstantPool,
+        );
         let pool: ConstantPool = decoder.read().unwrap();
         assert_eq!(pool.iter().count(), 0);
     }
 
     #[test]
     fn negative_length() {
-        let mut decoder = Decoder::new(&[
-            // length
-            0x00, 0x00
-        ], Context::ConstantPool);
+        let mut decoder = Decoder::new(
+            &[
+                // length
+                0x00, 0x00,
+            ],
+            Context::ConstantPool,
+        );
         assert!(decoder.read::<ConstantPool>().is_err());
     }
 
     #[test]
     fn iteration_and_decoding() {
-        let mut decoder = Decoder::new(&[
-            // length
-            0x00, 0x05,
-            // integer
-            0x03,
-            0x00, 0x00, 0x00, 0x05,
-            // utf8
-            0x01,
-            0x00, 0x0B,
-            b'h', b'e', b'l', b'l', b'o', b' ', b'w', b'o', b'r', b'l', b'd',
-            // long (takes up two spaces)
-            0x05,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF,
-            // string
-            0x08,
-            0x00, 0x02,
-            // random bytes which should not be read
-            0xAB, 0xC4, 0x12, 0x4B, 0xFF, 0x00,
-        ], Context::ConstantPool);
+        let mut decoder = Decoder::new(
+            &[
+                // length
+                0x00, 0x05, // integer
+                0x03, 0x00, 0x00, 0x00, 0x05, // utf8
+                0x01, 0x00, 0x0B, b'h', b'e', b'l', b'l', b'o', b' ', b'w', b'o', b'r', b'l', b'd',
+                // long (takes up two spaces)
+                0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, // string
+                0x08, 0x00, 0x02, // random bytes which should not be read
+                0xAB, 0xC4, 0x12, 0x4B, 0xFF, 0x00,
+            ],
+            Context::ConstantPool,
+        );
         let pool: ConstantPool = decoder.read().unwrap();
         let mut iter = pool.iter();
         assert_eq!(iter.next(), Some(&Item::Integer(5)));
-        assert_eq!(iter.next(), Some(&Item::Utf8(MaybeMUtf8::Uninit(b"hello world"))));
+        assert_eq!(
+            iter.next(),
+            Some(&Item::Utf8(MaybeMUtf8::Uninit(b"hello world")))
+        );
         assert_eq!(iter.next(), Some(&Item::Long(0xFF)));
-        assert_eq!(iter.next(), Some(&Item::String { string: Index::new(2), }));
+        assert_eq!(
+            iter.next(),
+            Some(&Item::String {
+                string: Index::new(2),
+            })
+        );
         assert_eq!(iter.next(), None);
     }
 
@@ -297,7 +304,7 @@ mod tests {
             Some(Item::Integer(2)),
             Some(Item::Long(3)),
             None,
-            Some(Item::Integer(4))
+            Some(Item::Integer(4)),
         ];
         let pool = ConstantPool { content };
         assert_eq!(pool.get(Index::new(1)).unwrap(), &Item::Integer(2));
