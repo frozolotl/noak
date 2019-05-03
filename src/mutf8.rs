@@ -6,7 +6,8 @@ use std::{
     char,
     fmt::{self, Write},
     iter::FromIterator,
-    ops::Deref,
+    ops::{self, Deref},
+    convert::TryFrom,
     str,
 };
 
@@ -46,6 +47,18 @@ impl MStr {
     }
 
     #[inline]
+    pub fn is_char_boundary(&self, index: usize) -> bool {
+        if index == 0 || index == self.len() {
+            true
+        } else {
+            match self.as_bytes().get(index) {
+                None => false,
+                Some(&b) => b & 0b1100_0000 != 0b1000_0000 && b != 0b1110_1101,
+            }
+        }
+    }
+
+    #[inline]
     pub fn chars<'a>(&'a self) -> impl Iterator<Item = char> + 'a {
         struct Chars<'a> {
             inner: &'a [u8],
@@ -65,6 +78,82 @@ impl MStr {
         Chars {
             inner: &self.inner,
             cursor: 0,
+        }
+    }
+}
+
+impl ops::Index<ops::RangeFull> for MStr {
+    type Output = MStr;
+
+    #[inline]
+    fn index(&self, _: ops::RangeFull) -> &MStr {
+        self
+    }
+}
+
+impl ops::Index<ops::Range<usize>> for MStr {
+    type Output = MStr;
+
+    #[inline]
+    fn index(&self, index: ops::Range<usize>) -> &MStr {
+        if index.start <= index.end &&
+            self.is_char_boundary(index.start) &&
+            self.is_char_boundary(index.end) {
+            unsafe { MStr::from_mutf8_unchecked(&self.inner.get_unchecked(index)) }
+        } else {
+            panic!("MUtf8 index out of bounds");
+        }
+    }
+}
+
+impl ops::Index<ops::RangeInclusive<usize>> for MStr {
+    type Output = MStr;
+
+    #[inline]
+    fn index(&self, index: ops::RangeInclusive<usize>) -> &MStr {
+        if *index.end() == usize::max_value() {
+            panic!("cannot index mutf8 to maximum integer")
+        } else {
+            &self[*index.start()..*index.end() + 1]
+        }
+    }
+}
+
+impl ops::Index<ops::RangeTo<usize>> for MStr {
+    type Output = MStr;
+
+    #[inline]
+    fn index(&self, index: ops::RangeTo<usize>) -> &MStr {
+        if self.is_char_boundary(index.end) {
+            unsafe { MStr::from_mutf8_unchecked(&self.inner.get_unchecked(index)) }
+        } else {
+            panic!("MUtf8 index out of bounds");
+        }
+    }
+}
+
+impl ops::Index<ops::RangeToInclusive<usize>> for MStr {
+    type Output = MStr;
+
+    #[inline]
+    fn index(&self, index: ops::RangeToInclusive<usize>) -> &MStr {
+        if index.end == usize::max_value() {
+            panic!("cannot index mutf8 to maximum integer")
+        } else {
+            &self[..index.end + 1]
+        }
+    }
+}
+
+impl ops::Index<ops::RangeFrom<usize>> for MStr {
+    type Output = MStr;
+
+    #[inline]
+    fn index(&self, index: ops::RangeFrom<usize>) -> &MStr {
+        if self.is_char_boundary(index.start) {
+            unsafe { MStr::from_mutf8_unchecked(&self.inner.get_unchecked(index)) }
+        } else {
+            panic!("MUtf8 index out of bounds");
         }
     }
 }
