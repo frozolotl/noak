@@ -112,11 +112,11 @@ pub trait Decode<'a>: Sized + 'a {
 }
 
 macro_rules! impl_decode {
-    ($($t:ty => $buf:expr,)*) => {
+    ($($t:ty => $len:expr,)*) => {
         $(
             impl<'a> Decode<'a> for $t {
                 fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
-                    let mut buf = $buf;
+                    let mut buf = <[u8; $len]>::default();
                     decoder.read_bytes(&mut buf)?;
                     Ok(Self::from_be_bytes(buf))
                 }
@@ -126,12 +126,12 @@ macro_rules! impl_decode {
 }
 
 impl_decode! {
-    u8 => [0], i8 => [0],
-    u16 => [0, 0], i16 => [0, 0],
-    u32 => [0, 0, 0, 0], i32 => [0, 0, 0, 0],
-    u64 => [0, 0, 0, 0, 0, 0, 0, 0], i64 => [0, 0, 0, 0, 0, 0, 0, 0],
+    u8 => 1, i8 => 1,
+    u16 => 2, i16 => 2,
+    u32 => 4, i32 => 4,
+    u64 => 8, i64 => 8,
     // this will probably never be needed, but why not
-    u128 => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i128 => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    u128 => 16, i128 => 16,
 }
 
 impl<'a> Decode<'a> for f32 {
