@@ -10,6 +10,7 @@ pub enum DecodeErrorKind {
     InvalidLength,
     TagMismatch,
     InvalidTag,
+    InvalidDescriptor,
 }
 
 impl fmt::Display for DecodeErrorKind {
@@ -24,6 +25,7 @@ impl fmt::Display for DecodeErrorKind {
             InvalidLength => write!(f, "invalid length of a table or the constant pool"),
             TagMismatch => write!(f, "tag mismatch"),
             InvalidTag => write!(f, "invalid tag"),
+            InvalidDescriptor => write!(f, "invalid descriptor"),
         }
     }
 }

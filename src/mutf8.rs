@@ -69,9 +69,13 @@ impl MStr {
             type Item = char;
 
             fn next(&mut self) -> Option<char> {
-                let (size, ch) = unsafe { decode_mutf8_char(&self.inner[self.cursor..]) };
-                self.cursor += size;
-                Some(ch)
+                if self.cursor == self.inner.len() {
+                    None
+                } else {
+                    let (size, ch) = unsafe { decode_mutf8_char(&self.inner[self.cursor..]) };
+                    self.cursor += size;
+                    Some(ch)
+                }
             }
         }
 
