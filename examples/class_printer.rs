@@ -2,7 +2,9 @@ use noak::error::DecodeError;
 use noak::reader::Class;
 
 fn main() -> Result<(), DecodeError> {
-    let path = std::env::args().nth(1).expect("usage: `class_printer MyClass.class`");
+    let path = std::env::args()
+        .nth(1)
+        .expect("usage: `class_printer MyClass.class`");
     let bytes = std::fs::read(path).expect("could not read file");
 
     let mut class = Class::new(&bytes)?;

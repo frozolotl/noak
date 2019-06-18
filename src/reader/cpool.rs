@@ -1,7 +1,7 @@
 use crate::encoding::*;
 use crate::error::*;
 use crate::mutf8::MStr;
-use std::{fmt, num::NonZeroU16, marker::PhantomData};
+use std::{fmt, marker::PhantomData, num::NonZeroU16};
 
 pub struct ConstantPool<'a> {
     content: Vec<Option<Item<'a>>>,
@@ -13,7 +13,6 @@ impl<'a> ConstantPool<'a> {
         if pos != 0 && pos <= self.content.len() {
             if let Some(item) = &self.content[pos - 1] {
                 return I::try_from_item(item).ok_or_else(|| {
-
                     DecodeError::with_context(DecodeErrorKind::TagMismatch, Context::ConstantPool)
                 });
             }
@@ -464,7 +463,10 @@ mod tests {
         assert_eq!(pool.get(Index::new(2).unwrap()), Ok(&Long(3)));
         assert_eq!(pool.get(Index::new(4).unwrap()), Ok(&Integer(4)));
         let string: &String = pool.get(Index::new(5).unwrap()).unwrap();
-        assert_eq!(pool.get(string.string), Ok(&Utf8(MaybeMUtf8::Uninit(&some_string))));
+        assert_eq!(
+            pool.get(string.string),
+            Ok(&Utf8(MaybeMUtf8::Uninit(&some_string)))
+        );
 
         assert!(pool.get::<Double>(Index::new(4).unwrap()).is_err());
         assert!(pool.get::<Item>(Index::new(3).unwrap()).is_err());

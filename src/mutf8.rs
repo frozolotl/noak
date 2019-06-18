@@ -99,9 +99,10 @@ impl ops::Index<ops::Range<usize>> for MStr {
 
     #[inline]
     fn index(&self, index: ops::Range<usize>) -> &MStr {
-        if index.start <= index.end &&
-            self.is_char_boundary(index.start) &&
-            self.is_char_boundary(index.end) {
+        if index.start <= index.end
+            && self.is_char_boundary(index.start)
+            && self.is_char_boundary(index.end)
+        {
             unsafe { MStr::from_mutf8_unchecked(&self.inner.get_unchecked(index)) }
         } else {
             panic!("MUtf8 index out of bounds");

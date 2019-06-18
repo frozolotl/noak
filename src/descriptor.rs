@@ -9,10 +9,7 @@ pub struct TypeDescriptor<'a> {
 
 impl<'a> TypeDescriptor<'a> {
     pub fn new(base: BaseType<'a>, dimensions: u8) -> TypeDescriptor {
-        TypeDescriptor {
-            dimensions,
-            base,
-        }
+        TypeDescriptor { dimensions, base }
     }
 
     pub fn parse(s: &'a MStr) -> Result<TypeDescriptor<'a>, DecodeError> {
@@ -92,7 +89,7 @@ pub enum BaseType<'a> {
 
 #[cfg(test)]
 mod test {
-    use super::{*, BaseType::*};
+    use super::{BaseType::*, *};
     use crate::mutf8::MString;
 
     #[test]
@@ -109,10 +106,16 @@ mod test {
         eq("J", TypeDescriptor::new(Long, 0));
         eq("F", TypeDescriptor::new(Float, 0));
         eq("D", TypeDescriptor::new(Double, 0));
-        eq("Ljava/lang/String;", TypeDescriptor::new(Object(&MString::from("java/lang/String")), 0));
+        eq(
+            "Ljava/lang/String;",
+            TypeDescriptor::new(Object(&MString::from("java/lang/String")), 0),
+        );
 
         eq("[D", TypeDescriptor::new(Double, 1));
-        eq("[[Ljava/lang/String;", TypeDescriptor::new(Object(&MString::from("java/lang/String")), 2));
+        eq(
+            "[[Ljava/lang/String;",
+            TypeDescriptor::new(Object(&MString::from("java/lang/String")), 2),
+        );
         eq("[[[[[[[[[[[[[[[[[[F", TypeDescriptor::new(Float, 18));
         eq(&("[".repeat(255) + "I"), TypeDescriptor::new(Integer, 255));
     }
