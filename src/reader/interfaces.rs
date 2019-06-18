@@ -68,32 +68,35 @@ impl<'a> FusedIterator for Interfaces<'a> {}
 mod tests {
     use super::*;
 
+    #[test]
     fn valid_interfaces() {
         #[rustfmt::skip]
         let mut decoder = Decoder::new(&[
-            0x03,
+            0x00, 0x03,
             0x00, 0x23,
             0x05, 0x55,
             0x00, 0x01,
         ], Context::Interfaces);
 
         let mut interfaces = Interfaces::new(&mut decoder).unwrap();
+        assert_eq!(interfaces.len(), 3);
         assert_eq!(interfaces.next(), Some(cpool::Index::new(0x0023).unwrap()));
         assert_eq!(interfaces.next(), Some(cpool::Index::new(0x0555).unwrap()));
         assert_eq!(interfaces.next(), Some(cpool::Index::new(0x0001).unwrap()));
         assert_eq!(interfaces.next(), None);
     }
 
+    #[test]
     fn invalid_length() {
         #[rustfmt::skip]
         let mut decoder = Decoder::new(&[
-            0x03,
+            0x00, 0x03,
             0x12,
         ], Context::Interfaces);
 
-        let mut interfaces = Interfaces::new(&mut decoder).unwrap();
-        assert_eq!(interfaces.next(), None);
+        assert!(Interfaces::new(&mut decoder).is_err());
 
+        #[rustfmt::skip]
         let mut decoder = Decoder::new(&[
             0x00,
         ], Context::Interfaces);
