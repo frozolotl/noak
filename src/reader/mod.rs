@@ -3,6 +3,7 @@ pub mod cpool;
 use crate::encoding::*;
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
+use crate::mutf8::MStr;
 use cpool::ConstantPool;
 
 pub struct Class<'a> {
@@ -17,7 +18,7 @@ pub struct Class<'a> {
 }
 
 impl<'a> Class<'a> {
-    pub fn new(v: &[u8]) -> Result<Class, DecodeError> {
+    pub fn new(v: &'a [u8]) -> Result<Class, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
 
@@ -37,7 +38,10 @@ impl<'a> Class<'a> {
     }
 
     pub fn pool(&mut self) -> Result<&ConstantPool<'a>, DecodeError> {
-        self.read_level = ReadLevel::ConstantPool;
+        if self.read_level < ReadLevel::ConstantPool {
+            self.read_level = ReadLevel::ConstantPool;
+        }
+
         self.pool.get(&mut self.decoder)
     }
 
@@ -60,14 +64,26 @@ impl<'a> Class<'a> {
         Ok(self.access_flags)
     }
 
-    pub fn this_class(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
+    pub fn this_class_index(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
         self.read_info()?;
         Ok(self.this_class.unwrap())
     }
 
-    pub fn super_class(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
+    pub fn this_class_name(&mut self) -> Result<&'a MStr, DecodeError> {
+        let index = self.this_class_index()?;
+        let pool = self.pool()?;
+        Ok(pool.get(pool.get(index)?.name)?.content)
+    }
+
+    pub fn super_class_index(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
         self.read_info()?;
         Ok(self.super_class.unwrap())
+    }
+
+    pub fn super_class_name(&mut self) -> Result<&'a MStr, DecodeError> {
+        let index = self.super_class_index()?;
+        let pool = self.pool()?;
+        Ok(pool.get(pool.get(index)?.name)?.content)
     }
 }
 

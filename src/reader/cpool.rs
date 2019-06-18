@@ -1,6 +1,6 @@
 use crate::encoding::*;
 use crate::error::*;
-use crate::mutf8::MaybeMUtf8;
+use crate::mutf8::MStr;
 use std::{fmt, num::NonZeroU16, marker::PhantomData};
 
 pub struct ConstantPool<'a> {
@@ -138,7 +138,9 @@ impl<'a> Decode<'a> for Item<'a> {
             1 => {
                 let len: u16 = decoder.read()?;
                 let buf = decoder.split_bytes_off(len as usize)?;
-                Ok(Item::Utf8(Utf8(MaybeMUtf8::new(buf))))
+                Ok(Item::Utf8(Utf8 {
+                    content: MStr::from_bytes(buf)?,
+                }))
             }
             3 => Ok(Item::Integer(Integer(decoder.read()?))),
             4 => Ok(Item::Float(Float(decoder.read()?))),
@@ -297,7 +299,9 @@ pub struct NameAndType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Utf8<'a>(MaybeMUtf8<'a>);
+pub struct Utf8<'a> {
+    pub content: &'a MStr,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MethodHandle {
@@ -422,7 +426,9 @@ mod tests {
         assert_eq!(iter.next(), Some(&Item::Integer(Integer(5))));
         assert_eq!(
             iter.next(),
-            Some(&Item::Utf8(Utf8(MaybeMUtf8::Uninit(b"hello world"))))
+            Some(&Item::Utf8(Utf8 {
+                content: MaybeMUtf8::Uninit(b"hello world"),
+            }))
         );
         assert_eq!(iter.next(), Some(&Item::Long(Long(0xFF))));
         assert_eq!(

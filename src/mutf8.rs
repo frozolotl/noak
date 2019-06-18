@@ -429,29 +429,3 @@ fn encode_char(ch: char, buf: &mut [u8]) -> usize {
         }
     }
 }
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MaybeMUtf8<'a> {
-    Uninit(&'a [u8]),
-    MUtf8(&'a MStr),
-    Invalid,
-}
-
-impl<'a> MaybeMUtf8<'a> {
-    pub fn new(v: &'a [u8]) -> MaybeMUtf8<'a> {
-        MaybeMUtf8::Uninit(v)
-    }
-
-    /// Decodes the string if needed and returns an error if the bytes are invalid.
-    pub fn get(&mut self) -> Result<&'a MStr, DecodeError> {
-        match self {
-            MaybeMUtf8::Uninit(v) => {
-                let s = MStr::from_bytes(v)?;
-                *self = MaybeMUtf8::MUtf8(s);
-                Ok(s)
-            }
-            MaybeMUtf8::MUtf8(s) => Ok(s),
-            MaybeMUtf8::Invalid => Err(DecodeError::new(DecodeErrorKind::InvalidMutf8)),
-        }
-    }
-}

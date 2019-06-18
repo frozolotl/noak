@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Version {
