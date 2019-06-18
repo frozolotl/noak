@@ -1,7 +1,7 @@
 pub mod cpool;
 mod interfaces;
 
-pub use interfaces::Interfaces;
+pub use interfaces::{Interfaces, InterfaceNames};
 
 use crate::encoding::*;
 use crate::error::*;
@@ -25,6 +25,7 @@ impl<'a> Class<'a> {
     pub fn new(v: &'a [u8]) -> Result<Class, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
+
 
         Ok(Class {
             read_level: ReadLevel::Start,
@@ -92,10 +93,17 @@ impl<'a> Class<'a> {
         Ok(pool.get(pool.get(index)?.name)?.content)
     }
 
-    pub fn interfaces(&mut self) -> Result<Interfaces<'a>, DecodeError> {
+    pub fn interface_indices(&mut self) -> Result<Interfaces<'a>, DecodeError> {
         self.read_info()?;
         Ok(self.interfaces.clone().unwrap())
     }
+
+    pub fn interface_names(&mut self) -> Result<InterfaceNames<'a, '_>, DecodeError> {
+        let interfaces = self.interface_indices()?;
+        let pool = self.pool()?;
+        Ok(InterfaceNames::new(&pool, interfaces))
+    }
+
 }
 
 /// How much of the class is already read.

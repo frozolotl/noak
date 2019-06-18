@@ -16,5 +16,10 @@ fn main() -> Result<(), DecodeError> {
     println!("      Class Name: {}", class.this_class_name()?);
     println!("Super Class Name: {}", class.super_class_name()?);
 
+    println!("      Interfaces:");
+    for name in class.interface_names()? {
+        println!("                - {}", name);
+    }
+
     Ok(())
 }

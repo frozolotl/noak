@@ -1,9 +1,10 @@
 use crate::encoding::Decoder;
 use crate::error::*;
 use crate::reader::cpool;
+use crate::mutf8::MStr;
 use std::iter::FusedIterator;
 
-/// An iterator over the interfaces in a class.
+/// An iterator over the interface indices in a class.
 #[derive(Clone)]
 pub struct Interfaces<'a> {
     decoder: Decoder<'a>,
@@ -63,6 +64,68 @@ impl<'a> ExactSizeIterator for Interfaces<'a> {
 }
 
 impl<'a> FusedIterator for Interfaces<'a> {}
+
+/// An iterator over the interface names in a class.
+pub struct InterfaceNames<'a, 'b> {
+    interfaces: Interfaces<'a>,
+    pool: &'b cpool::ConstantPool<'a>,
+}
+
+impl<'a, 'b> InterfaceNames<'a, 'b> {
+    pub(in crate::reader) fn new(pool: &'b cpool::ConstantPool<'a>, interfaces: Interfaces<'a>) -> InterfaceNames<'a, 'b> {
+        InterfaceNames {
+            interfaces,
+            pool,
+        }
+    }
+}
+
+impl<'a, 'b> Iterator for InterfaceNames<'a, 'b> {
+    type Item = &'a MStr;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let v = self.interfaces.next()?;
+        get_name(self.pool, v)
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        self.len()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+
+    #[inline]
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let v = self.interfaces.nth(n)?;
+        get_name(self.pool, v)
+    }
+
+    #[inline]
+    fn last(self) -> Option<Self::Item> {
+        let v = self.interfaces.last()?;
+        get_name(self.pool, v)
+    }
+}
+
+impl<'a, 'b> ExactSizeIterator for InterfaceNames<'a, 'b> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.interfaces.len()
+    }
+}
+
+impl<'a, 'b> FusedIterator for InterfaceNames<'a, 'b> {}
+
+fn get_name<'a>(pool: &cpool::ConstantPool<'a>, interface_index: cpool::Index<cpool::Class>) -> Option<&'a MStr>{
+    let interface = pool.get(interface_index).ok()?.name;
+    let name = pool.get(interface).ok()?.content;
+    Some(name)
+}
 
 #[cfg(test)]
 mod tests {
