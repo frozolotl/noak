@@ -5,6 +5,7 @@ mod fields;
 
 pub use interfaces::{Interfaces, InterfaceNames};
 pub use attributes::{Attributes, Attribute};
+pub use fields::{Fields, Field};
 
 use crate::encoding::*;
 use crate::error::*;
@@ -22,6 +23,7 @@ pub struct Class<'a> {
     this_class: Option<cpool::Index<cpool::Class>>,
     super_class: Option<cpool::Index<cpool::Class>>,
     interfaces: Option<Interfaces<'a>>,
+    fields: Option<Fields<'a>>,
 }
 
 impl<'a> Class<'a> {
@@ -39,6 +41,7 @@ impl<'a> Class<'a> {
             this_class: None,
             super_class: None,
             interfaces: None,
+            fields: None,
         })
     }
 
@@ -62,7 +65,7 @@ impl<'a> Class<'a> {
             self.access_flags = self.decoder.read()?;
             self.this_class = Some(self.decoder.read()?);
             self.super_class = Some(self.decoder.read()?);
-            self.interfaces = Some(Interfaces::new(&mut self.decoder)?);
+            self.interfaces = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Info;
         }
 
@@ -107,6 +110,15 @@ impl<'a> Class<'a> {
         Ok(InterfaceNames::new(&pool, interfaces))
     }
 
+    pub fn field_indices(&mut self) -> Result<Fields<'a>, DecodeError> {
+        self.read_info()?;
+        if self.read_level < ReadLevel::Fields {
+            self.fields = Some(self.decoder.read()?);
+            self.read_level = ReadLevel::Fields;
+        }
+        Ok(self.fields.clone().unwrap())
+    }
+
 }
 
 /// How much of the class is already read.
@@ -117,8 +129,6 @@ enum ReadLevel {
     ConstantPool,
     // Access Flags, Class Name, Super Class
     Info,
-    // Interface table
-    Interfaces,
     // The field table
     Fields,
     // The method table

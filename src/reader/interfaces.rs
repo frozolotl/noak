@@ -1,4 +1,4 @@
-use crate::encoding::Decoder;
+use crate::encoding::{Decoder, Decode};
 use crate::error::*;
 use crate::reader::cpool;
 use crate::mutf8::MStr;
@@ -10,8 +10,8 @@ pub struct Interfaces<'a> {
     decoder: Decoder<'a>,
 }
 
-impl<'a> Interfaces<'a> {
-    pub(in crate::reader) fn new(decoder: &mut Decoder<'a>) -> Result<Interfaces<'a>, DecodeError> {
+impl<'a> Decode<'a> for Interfaces<'a> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let count: u16 = decoder.read()?;
         let limit = count as usize * 2;
         let interface_decoder = decoder.limit(limit, Context::Interfaces)?;

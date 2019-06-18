@@ -21,5 +21,20 @@ fn main() -> Result<(), DecodeError> {
         println!("                - {}", name);
     }
 
+    println!("          Fields:");
+    for field in class.field_indices()? {
+        let name = class.pool()?.get(field.name)?.content;
+        let descriptor = class.pool()?.get(field.descriptor)?.content;
+        println!("                - {}:", name);
+        println!("                  - Access Flags: {:?}", field.access_flags);
+        println!("                  - Descriptor: {}", descriptor);
+        println!("                  - Attributes:");
+
+        for attr in field.attributes() {
+            let name = class.pool()?.get(attr.name)?.content;
+            println!("                    - {}", name);
+        }
+    }
+
     Ok(())
 }
