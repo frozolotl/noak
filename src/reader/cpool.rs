@@ -1,18 +1,21 @@
 use crate::encoding::*;
 use crate::error::*;
 use crate::mutf8::MaybeMUtf8;
-use std::{fmt, num::NonZeroU16};
+use std::{fmt, num::NonZeroU16, marker::PhantomData};
 
 pub struct ConstantPool<'a> {
     content: Vec<Option<Item<'a>>>,
 }
 
 impl<'a> ConstantPool<'a> {
-    pub fn get(&self, at: Index) -> Result<&Item<'a>, DecodeError> {
-        let pos = at.0.get() as usize;
+    pub fn get<I: TryFromItem<'a>>(&self, at: Index<I>) -> Result<&I, DecodeError> {
+        let pos = at.index.get() as usize;
         if pos != 0 && pos <= self.content.len() {
             if let Some(item) = &self.content[pos - 1] {
-                return Ok(item);
+                return I::try_from_item(item).ok_or_else(|| {
+
+                    DecodeError::with_context(DecodeErrorKind::TagMismatch, Context::ConstantPool)
+                });
             }
         }
 
@@ -26,7 +29,7 @@ impl<'a> ConstantPool<'a> {
         self.content.iter().filter_map(|opt| opt.as_ref())
     }
 
-    pub fn iter_indices(&self) -> impl Iterator<Item = (Index, &Item<'a>)> {
+    pub fn iter_indices(&self) -> impl Iterator<Item = (Index<Item<'a>>, &Item<'a>)> {
         self.content.iter().enumerate().filter_map(|(i, opt)| {
             opt.as_ref()
                 .map(|item| (Index::new(i as u16 + 1).unwrap(), item))
@@ -63,27 +66,44 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
 }
 
 /// A 1-based index into the constant pool.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Index(NonZeroU16);
+#[derive(Debug, PartialEq)]
+pub struct Index<I> {
+    index: NonZeroU16,
+    mark: PhantomData<I>,
+}
 
-impl Index {
-    pub fn new(index: u16) -> Result<Index, DecodeError> {
+impl<I> Clone for Index<I> {
+    fn clone(&self) -> Index<I> {
+        Index {
+            index: self.index,
+            mark: PhantomData,
+        }
+    }
+}
+
+impl<I> Copy for Index<I> {}
+
+impl<I> Index<I> {
+    pub fn new(index: u16) -> Result<Index<I>, DecodeError> {
         if let Some(v) = NonZeroU16::new(index) {
-            Ok(Index(v))
+            Ok(Index {
+                index: v,
+                mark: PhantomData,
+            })
         } else {
             Err(DecodeError::new(DecodeErrorKind::InvalidIndex))
         }
     }
 }
 
-impl fmt::Display for Index {
+impl<I> fmt::Display for Index<I> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "#{}", self.0)
+        write!(f, "#{}", self.index)
     }
 }
 
-impl<'a> Decode<'a> for Index {
-    fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
+impl<'a, I: 'a> Decode<'a> for Index<I> {
+    fn decode(decoder: &mut Decoder) -> Result<Index<I>, DecodeError> {
         let index = Index::new(decoder.read()?)
             .map_err(|err| DecodeError::from_decoder(err.kind(), decoder))?;
         Ok(index)
@@ -92,55 +112,23 @@ impl<'a> Decode<'a> for Index {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item<'a> {
-    Class {
-        name: Index,
-    },
-    FieldRef {
-        class: Index,
-        name_and_type: Index,
-    },
-    MethodRef {
-        class: Index,
-        name_and_type: Index,
-    },
-    InterfaceMethodRef {
-        class: Index,
-        name_and_type: Index,
-    },
-    String {
-        string: Index,
-    },
-    Integer(i32),
-    Long(i64),
-    Float(f32),
-    Double(f64),
-    NameAndType {
-        name: Index,
-        descriptor: Index,
-    },
-    Utf8(MaybeMUtf8<'a>),
-    MethodHandle {
-        kind: MethodKind,
-        reference: Index,
-    },
-    MethodType {
-        descriptor: Index,
-    },
-    Dynamic {
-        bootstrap_method_attr: Index,
-        name_and_type: Index,
-    },
-    InvokeDynamic {
-        // actually an index into the bootstrap method table
-        bootstrap_method_attr: u16,
-        name_and_type: Index,
-    },
-    Module {
-        name: Index,
-    },
-    Package {
-        name: Index,
-    },
+    Class(Class),
+    FieldRef(FieldRef),
+    MethodRef(MethodRef),
+    InterfaceMethodRef(InterfaceMethodRef),
+    String(String),
+    Integer(Integer),
+    Long(Long),
+    Float(Float),
+    Double(Double),
+    NameAndType(NameAndType),
+    Utf8(Utf8<'a>),
+    MethodHandle(MethodHandle),
+    MethodType(MethodType),
+    Dynamic(Dynamic),
+    InvokeDynamic(InvokeDynamic),
+    Module(Module),
+    Package(Package),
 }
 
 impl<'a> Decode<'a> for Item<'a> {
@@ -150,61 +138,200 @@ impl<'a> Decode<'a> for Item<'a> {
             1 => {
                 let len: u16 = decoder.read()?;
                 let buf = decoder.split_bytes_off(len as usize)?;
-                Ok(Item::Utf8(MaybeMUtf8::new(buf)))
+                Ok(Item::Utf8(Utf8(MaybeMUtf8::new(buf))))
             }
-            3 => Ok(Item::Integer(decoder.read()?)),
-            4 => Ok(Item::Float(decoder.read()?)),
-            5 => Ok(Item::Long(decoder.read()?)),
-            6 => Ok(Item::Double(decoder.read()?)),
-            7 => Ok(Item::Class {
+            3 => Ok(Item::Integer(Integer(decoder.read()?))),
+            4 => Ok(Item::Float(Float(decoder.read()?))),
+            5 => Ok(Item::Long(Long(decoder.read()?))),
+            6 => Ok(Item::Double(Double(decoder.read()?))),
+            7 => Ok(Item::Class(Class {
                 name: decoder.read()?,
-            }),
-            8 => Ok(Item::String {
+            })),
+            8 => Ok(Item::String(String {
                 string: decoder.read()?,
-            }),
-            9 => Ok(Item::FieldRef {
+            })),
+            9 => Ok(Item::FieldRef(FieldRef {
                 class: decoder.read()?,
                 name_and_type: decoder.read()?,
-            }),
-            10 => Ok(Item::MethodRef {
+            })),
+            10 => Ok(Item::MethodRef(MethodRef {
                 class: decoder.read()?,
                 name_and_type: decoder.read()?,
-            }),
-            11 => Ok(Item::InterfaceMethodRef {
+            })),
+            11 => Ok(Item::InterfaceMethodRef(InterfaceMethodRef {
                 class: decoder.read()?,
                 name_and_type: decoder.read()?,
-            }),
-            12 => Ok(Item::NameAndType {
+            })),
+            12 => Ok(Item::NameAndType(NameAndType {
                 name: decoder.read()?,
                 descriptor: decoder.read()?,
-            }),
-            15 => Ok(Item::MethodHandle {
+            })),
+            15 => Ok(Item::MethodHandle(MethodHandle {
                 kind: decoder.read()?,
                 reference: decoder.read()?,
-            }),
-            16 => Ok(Item::MethodType {
+            })),
+            16 => Ok(Item::MethodType(MethodType {
                 descriptor: decoder.read()?,
-            }),
-            17 => Ok(Item::Dynamic {
+            })),
+            17 => Ok(Item::Dynamic(Dynamic {
                 bootstrap_method_attr: decoder.read()?,
                 name_and_type: decoder.read()?,
-            }),
-            18 => Ok(Item::InvokeDynamic {
+            })),
+            18 => Ok(Item::InvokeDynamic(InvokeDynamic {
                 bootstrap_method_attr: decoder.read()?,
                 name_and_type: decoder.read()?,
-            }),
-            19 => Ok(Item::Module {
+            })),
+            19 => Ok(Item::Module(Module {
                 name: decoder.read()?,
-            }),
-            20 => Ok(Item::Package {
+            })),
+            20 => Ok(Item::Package(Package {
                 name: decoder.read()?,
-            }),
+            })),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::InvalidTag,
                 decoder,
             )),
         }
     }
+}
+
+pub trait TryFromItem<'a>: Sized {
+    fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self>;
+}
+
+macro_rules! impl_try_from_item {
+    ($($name:ident;)*) => {
+        $(
+            impl<'a> TryFromItem<'a> for $name {
+                fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self> {
+                    if let Item::$name(v) = item {
+                        Some(v)
+                    } else {
+                        None
+                    }
+                }
+            }
+        )*
+    }
+}
+
+impl_try_from_item! {
+    Class;
+    FieldRef;
+    MethodRef;
+    InterfaceMethodRef;
+    String;
+    Integer;
+    Long;
+    Float;
+    Double;
+    NameAndType;
+    MethodHandle;
+    MethodType;
+    Dynamic;
+    InvokeDynamic;
+    Module;
+    Package;
+}
+
+impl<'a> TryFromItem<'a> for Utf8<'a> {
+    fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self> {
+        if let Item::Utf8(v) = item {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> TryFromItem<'a> for Item<'a> {
+    fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self> {
+        Some(item)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Class {
+    pub name: Index<Utf8<'static>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FieldRef {
+    pub class: Index<Class>,
+    pub name_and_type: Index<NameAndType>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MethodRef {
+    pub class: Index<Class>,
+    pub name_and_type: Index<NameAndType>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct InterfaceMethodRef {
+    pub class: Index<Class>,
+    pub name_and_type: Index<NameAndType>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct String {
+    pub string: Index<Utf8<'static>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Integer(i32);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Long(i64);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Float(f32);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Double(f64);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NameAndType {
+    pub name: Index<Utf8<'static>>,
+    pub descriptor: Index<Utf8<'static>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Utf8<'a>(MaybeMUtf8<'a>);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MethodHandle {
+    pub kind: MethodKind,
+    pub reference: Index<Item<'static>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MethodType {
+    pub descriptor: Index<Utf8<'static>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Dynamic {
+    // actually an index into the bootstrap method table
+    pub bootstrap_method_attr: u16,
+    pub name_and_type: Index<NameAndType>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct InvokeDynamic {
+    // actually an index into the bootstrap method table
+    pub bootstrap_method_attr: u16,
+    pub name_and_type: Index<NameAndType>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Module {
+    pub name: Index<Utf8<'static>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Package {
+    pub name: Index<Utf8<'static>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -292,17 +419,17 @@ mod tests {
         ], Context::ConstantPool);
         let pool: ConstantPool = decoder.read().unwrap();
         let mut iter = pool.iter();
-        assert_eq!(iter.next(), Some(&Item::Integer(5)));
+        assert_eq!(iter.next(), Some(&Item::Integer(Integer(5))));
         assert_eq!(
             iter.next(),
-            Some(&Item::Utf8(MaybeMUtf8::Uninit(b"hello world")))
+            Some(&Item::Utf8(Utf8(MaybeMUtf8::Uninit(b"hello world"))))
         );
-        assert_eq!(iter.next(), Some(&Item::Long(0xFF)));
+        assert_eq!(iter.next(), Some(&Item::Long(Long(0xFF))));
         assert_eq!(
             iter.next(),
-            Some(&Item::String {
+            Some(&Item::String(String {
                 string: Index::new(2).unwrap(),
-            })
+            }))
         );
         assert_eq!(iter.next(), None);
     }
@@ -310,17 +437,29 @@ mod tests {
     #[test]
     fn get() {
         let content = vec![
-            Some(Item::Integer(2)),
-            Some(Item::Long(3)),
+            Some(Item::Integer(Integer(2))),
+            Some(Item::Long(Long(3))),
             None,
-            Some(Item::Integer(4)),
+            Some(Item::Integer(Integer(4))),
+            Some(Item::String(String {
+                string: Index::new(6).unwrap(),
+            })),
+            Some(Item::Utf8(Utf8(MaybeMUtf8::Uninit(b"hello world")))),
         ];
+
         let pool = ConstantPool { content };
-        assert_eq!(pool.get(Index::new(1).unwrap()).unwrap(), &Item::Integer(2));
-        assert_eq!(pool.get(Index::new(2).unwrap()).unwrap(), &Item::Long(3));
-        assert_eq!(pool.get(Index::new(4).unwrap()).unwrap(), &Item::Integer(4));
-        assert!(pool.get(Index::new(3).unwrap()).is_err());
-        assert!(pool.get(Index::new(5).unwrap()).is_err());
-        assert!(Index::new(0).is_err());
+        assert_eq!(pool.get(Index::new(1).unwrap()), Ok(&Integer(2)));
+        assert_eq!(pool.get(Index::new(2).unwrap()), Ok(&Long(3)));
+        assert_eq!(pool.get(Index::new(4).unwrap()), Ok(&Integer(4)));
+        if let String { string } = pool.get(Index::new(5).unwrap()).unwrap() {
+            assert_eq!(pool.get(*string), Ok(&Utf8(MaybeMUtf8::Uninit(b"hello world"))));
+        } else {
+            panic!("not a string");
+        }
+
+        assert!(pool.get::<Double>(Index::new(4).unwrap()).is_err());
+        assert!(pool.get::<Item>(Index::new(3).unwrap()).is_err());
+        assert!(pool.get::<Item>(Index::new(7).unwrap()).is_err());
+        assert!(Index::<Item>::new(0).is_err());
     }
 }

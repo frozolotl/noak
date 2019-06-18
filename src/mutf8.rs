@@ -7,7 +7,6 @@ use std::{
     fmt::{self, Write},
     iter::FromIterator,
     ops::{self, Deref},
-    convert::TryFrom,
     str,
 };
 

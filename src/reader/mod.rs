@@ -12,8 +12,8 @@ pub struct Class<'a> {
     pool: LazyDecodeRef<ConstantPool<'a>>,
     access_flags: AccessFlags,
 
-    this_class: Option<cpool::Index>,
-    super_class: Option<cpool::Index>,
+    this_class: Option<cpool::Index<cpool::Class>>,
+    super_class: Option<cpool::Index<cpool::Class>>,
 }
 
 impl<'a> Class<'a> {
@@ -60,12 +60,12 @@ impl<'a> Class<'a> {
         Ok(self.access_flags)
     }
 
-    pub fn this_class(&mut self) -> Result<cpool::Index, DecodeError> {
+    pub fn this_class(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
         self.read_info()?;
         Ok(self.this_class.unwrap())
     }
 
-    pub fn super_class(&mut self) -> Result<cpool::Index, DecodeError> {
+    pub fn super_class(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
         self.read_info()?;
         Ok(self.super_class.unwrap())
     }

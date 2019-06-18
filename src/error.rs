@@ -30,7 +30,7 @@ impl fmt::Display for DecodeErrorKind {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DecodeError {
     kind: DecodeErrorKind,
     position: Option<usize>,
