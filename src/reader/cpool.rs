@@ -436,6 +436,8 @@ mod tests {
 
     #[test]
     fn get() {
+        // just to test that it will work with non-'static strings
+        let some_string = b"hello world".to_vec();
         let content = vec![
             Some(Item::Integer(Integer(2))),
             Some(Item::Long(Long(3))),
@@ -444,7 +446,7 @@ mod tests {
             Some(Item::String(String {
                 string: Index::new(6).unwrap(),
             })),
-            Some(Item::Utf8(Utf8(MaybeMUtf8::Uninit(b"hello world")))),
+            Some(Item::Utf8(Utf8(MaybeMUtf8::Uninit(&some_string)))),
         ];
 
         let pool = ConstantPool { content };
@@ -452,7 +454,7 @@ mod tests {
         assert_eq!(pool.get(Index::new(2).unwrap()), Ok(&Long(3)));
         assert_eq!(pool.get(Index::new(4).unwrap()), Ok(&Integer(4)));
         let string: &String = pool.get(Index::new(5).unwrap()).unwrap();
-        assert_eq!(pool.get(string.string), Ok(&Utf8(MaybeMUtf8::Uninit(b"hello world"))));
+        assert_eq!(pool.get(string.string), Ok(&Utf8(MaybeMUtf8::Uninit(&some_string))));
 
         assert!(pool.get::<Double>(Index::new(4).unwrap()).is_err());
         assert!(pool.get::<Item>(Index::new(3).unwrap()).is_err());
