@@ -94,6 +94,10 @@ impl<I> Index<I> {
             Err(DecodeError::new(DecodeErrorKind::InvalidIndex))
         }
     }
+
+    pub fn as_u16(self) -> u16 {
+        self.index.get()
+    }
 }
 
 impl<I> fmt::Display for Index<I> {
