@@ -105,6 +105,8 @@ pub enum Context {
     Start,
     ConstantPool,
     Interfaces,
+    Fields,
+    Attributes,
 }
 
 impl fmt::Display for Context {
@@ -116,6 +118,8 @@ impl fmt::Display for Context {
             Start => write!(f, "start"),
             ConstantPool => write!(f, "constant pool"),
             Interfaces => write!(f, "interfaces"),
+            Fields => write!(f, "fields"),
+            Attributes => write!(f, "attributes"),
         }
     }
 }

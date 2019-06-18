@@ -1,7 +1,10 @@
 pub mod cpool;
 mod interfaces;
+mod attributes;
+mod fields;
 
 pub use interfaces::{Interfaces, InterfaceNames};
+pub use attributes::{Attributes, Attribute};
 
 use crate::encoding::*;
 use crate::error::*;
@@ -56,7 +59,7 @@ impl<'a> Class<'a> {
             // advance the decoder
             self.pool()?;
 
-            self.access_flags = AccessFlags::from_bits(self.decoder.read()?).unwrap();
+            self.access_flags = self.decoder.read()?;
             self.this_class = Some(self.decoder.read()?);
             self.super_class = Some(self.decoder.read()?);
             self.interfaces = Some(Interfaces::new(&mut self.decoder)?);

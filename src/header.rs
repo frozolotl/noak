@@ -1,5 +1,7 @@
 use bitflags::bitflags;
 use std::fmt;
+use crate::encoding::{Decode, Decoder};
+use crate::error::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Version {
@@ -27,5 +29,11 @@ bitflags! {
         const ENUM         = 1 << 14;
         const MANDATED     = 1 << 15;
         const MODULE       = 1 << 15;
+    }
+}
+
+impl<'a> Decode<'a> for AccessFlags {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+        Ok(AccessFlags::from_bits(decoder.read()?).unwrap())
     }
 }
