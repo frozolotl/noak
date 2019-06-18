@@ -1,6 +1,6 @@
 use crate::error::{Context, DecodeError, DecodeErrorKind};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Decoder<'a> {
     buf: &'a [u8],
     file_position: usize,
@@ -69,7 +69,7 @@ impl<'a> Decoder<'a> {
                 self.ctx,
             ))
         } else {
-            self.buf = &self.buf[..count];
+            self.buf = &self.buf[count..];
             self.file_position += count;
             Ok(())
         }
