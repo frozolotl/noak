@@ -430,7 +430,7 @@ mod tests {
         assert_eq!(
             iter.next(),
             Some(&Item::Utf8(Utf8 {
-                content: MaybeMUtf8::Uninit(b"hello world"),
+                content: MStr::from_bytes(b"hello world").unwrap(),
             }))
         );
         assert_eq!(iter.next(), Some(&Item::Long(Long(0xFF))));
@@ -455,7 +455,9 @@ mod tests {
             Some(Item::String(String {
                 string: Index::new(6).unwrap(),
             })),
-            Some(Item::Utf8(Utf8(MaybeMUtf8::Uninit(&some_string)))),
+            Some(Item::Utf8(Utf8 {
+                content: MStr::from_bytes(&some_string).unwrap(),
+            })),
         ];
 
         let pool = ConstantPool { content };
@@ -465,7 +467,9 @@ mod tests {
         let string: &String = pool.get(Index::new(5).unwrap()).unwrap();
         assert_eq!(
             pool.get(string.string),
-            Ok(&Utf8(MaybeMUtf8::Uninit(&some_string)))
+            Ok(&Utf8 {
+                content: MStr::from_bytes(&some_string).unwrap(),
+            })
         );
 
         assert!(pool.get::<Double>(Index::new(4).unwrap()).is_err());
