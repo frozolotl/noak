@@ -1,4 +1,7 @@
 pub mod cpool;
+mod interfaces;
+
+pub use interfaces::Interfaces;
 
 use crate::encoding::*;
 use crate::error::*;
@@ -15,6 +18,7 @@ pub struct Class<'a> {
 
     this_class: Option<cpool::Index<cpool::Class>>,
     super_class: Option<cpool::Index<cpool::Class>>,
+    interfaces: Option<Interfaces<'a>>,
 }
 
 impl<'a> Class<'a> {
@@ -30,6 +34,7 @@ impl<'a> Class<'a> {
             access_flags: AccessFlags::empty(),
             this_class: None,
             super_class: None,
+            interfaces: None,
         })
     }
 
@@ -53,6 +58,7 @@ impl<'a> Class<'a> {
             self.access_flags = AccessFlags::from_bits(self.decoder.read()?).unwrap();
             self.this_class = Some(self.decoder.read()?);
             self.super_class = Some(self.decoder.read()?);
+            self.interfaces = Some(Interfaces::new(&mut self.decoder)?);
             self.read_level = ReadLevel::Info;
         }
 
@@ -84,6 +90,11 @@ impl<'a> Class<'a> {
         let index = self.super_class_index()?;
         let pool = self.pool()?;
         Ok(pool.get(pool.get(index)?.name)?.content)
+    }
+
+    pub fn interfaces(&mut self) -> Result<Interfaces<'a>, DecodeError> {
+        self.read_info()?;
+        Ok(self.interfaces.clone().unwrap())
     }
 }
 

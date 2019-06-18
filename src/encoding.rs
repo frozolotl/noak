@@ -1,5 +1,6 @@
 use crate::error::{Context, DecodeError, DecodeErrorKind};
 
+#[derive(Clone)]
 pub struct Decoder<'a> {
     buf: &'a [u8],
     file_position: usize,
@@ -18,6 +19,10 @@ impl<'a> Decoder<'a> {
     /// The position inside the file, *not* this decoder.
     pub fn file_position(&self) -> usize {
         self.file_position
+    }
+
+    pub fn bytes_remaining(&self) -> usize {
+        self.buf.len()
     }
 
     pub fn context(&self) -> Context {

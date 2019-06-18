@@ -104,6 +104,7 @@ pub enum Context {
     /// Either the `0xCAFEBABE` prefix or the major and minor versions.
     Start,
     ConstantPool,
+    Interfaces,
 }
 
 impl fmt::Display for Context {
@@ -114,6 +115,7 @@ impl fmt::Display for Context {
             None => write!(f, "none"),
             Start => write!(f, "start"),
             ConstantPool => write!(f, "constant pool"),
+            Interfaces => write!(f, "interfaces"),
         }
     }
 }
