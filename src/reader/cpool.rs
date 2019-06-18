@@ -451,11 +451,8 @@ mod tests {
         assert_eq!(pool.get(Index::new(1).unwrap()), Ok(&Integer(2)));
         assert_eq!(pool.get(Index::new(2).unwrap()), Ok(&Long(3)));
         assert_eq!(pool.get(Index::new(4).unwrap()), Ok(&Integer(4)));
-        if let String { string } = pool.get(Index::new(5).unwrap()).unwrap() {
-            assert_eq!(pool.get(*string), Ok(&Utf8(MaybeMUtf8::Uninit(b"hello world"))));
-        } else {
-            panic!("not a string");
-        }
+        let string: &String = pool.get(Index::new(5).unwrap()).unwrap();
+        assert_eq!(pool.get(string.string), Ok(&Utf8(MaybeMUtf8::Uninit(b"hello world"))));
 
         assert!(pool.get::<Double>(Index::new(4).unwrap()).is_err());
         assert!(pool.get::<Item>(Index::new(3).unwrap()).is_err());
