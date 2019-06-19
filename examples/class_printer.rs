@@ -10,44 +10,44 @@ fn main() -> Result<(), DecodeError> {
     let mut class = Class::new(&bytes)?;
 
     let version = class.version();
-    println!("   Major Version: {}", version.major);
-    println!("   Minor Version: {}", version.minor);
-    println!("    Access Flags: {:?}", class.access_flags()?);
-    println!("      Class Name: {}", class.this_class_name()?);
-    println!("Super Class Name: {}", class.super_class_name()?);
+    println!("- Major Version: {}", version.major);
+    println!("- Minor Version: {}", version.minor);
+    println!("- Access Flags: {:?}", class.access_flags()?);
+    println!("- Class Name: {}", class.this_class_name()?);
+    println!("- Super Class Name: {}", class.super_class_name()?);
 
-    println!("      Interfaces:");
+    println!("- Interfaces:");
     for name in class.interface_names()? {
-        println!("                - {}", name);
+        println!("  - {}", name);
     }
 
-    println!("          Fields:");
+    println!("- Fields:");
     for field in class.field_indices()? {
         let name = class.pool()?.get(field.name)?.content;
         let descriptor = class.pool()?.get(field.descriptor)?.content;
-        println!("                - {}:", name);
-        println!("                  - Access Flags: {:?}", field.access_flags);
-        println!("                  - Descriptor: {}", descriptor);
-        println!("                  - Attributes:");
+        println!("  - {}:", name);
+        println!("    - Access Flags: {:?}", field.access_flags);
+        println!("    - Descriptor: {}", descriptor);
+        println!("    - Attributes:");
 
         for attr in field.attributes() {
             let name = class.pool()?.get(attr.name)?.content;
-            println!("                    - {}", name);
+            println!("      - {}", name);
         }
     }
 
-    println!("          Methods:");
+    println!("- Methods:");
     for method in class.method_indices()? {
         let name = class.pool()?.get(method.name)?.content;
         let descriptor = class.pool()?.get(method.descriptor)?.content;
-        println!("                - {}:", name);
-        println!("                  - Access Flags: {:?}", method.access_flags);
-        println!("                  - Descriptor: {}", descriptor);
-        println!("                  - Attributes:");
+        println!("  - {}:", name);
+        println!("    - Access Flags: {:?}", method.access_flags);
+        println!("    - Descriptor: {}", descriptor);
+        println!("    - Attributes:");
 
         for attr in method.attributes() {
             let name = class.pool()?.get(attr.name)?.content;
-            println!("                    - {}", name);
+            println!("      - {}", name);
         }
     }
 
