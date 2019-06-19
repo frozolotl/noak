@@ -61,6 +61,4 @@ impl<'a> Iterator for Attributes<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Attributes<'a> {}
-
 impl<'a> FusedIterator for Attributes<'a> {}
