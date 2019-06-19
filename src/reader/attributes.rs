@@ -14,9 +14,11 @@ impl<'a> Decode<'a> for Attribute<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let name = decoder.read()?;
         let length = decoder.read::<u32>()? as usize;
+        let content_decoder = decoder.limit(length, Context::Attributes)?;
+        decoder.advance(length)?;
         Ok(Attribute {
             name,
-            content: decoder.limit(length, Context::Attributes)?,
+            content: content_decoder,
         })
     }
 }
@@ -29,7 +31,8 @@ pub struct Attributes<'a> {
 
 impl<'a> Decode<'a> for Attributes<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let attribute_decoder = decoder.clone();
+        let mut attribute_decoder = decoder.clone();
+        attribute_decoder.advance(2)?;
         skip_attributes(decoder)?;
         let attribute_length = attribute_decoder.bytes_remaining() - decoder.bytes_remaining();
 
