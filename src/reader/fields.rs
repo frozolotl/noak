@@ -68,6 +68,4 @@ impl<'a> Iterator for Fields<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Fields<'a> {}
-
 impl<'a> FusedIterator for Fields<'a> {}
