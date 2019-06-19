@@ -13,7 +13,7 @@ pub struct Attribute<'a> {
 impl<'a> Decode<'a> for Attribute<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let name = decoder.read()?;
-        let length = decoder.read::<u16>()? as usize;
+        let length = decoder.read::<u32>()? as usize;
         Ok(Attribute {
             name,
             content: decoder.limit(length, Context::Attributes)?,
@@ -45,7 +45,7 @@ pub(in crate::reader) fn skip_attributes(decoder: &mut Decoder) -> Result<(), De
     for _ in 0..count {
         // skipping the name
         decoder.advance(2)?;
-        let len: u16 = decoder.read()?;
+        let len: u32 = decoder.read()?;
         decoder.advance(len as usize)?;
     }
 

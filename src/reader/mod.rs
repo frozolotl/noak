@@ -2,10 +2,12 @@ pub mod cpool;
 mod interfaces;
 mod attributes;
 mod fields;
+mod methods;
 
 pub use interfaces::{Interfaces, InterfaceNames};
 pub use attributes::{Attributes, Attribute};
 pub use fields::{Fields, Field};
+pub use methods::{Methods, Method};
 
 use crate::encoding::*;
 use crate::error::*;
@@ -24,6 +26,7 @@ pub struct Class<'a> {
     super_class: Option<cpool::Index<cpool::Class>>,
     interfaces: Option<Interfaces<'a>>,
     fields: Option<Fields<'a>>,
+    methods: Option<Methods<'a>>,
 }
 
 impl<'a> Class<'a> {
@@ -42,6 +45,7 @@ impl<'a> Class<'a> {
             super_class: None,
             interfaces: None,
             fields: None,
+            methods: None,
         })
     }
 
@@ -117,6 +121,15 @@ impl<'a> Class<'a> {
             self.read_level = ReadLevel::Fields;
         }
         Ok(self.fields.clone().unwrap())
+    }
+
+    pub fn method_indices(&mut self) -> Result<Methods<'a>, DecodeError> {
+        if self.read_level < ReadLevel::Methods {
+            self.field_indices()?;
+            self.methods = Some(self.decoder.read()?);
+            self.read_level = ReadLevel::Methods;
+        }
+        Ok(self.methods.clone().unwrap())
     }
 
 }

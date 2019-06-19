@@ -36,5 +36,20 @@ fn main() -> Result<(), DecodeError> {
         }
     }
 
+    println!("          Methods:");
+    for method in class.method_indices()? {
+        let name = class.pool()?.get(method.name)?.content;
+        let descriptor = class.pool()?.get(method.descriptor)?.content;
+        println!("                - {}:", name);
+        println!("                  - Access Flags: {:?}", method.access_flags);
+        println!("                  - Descriptor: {}", descriptor);
+        println!("                  - Attributes:");
+
+        for attr in method.attributes() {
+            let name = class.pool()?.get(attr.name)?.content;
+            println!("                    - {}", name);
+        }
+    }
+
     Ok(())
 }
