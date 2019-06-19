@@ -27,6 +27,7 @@ pub struct Class<'a> {
     interfaces: Option<Interfaces<'a>>,
     fields: Option<Fields<'a>>,
     methods: Option<Methods<'a>>,
+    attributes: Option<Attributes<'a>>,
 }
 
 impl<'a> Class<'a> {
@@ -46,6 +47,7 @@ impl<'a> Class<'a> {
             interfaces: None,
             fields: None,
             methods: None,
+            attributes: None,
         })
     }
 
@@ -130,6 +132,15 @@ impl<'a> Class<'a> {
             self.read_level = ReadLevel::Methods;
         }
         Ok(self.methods.clone().unwrap())
+    }
+
+    pub fn attribute_indices(&mut self) -> Result<Attributes<'a>, DecodeError> {
+        if self.read_level < ReadLevel::Attributes {
+            self.method_indices()?;
+            self.attributes = Some(self.decoder.read()?);
+            self.read_level = ReadLevel::Attributes;
+        }
+        Ok(self.attributes.clone().unwrap())
     }
 
 }

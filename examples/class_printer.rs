@@ -1,5 +1,5 @@
 use noak::error::DecodeError;
-use noak::reader::Class;
+use noak::reader::{Class, Attributes, cpool};
 
 fn main() -> Result<(), DecodeError> {
     let path = std::env::args()
@@ -27,13 +27,8 @@ fn main() -> Result<(), DecodeError> {
         let descriptor = class.pool()?.get(field.descriptor)?.content;
         println!("  - {}:", name);
         println!("    - Access Flags: {:?}", field.access_flags);
-        println!("    - Descriptor: {}", descriptor);
-        println!("    - Attributes:");
 
-        for attr in field.attributes() {
-            let name = class.pool()?.get(attr.name)?.content;
-            println!("      - {}", name);
-        }
+        print_attributes(2, class.pool()?, field.attribute_indices())?;
     }
 
     println!("- Methods:");
@@ -43,12 +38,22 @@ fn main() -> Result<(), DecodeError> {
         println!("  - {}:", name);
         println!("    - Access Flags: {:?}", method.access_flags);
         println!("    - Descriptor: {}", descriptor);
-        println!("    - Attributes:");
 
-        for attr in method.attributes() {
-            let name = class.pool()?.get(attr.name)?.content;
-            println!("      - {}", name);
-        }
+        print_attributes(2, class.pool()?, method.attribute_indices())?;
+    }
+
+    let attrs = class.attribute_indices()?;
+    print_attributes(0, class.pool()?, attrs)?;
+
+    Ok(())
+}
+
+fn print_attributes(indentation: usize, pool: &cpool::ConstantPool, attributes: Attributes) -> Result<(), DecodeError> {
+    let indent = "  ".repeat(indentation);
+    println!("{}- Attributes:", indent);
+    for attr in attributes {
+        let name = pool.get(attr.name)?.content;
+        println!("{}  - {}", indent, name);
     }
 
     Ok(())

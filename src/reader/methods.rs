@@ -12,7 +12,7 @@ pub struct Method<'a> {
 }
 
 impl<'a> Method<'a> {
-    pub fn attributes(&self) -> Attributes<'a> {
+    pub fn attribute_indices(&self) -> Attributes<'a> {
         self.attributes.clone()
     }
 }
