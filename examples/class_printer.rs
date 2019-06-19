@@ -27,6 +27,7 @@ fn main() -> Result<(), DecodeError> {
         let descriptor = class.pool()?.get(field.descriptor)?.content;
         println!("  - {}:", name);
         println!("    - Access Flags: {:?}", field.access_flags);
+        println!("    - Descriptor: {}", descriptor);
 
         print_attributes(2, class.pool()?, field.attribute_indices())?;
     }
