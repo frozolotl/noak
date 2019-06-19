@@ -141,7 +141,7 @@ mod tests {
             0x00, 0x01,
         ], Context::Interfaces);
 
-        let mut interfaces = Interfaces::new(&mut decoder).unwrap();
+        let mut interfaces = Interfaces::decode(&mut decoder).unwrap();
         assert_eq!(interfaces.len(), 3);
         assert_eq!(interfaces.next(), Some(cpool::Index::new(0x0023).unwrap()));
         assert_eq!(interfaces.next(), Some(cpool::Index::new(0x0555).unwrap()));
@@ -157,13 +157,13 @@ mod tests {
             0x12,
         ], Context::Interfaces);
 
-        assert!(Interfaces::new(&mut decoder).is_err());
+        assert!(Interfaces::decode(&mut decoder).is_err());
 
         #[rustfmt::skip]
         let mut decoder = Decoder::new(&[
             0x00,
         ], Context::Interfaces);
 
-        assert!(Interfaces::new(&mut decoder).is_err());
+        assert!(Interfaces::decode(&mut decoder).is_err());
     }
 }
