@@ -28,7 +28,7 @@ impl<'a> Decode<'a> for Field<'a> {
     }
 }
 
-/// An iterator over the attributes of some item
+/// An iterator over the fields of a class
 #[derive(Clone)]
 pub struct Fields<'a> {
     decoder: Decoder<'a>,
