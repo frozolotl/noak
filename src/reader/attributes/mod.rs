@@ -1,3 +1,7 @@
+mod debug;
+
+pub use debug::SourceFile;
+
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
@@ -33,8 +37,9 @@ impl<'a> Attribute<'a> {
         pool: &cpool::ConstantPool<'a>,
     ) -> Result<AttributeContent<'a>, DecodeError> {
         let name = pool.get(self.name)?.content;
+        let mut decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
-            b"" => unimplemented!(),
+            b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
@@ -87,4 +92,8 @@ impl<'a> Iterator for Attributes<'a> {
 impl<'a> FusedIterator for Attributes<'a> {}
 
 #[derive(Debug)]
-pub enum AttributeContent<'a> {}
+pub enum AttributeContent<'a> {
+    SourceFile(SourceFile),
+    /// Will be removed later
+    __CompilePlease(std::marker::PhantomData<&'a ()>),
+}

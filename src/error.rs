@@ -109,6 +109,7 @@ pub enum Context {
     Interfaces,
     Fields,
     Attributes,
+    AttributeContent,
 }
 
 impl fmt::Display for Context {
@@ -122,6 +123,7 @@ impl fmt::Display for Context {
             Interfaces => write!(f, "interfaces"),
             Fields => write!(f, "fields"),
             Attributes => write!(f, "attributes"),
+            AttributeContent => write!(f, "attribute content"),
         }
     }
 }
