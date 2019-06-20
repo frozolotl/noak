@@ -70,6 +70,7 @@ fn print_attributes(
                 SourceDebugExtension(content) => {
                     println!("{}    - {}", indent, content);
                 }
+                Deprecated => {}
             }
         }
     }

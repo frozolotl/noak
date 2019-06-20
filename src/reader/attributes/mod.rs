@@ -45,6 +45,7 @@ impl<'a> Attribute<'a> {
                 let content = MStr::from_bytes(decoder.buf())?;
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
+            b"Deprecated" => Ok(AttributeContent::Deprecated),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
@@ -98,6 +99,7 @@ impl<'a> FusedIterator for Attributes<'a> {}
 
 #[derive(Debug)]
 pub enum AttributeContent<'a> {
-    SourceFile(SourceFile),
+    Deprecated,
     SourceDebugExtension(&'a MStr),
+    SourceFile(SourceFile),
 }
