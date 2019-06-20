@@ -28,6 +28,8 @@ fn main() -> Result<(), DecodeError> {
         println!("  - {}:", name);
         println!("    - Access Flags: {:?}", field.access_flags);
         println!("    - Descriptor: {}", descriptor);
+
+        print_attributes(2, class.pool()?, field.attribute_indices())?;
     }
 
     println!("- Methods:");
@@ -37,8 +39,38 @@ fn main() -> Result<(), DecodeError> {
         println!("  - {}:", name);
         println!("    - Access Flags: {:?}", method.access_flags);
         println!("    - Descriptor: {}", descriptor);
+
+        print_attributes(2, class.pool()?, method.attribute_indices())?;
     }
+
+    let attrs = class.attribute_indices()?;
+    print_attributes(0, class.pool()?, attrs)?;
 
     Ok(())
 }
 
+fn print_attributes(
+    indentation: usize,
+    pool: &cpool::ConstantPool,
+    attributes: Attributes,
+) -> Result<(), DecodeError> {
+    let indent = "  ".repeat(indentation);
+    println!("{}- Attributes:", indent);
+    for attr in attributes {
+        let name = pool.get(attr.name)?.content;
+        println!("{}  - {}", indent, name);
+
+        if let Ok(content) = attr.read_content(pool) {
+            use noak::reader::attributes::{AttributeContent::*, *};
+            match content {
+                SourceFile(source_file) => {
+                    let source = pool.get(source_file.source_file)?.content;
+                    println!("{}    - {}", indent, source);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    Ok(())
+}
