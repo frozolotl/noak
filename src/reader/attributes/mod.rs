@@ -4,6 +4,7 @@ pub use debug::SourceFile;
 
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
+use crate::mutf8::MStr;
 use crate::reader::cpool;
 use std::iter::FusedIterator;
 
@@ -40,6 +41,10 @@ impl<'a> Attribute<'a> {
         let mut decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
+            b"SourceDebugExtension" => {
+                let content = MStr::from_bytes(decoder.buf())?;
+                Ok(AttributeContent::SourceDebugExtension(content))
+            }
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
@@ -94,6 +99,5 @@ impl<'a> FusedIterator for Attributes<'a> {}
 #[derive(Debug)]
 pub enum AttributeContent<'a> {
     SourceFile(SourceFile),
-    /// Will be removed later
-    __CompilePlease(std::marker::PhantomData<&'a ()>),
+    SourceDebugExtension(&'a MStr),
 }

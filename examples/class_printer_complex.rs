@@ -61,13 +61,15 @@ fn print_attributes(
         println!("{}  - {}", indent, name);
 
         if let Ok(content) = attr.read_content(pool) {
-            use noak::reader::attributes::{AttributeContent::*, *};
+            use noak::reader::attributes::AttributeContent::*;
             match content {
                 SourceFile(source_file) => {
                     let source = pool.get(source_file.source_file)?.content;
                     println!("{}    - {}", indent, source);
                 }
-                _ => {}
+                SourceDebugExtension(content) => {
+                    println!("{}    - {}", indent, content);
+                }
             }
         }
     }
