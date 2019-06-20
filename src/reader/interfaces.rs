@@ -1,7 +1,7 @@
-use crate::encoding::{Decoder, Decode};
+use crate::encoding::{Decode, Decoder};
 use crate::error::*;
-use crate::reader::cpool;
 use crate::mutf8::MStr;
+use crate::reader::cpool;
 use std::iter::FusedIterator;
 
 /// An iterator over the interface indices in a class.
@@ -72,11 +72,11 @@ pub struct InterfaceNames<'a, 'b> {
 }
 
 impl<'a, 'b> InterfaceNames<'a, 'b> {
-    pub(in crate::reader) fn new(pool: &'b cpool::ConstantPool<'a>, interfaces: Interfaces<'a>) -> InterfaceNames<'a, 'b> {
-        InterfaceNames {
-            interfaces,
-            pool,
-        }
+    pub(in crate::reader) fn new(
+        pool: &'b cpool::ConstantPool<'a>,
+        interfaces: Interfaces<'a>,
+    ) -> InterfaceNames<'a, 'b> {
+        InterfaceNames { interfaces, pool }
     }
 }
 
@@ -121,7 +121,10 @@ impl<'a, 'b> ExactSizeIterator for InterfaceNames<'a, 'b> {
 
 impl<'a, 'b> FusedIterator for InterfaceNames<'a, 'b> {}
 
-fn get_name<'a>(pool: &cpool::ConstantPool<'a>, interface_index: cpool::Index<cpool::Class>) -> Option<&'a MStr>{
+fn get_name<'a>(
+    pool: &cpool::ConstantPool<'a>,
+    interface_index: cpool::Index<cpool::Class>,
+) -> Option<&'a MStr> {
     let interface = pool.get(interface_index).ok()?.name;
     let name = pool.get(interface).ok()?.content;
     Some(name)

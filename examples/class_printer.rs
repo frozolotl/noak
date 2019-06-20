@@ -1,5 +1,5 @@
 use noak::error::DecodeError;
-use noak::reader::{Class, Attributes, cpool};
+use noak::reader::{cpool, Attributes, Class};
 
 fn main() -> Result<(), DecodeError> {
     let path = std::env::args()
@@ -49,7 +49,11 @@ fn main() -> Result<(), DecodeError> {
     Ok(())
 }
 
-fn print_attributes(indentation: usize, pool: &cpool::ConstantPool, attributes: Attributes) -> Result<(), DecodeError> {
+fn print_attributes(
+    indentation: usize,
+    pool: &cpool::ConstantPool,
+    attributes: Attributes,
+) -> Result<(), DecodeError> {
     let indent = "  ".repeat(indentation);
     println!("{}- Attributes:", indent);
     for attr in attributes {
@@ -57,7 +61,7 @@ fn print_attributes(indentation: usize, pool: &cpool::ConstantPool, attributes: 
         println!("{}  - {}", indent, name);
 
         if let Ok(content) = attr.read_content(pool) {
-            use noak::reader::attributes::{*, AttributeContent::*};
+            use noak::reader::attributes::{AttributeContent::*, *};
             match content {
                 SourceFile(source_file) => {
                     let source = pool.get(source_file.source_file)?.content;

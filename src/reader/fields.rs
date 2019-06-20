@@ -1,7 +1,7 @@
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
 use crate::header::AccessFlags;
-use crate::reader::{cpool, attributes, Attributes};
+use crate::reader::{attributes, cpool, Attributes};
 use std::iter::FusedIterator;
 
 pub struct Field<'a> {

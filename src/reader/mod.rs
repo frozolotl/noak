@@ -1,13 +1,13 @@
-pub mod cpool;
-mod interfaces;
 pub mod attributes;
+pub mod cpool;
 mod fields;
+mod interfaces;
 mod methods;
 
-pub use interfaces::{Interfaces, InterfaceNames};
-pub use attributes::{Attributes, Attribute};
-pub use fields::{Fields, Field};
-pub use methods::{Methods, Method};
+pub use attributes::{Attribute, Attributes};
+pub use fields::{Field, Fields};
+pub use interfaces::{InterfaceNames, Interfaces};
+pub use methods::{Method, Methods};
 
 use crate::encoding::*;
 use crate::error::*;
@@ -34,7 +34,6 @@ impl<'a> Class<'a> {
     pub fn new(v: &'a [u8]) -> Result<Class, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
-
 
         Ok(Class {
             read_level: ReadLevel::Start,
@@ -142,7 +141,6 @@ impl<'a> Class<'a> {
         }
         Ok(self.attributes.clone().unwrap())
     }
-
 }
 
 /// How much of the class is already read.

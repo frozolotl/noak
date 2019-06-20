@@ -1,7 +1,7 @@
-use bitflags::bitflags;
-use std::fmt;
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
+use bitflags::bitflags;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Version {

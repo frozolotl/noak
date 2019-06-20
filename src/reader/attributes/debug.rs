@@ -1,5 +1,5 @@
-use crate::error::*;
 use crate::encoding::{Decode, Decoder};
+use crate::error::*;
 use crate::reader::cpool;
 
 #[derive(Debug)]
