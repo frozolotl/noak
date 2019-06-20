@@ -25,6 +25,10 @@ impl<'a> Decoder<'a> {
         self.buf.len()
     }
 
+    pub fn buf(&self) -> &'a [u8] {
+        self.buf
+    }
+
     pub fn context(&self) -> Context {
         self.ctx
     }

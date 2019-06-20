@@ -1,4 +1,4 @@
-use crate::encoding::{Decoder, Decode};
+use crate::encoding::{Decode, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
 use std::iter::FusedIterator;
@@ -20,6 +20,26 @@ impl<'a> Decode<'a> for Attribute<'a> {
             name,
             content: content_decoder,
         })
+    }
+}
+
+impl<'a> Attribute<'a> {
+    pub fn get_content(&self) -> &'a [u8] {
+        self.content.buf()
+    }
+
+    pub fn read_content(
+        &self,
+        pool: &cpool::ConstantPool<'a>,
+    ) -> Result<AttributeContent<'a>, DecodeError> {
+        let name = pool.get(self.name)?.content;
+        match name.as_bytes() {
+            b"" => unimplemented!(),
+            _ => Err(DecodeError::from_decoder(
+                DecodeErrorKind::UnknownAttributeName,
+                &self.content,
+            )),
+        }
     }
 }
 
@@ -65,3 +85,6 @@ impl<'a> Iterator for Attributes<'a> {
 }
 
 impl<'a> FusedIterator for Attributes<'a> {}
+
+#[derive(Debug)]
+pub enum AttributeContent<'a> {}

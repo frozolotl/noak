@@ -11,6 +11,7 @@ pub enum DecodeErrorKind {
     TagMismatch,
     InvalidTag,
     InvalidDescriptor,
+    UnknownAttributeName,
 }
 
 impl fmt::Display for DecodeErrorKind {
@@ -26,6 +27,7 @@ impl fmt::Display for DecodeErrorKind {
             TagMismatch => write!(f, "tag mismatch"),
             InvalidTag => write!(f, "invalid tag"),
             InvalidDescriptor => write!(f, "invalid descriptor"),
+            UnknownAttributeName => write!(f, "unknown attribute name"),
         }
     }
 }
