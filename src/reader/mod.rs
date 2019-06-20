@@ -162,8 +162,8 @@ enum ReadLevel {
 fn read_header(decoder: &mut Decoder) -> Result<Version, DecodeError> {
     let magic: u32 = decoder.read()?;
     if magic == 0xCAFE_BABE {
-        let major = decoder.read()?;
         let minor = decoder.read()?;
+        let major = decoder.read()?;
         Ok(Version { major, minor })
     } else {
         Err(DecodeError::from_decoder(
