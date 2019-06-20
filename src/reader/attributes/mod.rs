@@ -46,6 +46,7 @@ impl<'a> Attribute<'a> {
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
             b"Deprecated" => Ok(AttributeContent::Deprecated),
+            b"Synthetic" => Ok(AttributeContent::Synthetic),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
@@ -102,4 +103,5 @@ pub enum AttributeContent<'a> {
     Deprecated,
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
+    Synthetic,
 }

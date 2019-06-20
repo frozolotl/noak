@@ -71,6 +71,7 @@ fn print_attributes(
                     println!("{}    - {}", indent, content);
                 }
                 Deprecated => {}
+                Synthetic => {}
             }
         }
     }
