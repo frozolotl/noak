@@ -1,6 +1,6 @@
 pub mod cpool;
 mod interfaces;
-mod attributes;
+pub mod attributes;
 mod fields;
 mod methods;
 
