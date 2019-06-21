@@ -42,6 +42,7 @@ impl<'a> Attribute<'a> {
         let name = pool.get(self.name)?.content;
         let mut decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
+            b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read()?)),
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
