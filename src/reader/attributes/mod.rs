@@ -1,6 +1,8 @@
+mod code;
 mod debug;
 mod field;
 
+pub use code::Code;
 pub use debug::SourceFile;
 pub use field::ConstantValue;
 
@@ -42,6 +44,7 @@ impl<'a> Attribute<'a> {
         let name = pool.get(self.name)?.content;
         let mut decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
+            b"Code" => Ok(AttributeContent::Code(decoder.read()?)),
             b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read()?)),
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
             b"SourceDebugExtension" => {
@@ -101,8 +104,8 @@ impl<'a> Iterator for Attributes<'a> {
 
 impl<'a> FusedIterator for Attributes<'a> {}
 
-#[derive(Debug)]
 pub enum AttributeContent<'a> {
+    Code(Code<'a>),
     ConstantValue(ConstantValue),
     Deprecated,
     SourceDebugExtension(&'a MStr),

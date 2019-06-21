@@ -12,6 +12,7 @@ pub enum DecodeErrorKind {
     InvalidTag,
     InvalidDescriptor,
     UnknownAttributeName,
+    InvalidInstruction,
 }
 
 impl fmt::Display for DecodeErrorKind {
@@ -28,6 +29,7 @@ impl fmt::Display for DecodeErrorKind {
             InvalidTag => write!(f, "invalid tag"),
             InvalidDescriptor => write!(f, "invalid descriptor"),
             UnknownAttributeName => write!(f, "unknown attribute name"),
+            InvalidInstruction => write!(f, "invalid instruction"),
         }
     }
 }
@@ -110,6 +112,7 @@ pub enum Context {
     Fields,
     Attributes,
     AttributeContent,
+    Code,
 }
 
 impl fmt::Display for Context {
@@ -124,6 +127,7 @@ impl fmt::Display for Context {
             Fields => write!(f, "fields"),
             Attributes => write!(f, "attributes"),
             AttributeContent => write!(f, "attribute content"),
+            Code => write!(f, "code"),
         }
     }
 }
