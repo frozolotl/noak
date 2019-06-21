@@ -4,7 +4,13 @@ use crate::reader::cpool;
 
 #[derive(Debug)]
 pub struct SourceFile {
-    pub source_file: cpool::Index<cpool::Utf8<'static>>,
+    source_file: cpool::Index<cpool::Utf8<'static>>,
+}
+
+impl SourceFile {
+    pub fn source_file(&self) -> cpool::Index<cpool::Utf8<'static>> {
+        self.source_file
+    }
 }
 
 impl<'a> Decode<'a> for SourceFile {

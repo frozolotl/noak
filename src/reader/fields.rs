@@ -5,13 +5,25 @@ use crate::reader::{attributes, cpool, Attributes};
 use std::iter::FusedIterator;
 
 pub struct Field<'a> {
-    pub access_flags: AccessFlags,
-    pub name: cpool::Index<cpool::Utf8<'a>>,
-    pub descriptor: cpool::Index<cpool::Utf8<'a>>,
+    access_flags: AccessFlags,
+    name: cpool::Index<cpool::Utf8<'a>>,
+    descriptor: cpool::Index<cpool::Utf8<'a>>,
     attributes: Attributes<'a>,
 }
 
 impl<'a> Field<'a> {
+    pub fn access_flags(&self) -> AccessFlags {
+        self.access_flags
+    }
+
+    pub fn name(&self) -> cpool::Index<cpool::Utf8<'a>> {
+        self.name
+    }
+
+    pub fn descriptor(&self) -> cpool::Index<cpool::Utf8<'a>> {
+        self.descriptor
+    }
+
     pub fn attribute_indices(&self) -> Attributes<'a> {
         self.attributes.clone()
     }

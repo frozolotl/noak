@@ -103,18 +103,18 @@ pub struct ExceptionHandler {
 }
 
 impl ExceptionHandler {
-    fn range(&self) -> Range<Index> {
+    pub fn range(&self) -> Range<Index> {
         Range {
             start: self.start,
             end: self.end,
         }
     }
 
-    fn handler(&self) -> Index {
+    pub fn handler(&self) -> Index {
         self.handler
     }
 
-    fn catch_type(&self) -> cpool::Index<cpool::Class> {
+    pub fn catch_type(&self) -> cpool::Index<cpool::Class> {
         self.catch_type
     }
 }
@@ -142,7 +142,7 @@ impl Index {
         Index { index }
     }
 
-    pub fn as_u32(self) -> u32 {
+    fn as_u32(self) -> u32 {
         self.index
     }
 }

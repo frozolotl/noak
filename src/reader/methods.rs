@@ -12,6 +12,18 @@ pub struct Method<'a> {
 }
 
 impl<'a> Method<'a> {
+    pub fn access_flags(&self) -> AccessFlags {
+        self.access_flags
+    }
+
+    pub fn name(&self) -> cpool::Index<cpool::Utf8<'a>> {
+        self.name
+    }
+
+    pub fn descriptor(&self) -> cpool::Index<cpool::Utf8<'a>> {
+        self.descriptor
+    }
+
     pub fn attribute_indices(&self) -> Attributes<'a> {
         self.attributes.clone()
     }

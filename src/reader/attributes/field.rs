@@ -4,7 +4,13 @@ use crate::reader::cpool;
 
 #[derive(Debug)]
 pub struct ConstantValue {
-    pub value: cpool::Index<cpool::Item<'static>>,
+    value: cpool::Index<cpool::Item<'static>>,
+}
+
+impl ConstantValue {
+    pub fn value(&self) -> cpool::Index<cpool::Item<'static>> {
+        self.value
+    }
 }
 
 impl<'a> Decode<'a> for ConstantValue {
