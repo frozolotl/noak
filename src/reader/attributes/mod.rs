@@ -1,6 +1,8 @@
 mod debug;
+mod field;
 
 pub use debug::SourceFile;
+pub use field::ConstantValue;
 
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
@@ -100,6 +102,7 @@ impl<'a> FusedIterator for Attributes<'a> {}
 
 #[derive(Debug)]
 pub enum AttributeContent<'a> {
+    ConstantValue(ConstantValue),
     Deprecated,
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),

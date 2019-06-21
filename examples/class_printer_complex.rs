@@ -63,6 +63,10 @@ fn print_attributes(
         if let Ok(content) = attr.read_content(pool) {
             use noak::reader::attributes::AttributeContent::*;
             match content {
+                ConstantValue(source_file) => {
+                    let value = pool.get(source_file.value)?;
+                    println!("{}    - {:?}", indent, value);
+                }
                 SourceFile(source_file) => {
                     let source = pool.get(source_file.source_file)?.content;
                     println!("{}    - {}", indent, source);
