@@ -1,13 +1,17 @@
+mod raw;
+
+pub use raw::{RawInstruction, RawInstructions, ArrayType};
+
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
-use crate::reader::{cpool, attributes, Attributes};
+use crate::reader::{cpool, Attributes};
 use std::fmt;
 use std::ops::Range;
 
 pub struct Code<'a> {
     max_stack: u16,
     max_locals: u16,
-    instructions: Instructions<'a>,
+    raw_instructions: RawInstructions<'a>,
     exception_handlers: ExceptionHandlers<'a>,
     attributes: Attributes<'a>,
 }
@@ -20,6 +24,24 @@ impl<'a> Code<'a> {
     pub fn max_locals(&self) -> u16 {
         self.max_locals
     }
+
+    pub fn raw_instructions(&self) -> RawInstructions<'a> {
+        self.raw_instructions.clone()
+    }
+
+    pub fn raw_instructions_from(&self, index: Index) -> Result<RawInstructions<'a>, DecodeError> {
+        let mut instructions = self.raw_instructions();
+        instructions.decoder.advance(index.as_u32() as usize)?;
+        Ok(instructions)
+    }
+
+    pub fn exception_handlers(&self) -> ExceptionHandlers<'a> {
+        self.exception_handlers.clone()
+    }
+
+    pub fn attributes(&self) -> Attributes<'a> {
+        self.attributes.clone()
+    }
 }
 
 impl<'a> Decode<'a> for Code<'a> {
@@ -28,7 +50,8 @@ impl<'a> Decode<'a> for Code<'a> {
         let max_locals = decoder.read()?;
 
         let code_length = decoder.read::<u32>()? as usize;
-        let instructions = Instructions {
+        let raw_instructions = RawInstructions {
+            start_position: decoder.file_position(),
             decoder: decoder.limit(code_length, Context::Code)?,
         };
         decoder.advance(code_length)?;
@@ -44,44 +67,14 @@ impl<'a> Decode<'a> for Code<'a> {
         Ok(Code {
             max_stack,
             max_locals,
-            instructions,
+            raw_instructions,
             exception_handlers,
             attributes,
         })
     }
 }
 
-#[derive(Debug)]
-pub struct Instructions<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for Instructions<'a> {
-    type Item = Instruction<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-#[derive(Debug)]
-pub enum Instruction<'a> {
-    __IgnoreMePlease(std::marker::PhantomData<&'a ()>),
-}
-
-impl<'a> Decode<'a> for Instruction<'a> {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
-        let tag: u8 = decoder.read()?;
-        match tag {
-            _ => Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidInstruction,
-                decoder,
-            )),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExceptionHandlers<'a> {
     decoder: Decoder<'a>,
 }
