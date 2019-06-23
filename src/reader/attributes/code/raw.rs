@@ -654,7 +654,7 @@ impl<'a> RawInstruction<'a> {
             0x94 => LCmp,
             0x09 => LConst0,
             0x0a => LConst1,
-            0x12 => LdC { index: decoder.read()? },
+            0x12 => LdC { index: cpool::Index::new(decoder.read::<u8>()? as u16)? },
             0x13 => LdCW { index: decoder.read()? },
             0x14 => LdC2W { index: decoder.read()? },
             0x6d => LDiv,
