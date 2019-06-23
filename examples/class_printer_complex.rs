@@ -23,10 +23,10 @@ fn main() -> Result<(), DecodeError> {
 
     println!("- Fields:");
     for field in class.field_indices()? {
-        let name = class.pool()?.get(field.name)?.content;
-        let descriptor = class.pool()?.get(field.descriptor)?.content;
+        let name = class.pool()?.get(field.name())?.content;
+        let descriptor = class.pool()?.get(field.descriptor())?.content;
         println!("  - {}:", name);
-        println!("    - Access Flags: {:?}", field.access_flags);
+        println!("    - Access Flags: {:?}", field.access_flags());
         println!("    - Descriptor: {}", descriptor);
 
         print_attributes(2, class.pool()?, field.attribute_indices())?;
@@ -34,10 +34,10 @@ fn main() -> Result<(), DecodeError> {
 
     println!("- Methods:");
     for method in class.method_indices()? {
-        let name = class.pool()?.get(method.name)?.content;
-        let descriptor = class.pool()?.get(method.descriptor)?.content;
+        let name = class.pool()?.get(method.name())?.content;
+        let descriptor = class.pool()?.get(method.descriptor())?.content;
         println!("  - {}:", name);
-        println!("    - Access Flags: {:?}", method.access_flags);
+        println!("    - Access Flags: {:?}", method.access_flags());
         println!("    - Descriptor: {}", descriptor);
 
         print_attributes(2, class.pool()?, method.attribute_indices())?;
@@ -63,12 +63,20 @@ fn print_attributes(
         if let Ok(content) = attr.read_content(pool) {
             use noak::reader::attributes::AttributeContent::*;
             match content {
+                Code(code) => {
+                    println!("{}    - Max Stack: {}", indent, code.max_stack());
+                    println!("{}    - Max Locals: {}", indent, code.max_locals());
+                    println!("{}    - Instructions", indent);
+                    for (idx, instruction) in code.raw_instructions() {
+                        println!("{}      {}. {:?}", indent, idx, instruction);
+                    }
+                }
                 ConstantValue(source_file) => {
-                    let value = pool.get(source_file.value)?;
+                    let value = pool.get(source_file.value())?;
                     println!("{}    - {:?}", indent, value);
                 }
                 SourceFile(source_file) => {
-                    let source = pool.get(source_file.source_file)?.content;
+                    let source = pool.get(source_file.source_file())?.content;
                     println!("{}    - {}", indent, source);
                 }
                 SourceDebugExtension(content) => {

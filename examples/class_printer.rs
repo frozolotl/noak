@@ -23,19 +23,19 @@ fn main() -> Result<(), DecodeError> {
 
     println!("- Fields:");
     for field in class.field_indices()? {
-        let name = class.pool()?.get(field.name)?.content;
-        let descriptor = class.pool()?.get(field.descriptor)?.content;
+        let name = class.pool()?.get(field.name())?.content;
+        let descriptor = class.pool()?.get(field.descriptor())?.content;
         println!("  - {}:", name);
-        println!("    - Access Flags: {:?}", field.access_flags);
+        println!("    - Access Flags: {:?}", field.access_flags());
         println!("    - Descriptor: {}", descriptor);
     }
 
     println!("- Methods:");
     for method in class.method_indices()? {
-        let name = class.pool()?.get(method.name)?.content;
-        let descriptor = class.pool()?.get(method.descriptor)?.content;
+        let name = class.pool()?.get(method.name())?.content;
+        let descriptor = class.pool()?.get(method.descriptor())?.content;
         println!("  - {}:", name);
-        println!("    - Access Flags: {:?}", method.access_flags);
+        println!("    - Access Flags: {:?}", method.access_flags());
         println!("    - Descriptor: {}", descriptor);
     }
 
