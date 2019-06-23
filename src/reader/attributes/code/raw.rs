@@ -357,6 +357,9 @@ pub enum RawInstruction<'a> {
     Ret {
         index: u8,
     },
+    RetW {
+        index: u16,
+    },
     Return,
     SALoad,
     SAStore,
@@ -714,6 +717,24 @@ impl<'a> RawInstruction<'a> {
                     pairs: decoder.read()?,
                 })
             },
+            0xc4 => {
+                let opcode: u8 = decoder.read()?;
+                match opcode {
+                    0x19 => ALoadW { index: decoder.read()? },
+                    0x3a => AStoreW { index: decoder.read()? },
+                    0x18 => DLoadW { index: decoder.read()? },
+                    0x39 => DStoreW { index: decoder.read()? },
+                    0x17 => FLoadW { index: decoder.read()? },
+                    0x38 => FStoreW { index: decoder.read()? },
+                    0x15 => ILoadW { index: decoder.read()? },
+                    0x36 => IStoreW { index: decoder.read()? },
+                    0x16 => LLoadW { index: decoder.read()? },
+                    0x37 => LStoreW { index: decoder.read()? },
+                    0xa9 => RetW { index: decoder.read()? },
+                    0x84 => IIncW { index: decoder.read()?, value: decoder.read()? },
+                    _ => return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder)),
+                }
+            }
             _ => return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder)),
         };
         Ok(instruction)
