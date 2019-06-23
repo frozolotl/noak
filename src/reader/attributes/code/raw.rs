@@ -674,7 +674,7 @@ impl<'a> RawInstruction<'a> {
             0xab => {
                 // skip padding
                 let offset = decoder.file_position() - method_start;
-                decoder.advance(3 - offset % 4)?;
+                decoder.advance(4 - (offset & 3))?;
 
                 LookUpSwitch(self::LookUpSwitch {
                     default_offset: decoder.read()?,
@@ -713,7 +713,7 @@ impl<'a> RawInstruction<'a> {
             0xaa => {
                 // skip padding
                 let offset = decoder.file_position() - method_start;
-                decoder.advance(3 - offset % 4)?;
+                decoder.advance(4 - (offset & 3))?;
 
                 TableSwitch(self::TableSwitch {
                     default_offset: decoder.read()?,
