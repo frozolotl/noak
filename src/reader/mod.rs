@@ -69,7 +69,11 @@ impl<'a> Class<'a> {
 
             self.access_flags = self.decoder.read()?;
             self.this_class = Some(self.decoder.read()?);
-            self.super_class = Some(self.decoder.read()?);
+            let super_class = self.decoder.read()?;
+            // super_class is 0 if this_class is `java/lang/Object`
+            if let Ok(index) = cpool::Index::new(super_class) {
+                self.super_class = Some(index);
+            }
             self.interfaces = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Info;
         }
@@ -93,15 +97,18 @@ impl<'a> Class<'a> {
         Ok(pool.get(pool.get(index)?.name)?.content)
     }
 
-    pub fn super_class_index(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
+    pub fn super_class_index(&mut self) -> Result<Option<cpool::Index<cpool::Class>>, DecodeError> {
         self.read_info()?;
-        Ok(self.super_class.unwrap())
+        Ok(self.super_class)
     }
 
-    pub fn super_class_name(&mut self) -> Result<&'a MStr, DecodeError> {
-        let index = self.super_class_index()?;
-        let pool = self.pool()?;
-        Ok(pool.get(pool.get(index)?.name)?.content)
+    pub fn super_class_name(&mut self) -> Result<Option<&'a MStr>, DecodeError> {
+        if let Some(index) = self.super_class_index()? {
+            let pool = self.pool()?;
+            Ok(Some(pool.get(pool.get(index)?.name)?.content))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn interface_indices(&mut self) -> Result<Interfaces<'a>, DecodeError> {
