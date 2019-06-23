@@ -5,9 +5,16 @@ fn main() -> Result<(), DecodeError> {
     let path = std::env::args()
         .nth(1)
         .expect("usage: `class_printer MyClass.class`");
-    let bytes = std::fs::read(path).expect("could not read file");
+    let bytes = std::fs::read(&path).expect("could not read file");
+    if let Err(err) = print(&bytes) {
+        eprintln!("Error in file `{}`: {}", path, err);
+    }
 
-    let mut class = Class::new(&bytes)?;
+    Ok(())
+}
+
+fn print(bytes: &[u8]) -> Result<(), DecodeError> {
+    let mut class = Class::new(bytes)?;
 
     let version = class.version();
     println!("- Major Version: {}", version.major);
