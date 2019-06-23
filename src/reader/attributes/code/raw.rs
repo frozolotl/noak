@@ -764,7 +764,11 @@ impl<'a> Decode<'a> for TablePairs<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let low: i32 = decoder.read()?;
         let high: i32 = decoder.read()?;
-        let count = (high - low + 1) as usize * 4;
+        let count = (high as i64 - low as i64 + 1) * 4;
+        if count < 0 {
+            return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder));
+        }
+        let count = count as usize;
         let pair_decoder = decoder.limit(count, Context::Code)?;
         decoder.advance(count)?;
 
