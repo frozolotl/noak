@@ -788,7 +788,7 @@ impl<'a> Decode<'a> for LookUpPairs<'a> {
         if count < 0 {
             return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder));
         }
-        let count = count as usize * 4;
+        let count = count as usize * 8;
         let pair_decoder = decoder.limit(count, Context::Code)?;
         decoder.advance(count)?;
 
