@@ -38,15 +38,16 @@ impl<'a> ConstantPool<'a> {
 
 impl<'a> Decode<'a> for ConstantPool<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<ConstantPool<'a>, DecodeError> {
-        let length: u16 = decoder.read()?;
+        let length = decoder.read::<u16>()?;
         if length == 0 {
             return Err(DecodeError::from_decoder(
                 DecodeErrorKind::InvalidLength,
                 decoder,
             ));
         }
-        let mut content = Vec::with_capacity(length as usize - 1);
-        for _ in 0..length - 1 {
+        let length = length as usize - 1;
+        let mut content = Vec::with_capacity(length);
+        while content.len() < length {
             let item = decoder.read()?;
             let push_extra = if let Item::Long(_) | Item::Double(_) = item {
                 true
