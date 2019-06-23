@@ -276,7 +276,7 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
 
@@ -305,6 +305,22 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     }
                 }
                 3 => {
+                    // width = 6
+                    if b1 == 0b1110_1101
+                        && v[i + 1] & 0b1111_0000 == 0b1010_0000
+                        && v.len() - i >= 6
+                        && v[i + 3] == 0b1110_1101
+                        && v[i + 4] & 0b1111_0000 == 0b1011_0000 {
+
+                        if v[i + 2] & 0b1100_0000 != 0b1000_0000 || v[i + 5] & 0b1100_0000 != 0b1000_0000 {
+                            return false;
+                        }
+                        // overlong encodings are not allowed
+                        if v[i + 1].trailing_zeros() >= 4 {
+                            return false;
+                        }
+                    }
+
                     if v[i + 1] & 0b1100_0000 != 0b1000_0000
                         || v[i + 2] & 0b1100_0000 != 0b1000_0000
                     {
@@ -312,20 +328,6 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     }
                     // overlong encodings are not allowed
                     if b1.trailing_zeros() >= 4 && v[i + 1] & 0b0010_0000 == 0 {
-                        return false;
-                    }
-                }
-                6 => {
-                    if v[i + 1] & 0b1111_0000 != 0b1010_0000
-                        || v[i + 2] & 0b1100_0000 != 0b1000_0000
-                        || v[i + 3] != 0b1110_1101
-                        || v[i + 4] & 0b1111_0000 != 0b1011_0000
-                        || v[i + 5] & 0b1100_0000 != 0b1000_0000
-                    {
-                        return false;
-                    }
-                    // overlong encoding...
-                    if v[i + 1].trailing_zeros() >= 4 {
                         return false;
                     }
                 }
@@ -353,7 +355,11 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, char) {
         return (2, char::from_u32_unchecked(c1 | c2));
     }
 
-    if v[0] == 0b1110_1101 {
+    if v[0] == 0b1110_1101
+        && v[1] & 0b1111_0000 == 0b1010_0000
+        && v.len() >= 6
+        && v[3] == 0b1110_1101
+        && v[4] & 0b1111_0000 == 0b1011_0000 {
         // six byte case
         let c2 = u32::from(v[1] & 0b0000_1111) << 16;
         let c3 = u32::from(v[2] & 0b0011_1111) << 10;
