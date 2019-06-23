@@ -14,8 +14,8 @@ impl<'a> Iterator for RawInstructions<'a> {
     type Item = (code::Index, RawInstruction<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
+        let position = self.decoder.file_position() - self.start_position;
         if let Ok(insn) = RawInstruction::decode(&mut self.decoder, self.start_position) {
-            let position = self.decoder.file_position() - self.start_position;
             Some((code::Index::new(position as u32), insn))
         } else {
             None
