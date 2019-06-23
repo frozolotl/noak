@@ -74,7 +74,8 @@ fn print_attributes(
                     println!("{}    - Max Stack: {}", indent, code.max_stack());
                     println!("{}    - Max Locals: {}", indent, code.max_locals());
                     println!("{}    - Instructions", indent);
-                    for (idx, instruction) in code.raw_instructions() {
+                    for res in code.raw_instructions() {
+                        let (idx, instruction) = res?;
                         println!("{}      {}. {:?}", indent, idx, instruction);
                     }
                 }

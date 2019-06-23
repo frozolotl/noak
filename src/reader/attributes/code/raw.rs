@@ -11,14 +11,17 @@ pub struct RawInstructions<'a> {
 }
 
 impl<'a> Iterator for RawInstructions<'a> {
-    type Item = (code::Index, RawInstruction<'a>);
+    type Item = Result<(code::Index, RawInstruction<'a>), DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.decoder.bytes_remaining() == 0 {
+            return None;
+        }
+
         let position = self.decoder.file_position() - self.start_position;
-        if let Ok(insn) = RawInstruction::decode(&mut self.decoder, self.start_position) {
-            Some((code::Index::new(position as u32), insn))
-        } else {
-            None
+        match RawInstruction::decode(&mut self.decoder, self.start_position) {
+            Ok(insn) => Some(Ok((code::Index::new(position as u32), insn))),
+            Err(err) => Some(Err(err)),
         }
     }
 }
