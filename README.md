@@ -17,7 +17,6 @@ fn main() -> Result<(), DecodeError> {
     println!("   Minor Version: {}", version.minor);
     println!("    Access Flags: {:?}", class.access_flags()?);
     println!("      Class Name: {}", class.this_class_name()?);
-    println!("Super Class Name: {}", class.super_class_name()?);
 
     Ok(())
 }
