@@ -59,7 +59,9 @@ pub enum RawInstruction<'a> {
     AThrow,
     BALoad,
     BAStore,
-    BIPush,
+    BIPush {
+        value: i8,
+    },
     CALoad,
     CAStore,
     CheckCast {
@@ -366,7 +368,9 @@ pub enum RawInstruction<'a> {
     Return,
     SALoad,
     SAStore,
-    SIPush,
+    SIPush {
+        value: i16,
+    },
     Swap,
     TableSwitch(TableSwitch<'a>),
 }
@@ -507,7 +511,7 @@ impl<'a> RawInstruction<'a> {
             0xbf => AThrow,
             0x33 => BALoad,
             0x54 => BAStore,
-            0x10 => BIPush,
+            0x10 => BIPush { value: decoder.read()? },
             0x34 => CALoad,
             0x55 => CAStore,
             0xc0 => CheckCast { index: decoder.read()? },
@@ -708,7 +712,7 @@ impl<'a> RawInstruction<'a> {
             0xb1 => Return,
             0x35 => SALoad,
             0x56 => SAStore,
-            0x11 => SIPush,
+            0x11 => SIPush { value: decoder.read()? },
             0x5f => Swap,
             0xaa => {
                 // skip padding
