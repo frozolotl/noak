@@ -1,5 +1,34 @@
 use crate::error::*;
 use crate::mutf8::MStr;
+use std::fmt;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum BaseType<'a> {
+    Boolean,
+    Byte,
+    Short,
+    Integer,
+    Long,
+    Float,
+    Double,
+    Object(&'a MStr),
+}
+
+impl<'a> fmt::Display for BaseType<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use BaseType::*;
+        match self {
+            Boolean => write!(f, "Z"),
+            Byte => write!(f, "B"),
+            Short => write!(f, "S"),
+            Integer => write!(f, "I"),
+            Long => write!(f, "J"),
+            Float => write!(f, "F"),
+            Double => write!(f, "D"),
+            Object(name) => write!(f, "L{};", name),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeDescriptor<'a> {
@@ -66,25 +95,25 @@ impl<'a> TypeDescriptor<'a> {
         Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
     }
 
+    #[inline]
     pub fn dimensions(&self) -> u8 {
         self.dimensions
     }
 
+    #[inline]
     pub fn base(&self) -> &BaseType<'a> {
         &self.base
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum BaseType<'a> {
-    Boolean,
-    Byte,
-    Short,
-    Integer,
-    Long,
-    Float,
-    Double,
-    Object(&'a MStr),
+impl<'a> fmt::Display for TypeDescriptor<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for _ in 0..self.dimensions {
+            write!(f, "[")?;
+        }
+
+        write!(f, "{}", self.base)
+    }
 }
 
 #[cfg(test)]
