@@ -89,6 +89,8 @@ fn print_attributes(
                         println!("{}        - Handler: {}", indent, handler.handler());
                         println!("{}        - Catch Type: {}", indent, handler.catch_type());
                     }
+
+                    print_attributes(indentation + 3, pool, code.attribute_indices())?;
                 }
                 ConstantValue(source_file) => {
                     let value = pool.get(source_file.value())?;
