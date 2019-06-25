@@ -79,6 +79,16 @@ fn print_attributes(
                         let (idx, instruction) = res?;
                         println!("{}      {}. {:?}", indent, idx, instruction);
                     }
+
+                    println!("{}    - Exception Handlers:", indent);
+                    for handler in code.exception_handlers() {
+                        let range = handler.range();
+                        println!("{}      - Exception Handler:", indent);
+                        println!("{}        - Start: {}", indent, range.start);
+                        println!("{}        - End: {}", indent, range.end);
+                        println!("{}        - Handler: {}", indent, handler.handler());
+                        println!("{}        - Catch Type: {}", indent, handler.catch_type());
+                    }
                 }
                 ConstantValue(source_file) => {
                     let value = pool.get(source_file.value())?;
