@@ -234,7 +234,7 @@ impl fmt::Display for MStr {
         let mut start = 0;
         let mut i = 0;
         while i < self.len() {
-            if self.inner[0] < 0x80 {
+            if self.inner[i] < 0x80 {
                 i += 1;
             } else {
                 if i != start {
