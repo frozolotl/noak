@@ -408,7 +408,7 @@ mod tests {
         #[rustfmt::skip]
         let mut decoder = Decoder::new(&[
             // length
-            0x00, 0x05,
+            0x00, 0x06,
             // integer
             0x03,
             0x00, 0x00, 0x00, 0x05,
