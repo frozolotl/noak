@@ -12,6 +12,7 @@ use std::{
 
 /// A Modified UTF-8 string slice, like [str].
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
 pub struct MStr {
     inner: [u8],
 }
