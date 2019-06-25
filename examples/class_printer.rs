@@ -50,4 +50,3 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
 
     Ok(())
 }
-

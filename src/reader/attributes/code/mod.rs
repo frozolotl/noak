@@ -1,6 +1,6 @@
 mod raw;
 
-pub use raw::{RawInstruction, RawInstructions, ArrayType};
+pub use raw::{ArrayType, RawInstruction, RawInstructions};
 
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;

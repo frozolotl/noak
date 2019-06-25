@@ -94,8 +94,9 @@ fn print_attributes(
                 }
                 ConstantValue(source_file) => {
                     let value = pool.get(source_file.value())?;
-                    println!("{}    - {:?}", indent, value);
+                    println!("{}    - Constant Value: {:?}", indent, value);
                 }
+                Deprecated => {}
                 EnclosingMethod(enclosing) => {
                     let class = pool.get(enclosing.class())?.name;
                     let class = pool.get(class)?.content;
@@ -107,20 +108,19 @@ fn print_attributes(
                     println!("{}        - Method Name: {}", indent, method_name);
                     println!("{}        - Method Descriptor: {}", indent, method_desc);
                 }
-                SourceFile(source_file) => {
-                    let source = pool.get(source_file.source_file())?.content;
-                    println!("{}    - {}", indent, source);
-                }
-                SourceDebugExtension(content) => {
-                    println!("{}    - {}", indent, content);
-                }
-                Deprecated => {}
-                Synthetic => {}
                 NestHost(nest_host) => {
                     let class = pool.get(nest_host.host_class())?.name;
                     let content = pool.get(class)?.content;
                     println!("{}    - Nest Host: {}", indent, content);
                 }
+                SourceDebugExtension(content) => {
+                    println!("{}    - Source Debug Extension: {}", indent, content);
+                }
+                SourceFile(source_file) => {
+                    let source = pool.get(source_file.source_file())?.content;
+                    println!("{}    - Source File: {}", indent, source);
+                }
+                Synthetic => {}
             }
         }
     }

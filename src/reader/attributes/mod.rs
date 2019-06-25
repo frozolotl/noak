@@ -3,10 +3,10 @@ mod code;
 mod debug;
 mod field;
 
-pub use code::Code;
-pub use debug::SourceFile;
 pub use class::EnclosingMethod;
 pub use class::NestHost;
+pub use code::Code;
+pub use debug::SourceFile;
 pub use field::ConstantValue;
 
 use crate::encoding::{Decode, Decoder};
@@ -51,13 +51,13 @@ impl<'a> Attribute<'a> {
             b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read()?)),
             b"Deprecated" => Ok(AttributeContent::Deprecated),
             b"EnclosingMethod" => Ok(AttributeContent::EnclosingMethod(decoder.read()?)),
-            b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
+            b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
+            b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
             b"Synthetic" => Ok(AttributeContent::Synthetic),
-            b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
@@ -114,8 +114,8 @@ pub enum AttributeContent<'a> {
     ConstantValue(ConstantValue),
     Deprecated,
     EnclosingMethod(EnclosingMethod),
+    NestHost(NestHost),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
     Synthetic,
-    NestHost(NestHost),
 }
