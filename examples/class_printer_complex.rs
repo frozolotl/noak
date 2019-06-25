@@ -116,6 +116,11 @@ fn print_attributes(
                 }
                 Deprecated => {}
                 Synthetic => {}
+                NestHost(nest_host) => {
+                    let class = pool.get(nest_host.host_class())?.name;
+                    let content = pool.get(class)?.content;
+                    println!("{}    - Nest Host: {}", indent, content);
+                }
             }
         }
     }

@@ -6,6 +6,7 @@ mod field;
 pub use code::Code;
 pub use debug::SourceFile;
 pub use class::EnclosingMethod;
+pub use class::NestHost;
 pub use field::ConstantValue;
 
 use crate::encoding::{Decode, Decoder};
@@ -56,6 +57,7 @@ impl<'a> Attribute<'a> {
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
             b"Synthetic" => Ok(AttributeContent::Synthetic),
+            b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
@@ -115,4 +117,5 @@ pub enum AttributeContent<'a> {
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
     Synthetic,
+    NestHost(NestHost),
 }

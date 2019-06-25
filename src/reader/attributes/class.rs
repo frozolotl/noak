@@ -26,3 +26,22 @@ impl<'a> Decode<'a> for EnclosingMethod {
         })
     }
 }
+
+#[derive(Debug)]
+pub struct NestHost {
+    host_class: cpool::Index<cpool::Class>,
+}
+
+impl NestHost {
+    pub fn host_class(&self) -> cpool::Index<cpool::Class> {
+        self.host_class
+    }
+}
+
+impl<'a> Decode<'a> for NestHost {
+    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+        Ok(NestHost {
+            host_class: decoder.read()?,
+        })
+    }
+}
