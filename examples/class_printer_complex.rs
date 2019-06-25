@@ -96,6 +96,17 @@ fn print_attributes(
                     let value = pool.get(source_file.value())?;
                     println!("{}    - {:?}", indent, value);
                 }
+                EnclosingMethod(enclosing) => {
+                    let class = pool.get(enclosing.class())?.name;
+                    let class = pool.get(class)?.content;
+                    let method = pool.get(enclosing.method())?;
+                    let method_name = pool.get(method.name)?.content;
+                    let method_desc = pool.get(method.descriptor)?.content;
+                    println!("{}      - Enclosing Method:", indent);
+                    println!("{}        - Class: {}", indent, class);
+                    println!("{}        - Method Name: {}", indent, method_name);
+                    println!("{}        - Method Descriptor: {}", indent, method_desc);
+                }
                 SourceFile(source_file) => {
                     let source = pool.get(source_file.source_file())?.content;
                     println!("{}    - {}", indent, source);
