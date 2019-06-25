@@ -57,6 +57,7 @@ impl<'a> Attribute<'a> {
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
             b"Synthetic" => Ok(AttributeContent::Synthetic),
+            b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
