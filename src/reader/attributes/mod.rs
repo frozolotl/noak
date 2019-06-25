@@ -6,6 +6,7 @@ mod field;
 pub use code::Code;
 pub use debug::SourceFile;
 pub use class::EnclosingMethod;
+pub use class::NestHost;
 pub use field::ConstantValue;
 
 use crate::encoding::{Decode, Decoder};
@@ -115,4 +116,5 @@ pub enum AttributeContent<'a> {
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
     Synthetic,
+    NestHost(NestHost),
 }

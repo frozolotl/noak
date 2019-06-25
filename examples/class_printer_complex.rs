@@ -116,6 +116,10 @@ fn print_attributes(
                 }
                 Deprecated => {}
                 Synthetic => {}
+                NestHost(nesthost) => {
+                    println!("{}    - NestHost:", nesthost.host_class());
+                    println!("{}    - Host Class:", nesthost.host_class());
+                }
             }
         }
     }
