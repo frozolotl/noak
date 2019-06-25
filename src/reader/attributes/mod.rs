@@ -48,12 +48,13 @@ impl<'a> Attribute<'a> {
         match name.as_bytes() {
             b"Code" => Ok(AttributeContent::Code(decoder.read()?)),
             b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read()?)),
+            b"Deprecated" => Ok(AttributeContent::Deprecated),
+            b"EnclosingMethod" => Ok(AttributeContent::EnclosingMethod(decoder.read()?)),
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
-            b"Deprecated" => Ok(AttributeContent::Deprecated),
             b"Synthetic" => Ok(AttributeContent::Synthetic),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
@@ -110,6 +111,7 @@ pub enum AttributeContent<'a> {
     Code(Code<'a>),
     ConstantValue(ConstantValue),
     Deprecated,
+    EnclosingMethod(EnclosingMethod),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
     Synthetic,
