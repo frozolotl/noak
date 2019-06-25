@@ -190,10 +190,10 @@ mod tests {
         let mut decoder = Decoder::new(&[
                 // magic bytes
                 0xCA, 0xFE, 0xBA, 0xBE,
-                // major version
-                0x00, 0x38,
                 // minor version
                 0x00, 0x00,
+                // major version
+                0x00, 0x38,
         ], Context::Start);
 
         let version = read_header(&mut decoder).unwrap();
