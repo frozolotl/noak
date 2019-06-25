@@ -1,9 +1,11 @@
+mod class;
 mod code;
 mod debug;
 mod field;
 
 pub use code::Code;
 pub use debug::SourceFile;
+pub use class::EnclosingMethod;
 pub use field::ConstantValue;
 
 use crate::encoding::{Decode, Decoder};
