@@ -2,12 +2,14 @@ mod class;
 mod code;
 mod debug;
 mod field;
+mod method;
 
 pub use class::EnclosingMethod;
 pub use class::NestHost;
 pub use code::Code;
 pub use debug::SourceFile;
 pub use field::ConstantValue;
+pub use method::{Exceptions, ExceptionIter};
 
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
@@ -51,6 +53,7 @@ impl<'a> Attribute<'a> {
             b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read()?)),
             b"Deprecated" => Ok(AttributeContent::Deprecated),
             b"EnclosingMethod" => Ok(AttributeContent::EnclosingMethod(decoder.read()?)),
+            b"Exceptions" => Ok(AttributeContent::Exceptions(decoder.read()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
@@ -114,6 +117,7 @@ pub enum AttributeContent<'a> {
     ConstantValue(ConstantValue),
     Deprecated,
     EnclosingMethod(EnclosingMethod),
+    Exceptions(Exceptions<'a>),
     NestHost(NestHost),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),

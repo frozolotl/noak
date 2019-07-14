@@ -108,6 +108,14 @@ fn print_attributes(
                     println!("{}        - Method Name: {}", indent, method_name);
                     println!("{}        - Method Descriptor: {}", indent, method_desc);
                 }
+                Exceptions(exceptions) => {
+                    println!("{}      - Exceptions:", indent);
+                    for exception in exceptions.iter() {
+                        let class = pool.get(exception)?.name;
+                        let class = pool.get(class)?.content;
+                        println!("{}        - {}", indent, class);
+                    }
+                }
                 NestHost(nest_host) => {
                     let class = pool.get(nest_host.host_class())?.name;
                     let content = pool.get(class)?.content;
