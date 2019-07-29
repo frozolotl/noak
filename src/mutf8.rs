@@ -60,9 +60,7 @@ impl MStr {
 
     #[inline]
     pub fn chars<'a>(&'a self) -> Chars<'a> {
-        Chars {
-            inner: &self.inner,
-        }
+        Chars { inner: &self.inner }
     }
 }
 
@@ -73,9 +71,7 @@ pub struct Chars<'a> {
 impl<'a> Chars<'a> {
     pub fn as_mstr(&self) -> &'a MStr {
         // safe because the underlying buffer is guaranteed to be valid
-        unsafe {
-            MStr::from_mutf8_unchecked(&self.inner)
-        }
+        unsafe { MStr::from_mutf8_unchecked(&self.inner) }
     }
 }
 

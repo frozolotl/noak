@@ -9,7 +9,7 @@ pub use class::NestHost;
 pub use code::Code;
 pub use debug::SourceFile;
 pub use field::ConstantValue;
-pub use method::{Exceptions, ExceptionIter};
+pub use method::{ExceptionIter, Exceptions};
 
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;

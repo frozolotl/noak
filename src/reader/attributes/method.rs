@@ -1,6 +1,6 @@
-use crate::encoding::{Decoder, Decode};
-use crate::reader::cpool;
+use crate::encoding::{Decode, Decoder};
 use crate::error::*;
+use crate::reader::cpool;
 use std::iter::FusedIterator;
 
 #[derive(Clone)]
@@ -22,7 +22,6 @@ impl<'a> Decode<'a> for Exceptions<'a> {
         })
     }
 }
-
 
 impl<'a> Exceptions<'a> {
     pub fn iter(&self) -> ExceptionIter<'a> {
