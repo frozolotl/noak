@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::mutf8::MStr;
+use crate::mutf8::{MStr, Chars};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -114,6 +114,126 @@ impl<'a> fmt::Display for TypeDescriptor<'a> {
 
         write!(f, "{}", self.base)
     }
+}
+
+pub struct MethodDescriptor<'a> {
+    input: &'a MStr,
+}
+
+impl<'a> MethodDescriptor<'a> {
+    pub fn parse(input: &'a MStr) -> Result<MethodDescriptor, DecodeError> {
+        let mut chars = input.chars();
+        if let Some('(') = chars.next() {
+            loop {
+                if let Some(')') = chars.next() {
+                    break;
+                }
+
+                validate_type(&mut chars, false)?;
+            }
+
+            validate_type(&mut chars, true)?;
+            if chars.next().is_none() {
+                return Ok(MethodDescriptor {
+                    input,
+                })
+            }
+        }
+
+        Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
+    }
+
+    pub fn parameters(&self) -> impl Iterator<Item = TypeDescriptor<'a>> + 'a {
+        struct Parameters<'a> {
+            chars: Chars<'a>,
+        }
+
+        impl<'a> Iterator for Parameters<'a> {
+            type Item = TypeDescriptor<'a>;
+
+            fn next(&mut self) -> Option<TypeDescriptor<'a>> {
+                if let Some(')') = self.chars.next() {
+                    return None;
+                }
+
+                let mut ch = self.chars.next();
+                let mut dimensions = 0;
+                while let Some('[') = ch {
+                    ch = self.chars.next();
+                    dimensions += 1;
+                }
+                if let Some(ch) = ch {
+                    use BaseType::*;
+
+                    let base = match ch {
+                        'Z' => Boolean,
+                        'B' => Byte,
+                        'S' => Short,
+                        'I' => Integer,
+                        'J' => Long,
+                        'F' => Float,
+                        'D' => Double,
+                        'L' => {
+                            let input = self.chars.as_mstr();
+                            while let Some(ch) = self.chars.next() {
+                                if ch == ';' {
+                                    break;
+                                }
+                            }
+
+                            let name = &input[..input.len() - self.chars.as_mstr().len()];
+                            Object(name)
+                        }
+                        _ => unreachable!("it's guaranteed to be valid"),
+                    };
+
+                    return Some(TypeDescriptor { dimensions, base });
+                }
+
+                None
+            }
+        }
+
+        let mut chars = self.input.chars();
+        // skip the `(`
+        chars.next();
+        Parameters {
+            chars,
+        }
+    }
+}
+
+fn validate_type(mut chars: impl Iterator<Item = char>, return_type: bool) -> Result<(), DecodeError> {
+    let mut ch = chars.next();
+    if return_type && ch == Some('V') {
+        return Ok(());
+    }
+
+    while let Some('[') = ch {
+        ch = chars.next();
+    }
+    if let Some(ch) = ch {
+        match ch {
+            'Z' | 'B' | 'S' | 'I' | 'J' | 'F' | 'D' => return Ok(()),
+            'L' => {
+                let mut found_semicolon = false;
+                let mut found_character = false;
+                while let Some(ch) = chars.next() {
+                    if ch == ';' {
+                        found_semicolon = true;
+                        break;
+                    } else {
+                        found_character = true;
+                    }
+                }
+                if found_semicolon && found_character {
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+    }
+    Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
 }
 
 #[cfg(test)]
