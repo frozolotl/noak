@@ -59,29 +59,36 @@ impl MStr {
     }
 
     #[inline]
-    pub fn chars<'a>(&'a self) -> impl Iterator<Item = char> + 'a {
-        struct Chars<'a> {
-            inner: &'a [u8],
-            cursor: usize,
-        }
-
-        impl<'a> Iterator for Chars<'a> {
-            type Item = char;
-
-            fn next(&mut self) -> Option<char> {
-                if self.cursor == self.inner.len() {
-                    None
-                } else {
-                    let (size, ch) = unsafe { decode_mutf8_char(&self.inner[self.cursor..]) };
-                    self.cursor += size;
-                    Some(ch)
-                }
-            }
-        }
-
+    pub fn chars<'a>(&'a self) -> Chars<'a> {
         Chars {
             inner: &self.inner,
-            cursor: 0,
+        }
+    }
+}
+
+pub struct Chars<'a> {
+    inner: &'a [u8],
+}
+
+impl<'a> Chars<'a> {
+    pub fn as_mstr(&self) -> &'a MStr {
+        // safe because the underlying buffer is guaranteed to be valid
+        unsafe {
+            MStr::from_mutf8_unchecked(&self.inner)
+        }
+    }
+}
+
+impl<'a> Iterator for Chars<'a> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<char> {
+        if self.inner.is_empty() {
+            None
+        } else {
+            let (size, ch) = unsafe { decode_mutf8_char(&self.inner) };
+            self.inner = &self.inner[size..];
+            Some(ch)
         }
     }
 }
