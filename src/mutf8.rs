@@ -310,7 +310,7 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                 }
                 3 => {
                     // width = 6
-                    if b1 == 0b1110_1101 && v[i + 1] & 0b1111_0000 == 0b1010_0000 {
+                    if b1 == 0b1110_1101 && v[i + 1] & 0b1111_0000 != 0b1001_0000 {
                         if v.len() - i < 6
                             || v[i + 1] & 0b1111_0000 != 0b1010_0000
                             || v[i + 2] & 0b1100_0000 != 0b1000_0000
@@ -441,17 +441,5 @@ fn encode_char(ch: char, buf: &mut [u8]) -> usize {
             buf[5] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
             6
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    pub fn valid_mutf8() {
-        assert!(is_mutf8_valid(b"Hello World"));
-        assert!(is_mutf8_valid("Ich grüße die Welt".as_bytes()));
-        assert!(is_mutf8_valid("你好，世界".as_bytes()));
     }
 }
