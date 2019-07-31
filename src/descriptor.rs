@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::mutf8::{MStr, Chars};
+use crate::mutf8::{Chars, MStr};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -134,9 +134,7 @@ impl<'a> MethodDescriptor<'a> {
 
             validate_type(&mut chars, true)?;
             if chars.next().is_none() {
-                return Ok(MethodDescriptor {
-                    input,
-                })
+                return Ok(MethodDescriptor { input });
             }
         }
 
@@ -197,13 +195,14 @@ impl<'a> MethodDescriptor<'a> {
         let mut chars = self.input.chars();
         // skip the `(`
         chars.next();
-        Parameters {
-            chars,
-        }
+        Parameters { chars }
     }
 }
 
-fn validate_type(mut chars: impl Iterator<Item = char>, return_type: bool) -> Result<(), DecodeError> {
+fn validate_type(
+    mut chars: impl Iterator<Item = char>,
+    return_type: bool,
+) -> Result<(), DecodeError> {
     let mut ch = chars.next();
     if return_type && ch == Some('V') {
         return Ok(());

@@ -310,10 +310,9 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     i += 2;
                 }
                 3 => {
-                    if b1 == 0b1110_1101 && v[i + 1] & 0b1111_0000 != 0b1001_0000 {
+                    if b1 == 0b1110_1101 && v[i + 1] & 0b1111_0000 == 0b1010_0000 {
                         // width = 6
                         if v.len() - i < 6
-                            || v[i + 1] & 0b1111_0000 != 0b1010_0000
                             || v[i + 2] & 0b1100_0000 != 0b1000_0000
                             || v[i + 3] != 0b1110_1101
                             || v[i + 4] & 0b1111_0000 != 0b1011_0000
@@ -326,6 +325,7 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     } else {
                         // width = 3
                         if v[i + 1] & 0b1100_0000 != 0b1000_0000
+                            || (b1 == 0b1110_1101 && v[i + 1] & 0b0011_0000 == 0b0011_0000)
                             || v[i + 2] & 0b1100_0000 != 0b1000_0000
                         {
                             return false;
@@ -361,12 +361,7 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, char) {
         return (2, char::from_u32_unchecked(c1 | c2));
     }
 
-    if v[0] == 0b1110_1101
-        && v[1] & 0b1111_0000 == 0b1010_0000
-        && v.len() >= 6
-        && v[3] == 0b1110_1101
-        && v[4] & 0b1111_0000 == 0b1011_0000
-    {
+    if v[0] == 0b1110_1101 && v[1] & 0b1111_0000 == 0b1010_0000 {
         // six byte case
         let c2 = u32::from(v[1] & 0b0000_1111) << 16;
         let c3 = u32::from(v[2] & 0b0011_1111) << 10;
@@ -452,6 +447,15 @@ mod tests {
         assert!(is_mutf8_valid(b"Hello World"));
         assert!(is_mutf8_valid("Ich grüße die Welt".as_bytes()));
         assert!(is_mutf8_valid("你好，世界".as_bytes()));
-        assert!(is_mutf8_valid(&[0xED, 0xA0, 0xBD, 0xED, 0xB0, 0x96]))
+        assert!(is_mutf8_valid(&[0xED, 0xA0, 0xBD, 0xED, 0xB0, 0x96]));
+    }
+
+    #[test]
+    pub fn invalid_mutf8() {
+        assert!(!is_mutf8_valid(&[0xFF]));
+        assert!(!is_mutf8_valid(&[0x00]));
+        assert!(!is_mutf8_valid(&[0xED, 0xAD, 0xBD, 0xED, 0x25]));
+        assert!(!is_mutf8_valid(&[0xED, 0xAD, 0xBD]));
+        assert!(!is_mutf8_valid(&[0xED, 0xAD, 0x9C, 0x26, 0x0A, 0x0A]));
     }
 }
