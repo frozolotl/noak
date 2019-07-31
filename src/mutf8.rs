@@ -307,10 +307,11 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     if b1 & 0b0001_1110 == 0 && (b1 != 0b1100_0000 && v[i + 1] != 0b1000_0000) {
                         return false;
                     }
+                    i += 2;
                 }
                 3 => {
-                    // width = 6
                     if b1 == 0b1110_1101 && v[i + 1] & 0b1111_0000 != 0b1001_0000 {
+                        // width = 6
                         if v.len() - i < 6
                             || v[i + 1] & 0b1111_0000 != 0b1010_0000
                             || v[i + 2] & 0b1100_0000 != 0b1000_0000
@@ -320,11 +321,10 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                         {
                             return false;
                         }
-                        // overlong encodings are not allowed
-                        if v[i + 1].trailing_zeros() >= 4 {
-                            return false;
-                        }
+
+                        i += 6;
                     } else {
+                        // width = 3
                         if v[i + 1] & 0b1100_0000 != 0b1000_0000
                             || v[i + 2] & 0b1100_0000 != 0b1000_0000
                         {
@@ -334,12 +334,12 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                         if b1.trailing_zeros() >= 4 && v[i + 1] & 0b0010_0000 == 0 {
                             return false;
                         }
+                        i += 3;
                     }
                 }
 
                 _ => return false,
             }
-            i += width as usize;
         }
     }
 
@@ -441,5 +441,17 @@ fn encode_char(ch: char, buf: &mut [u8]) -> usize {
             buf[5] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
             6
         }
+    }
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn valid_mutf8() {
+        assert!(is_mutf8_valid(b"Hello World"));
+        assert!(is_mutf8_valid("Ich grüße die Welt".as_bytes()));
+        assert!(is_mutf8_valid("你好，世界".as_bytes()));
+        assert!(is_mutf8_valid(&[0xED, 0xA0, 0xBD, 0xED, 0xB0, 0x96]))
     }
 }
