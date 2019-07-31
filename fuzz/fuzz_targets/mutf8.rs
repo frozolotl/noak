@@ -10,5 +10,9 @@ fuzz_target!(|data: &[u8]| {
         for c in mstr.chars() {
             char::from_u32(c as u32).expect("MStr::from_bytes(data) probably accepted an invalid input string");
         }
+
+        for c in mstr.chars().rev() {
+            char::from_u32(c as u32).expect("MStr::from_bytes(data) probably accepted an invalid input string");
+        }
     }
 });

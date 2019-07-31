@@ -5,7 +5,7 @@ use std::{
     borrow::{Borrow, ToOwned},
     char,
     fmt::{self, Write},
-    iter::FromIterator,
+    iter::{DoubleEndedIterator, FromIterator},
     ops::{self, Deref},
     str,
 };
@@ -84,6 +84,18 @@ impl<'a> Iterator for Chars<'a> {
         } else {
             let (size, ch) = unsafe { decode_mutf8_char(&self.inner) };
             self.inner = &self.inner[size..];
+            Some(ch)
+        }
+    }
+}
+
+impl<'a> DoubleEndedIterator for Chars<'a> {
+    fn next_back(&mut self) -> Option<char> {
+        if self.inner.is_empty() {
+            None
+        } else {
+            let (size, ch) = unsafe { decode_mutf8_char_reversed(&self.inner) };
+            self.inner = &self.inner[..self.inner.len() - size];
             Some(ch)
         }
     }
@@ -377,6 +389,43 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, char) {
     (3, char::from_u32_unchecked(c1 | c2 | c3))
 }
 
+/// Decodes a character from back to front and returns its size.
+/// The input bytes **must** be valid modified utf-8
+unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, char) {
+    let b1 = v[v.len() - 1];
+    if b1 & 0b1000_0000 == 0b0000_0000 {
+        // single byte case
+        return (1, b1 as char);
+    }
+
+    let b2 = v[v.len() - 2];
+    if b2 & 0b1110_0000 == 0b1100_0000 {
+        // two byte case
+        let c1 = u32::from(b2 & 0b0001_1111) << 6;
+        let c2 = u32::from(b1 & 0b0011_1111);
+        return (2, char::from_u32_unchecked(c1 | c2));
+    }
+
+    let b3 = v[v.len() - 3];
+    if b3 == 0b1110_1101 && b2 & 0b1111_0000 == 0b1011_0000 {
+        // six byte case
+        let b4 = v[v.len() - 4];
+        let b5 = v[v.len() - 5];
+
+        let c2 = u32::from(b5 & 0b0000_1111) << 16;
+        let c3 = u32::from(b4 & 0b0011_1111) << 10;
+        let c5 = u32::from(b2 & 0b0000_1111) << 6;
+        let c6 = u32::from(b1 & 0b0011_1111);
+        return (6, char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6));
+    }
+
+    // three byte case
+    let c1 = u32::from(b3 & 0b0000_1111) << 12;
+    let c2 = u32::from(b2 & 0b0011_1111) << 6;
+    let c3 = u32::from(b1 & 0b0011_1111);
+    (3, char::from_u32_unchecked(c1 | c2 | c3))
+}
+
 impl From<&str> for MString {
     fn from(s: &str) -> MString {
         let mut buf = MString::with_capacity(s.len());
@@ -457,5 +506,11 @@ mod tests {
         assert!(!is_mutf8_valid(&[0xED, 0xAD, 0xBD, 0xED, 0x25]));
         assert!(!is_mutf8_valid(&[0xED, 0xAD, 0xBD]));
         assert!(!is_mutf8_valid(&[0xED, 0xAD, 0x9C, 0x26, 0x0A, 0x0A]));
+    }
+
+    #[test]
+    pub fn iterate() {
+        let s = MStr::from_bytes(&[0xED, 0xA0, 0xBD, 0xED, 0xB0, 0x96]).unwrap();
+        assert_eq!(s.chars().next_back(), s.chars().next());
     }
 }
