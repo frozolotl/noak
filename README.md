@@ -13,10 +13,10 @@ fn main() -> Result<(), DecodeError> {
     let mut class = Class::new(&bytes)?;
 
     let version = class.version();
-    println!("   Major Version: {}", version.major);
-    println!("   Minor Version: {}", version.minor);
-    println!("    Access Flags: {:?}", class.access_flags()?);
-    println!("      Class Name: {}", class.this_class_name()?);
+    println!("Major Version: {}", version.major);
+    println!("Minor Version: {}", version.minor);
+    println!(" Access Flags: {:?}", class.access_flags()?);
+    println!("   Class Name: {}", class.this_class_name()?);
 
     Ok(())
 }
