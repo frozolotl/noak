@@ -66,9 +66,7 @@ impl MStr {
 
 impl Default for &'static MStr {
     fn default() -> &'static MStr {
-        unsafe {
-            MStr::from_mutf8_unchecked(&[])
-        }
+        unsafe { MStr::from_mutf8_unchecked(&[]) }
     }
 }
 

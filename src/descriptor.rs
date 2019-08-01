@@ -118,23 +118,30 @@ impl<'a> fmt::Display for TypeDescriptor<'a> {
 
 pub struct MethodDescriptor<'a> {
     input: &'a MStr,
+    return_index: u16,
 }
 
 impl<'a> MethodDescriptor<'a> {
     pub fn parse(input: &'a MStr) -> Result<MethodDescriptor, DecodeError> {
-        let mut chars = input.chars();
-        if let Some('(') = chars.next() {
-            loop {
-                if let Some(')') = chars.next() {
-                    break;
+        if input.len() <= u16::max_value() as usize {
+            let mut chars = input.chars();
+            if let Some('(') = chars.next() {
+                loop {
+                    if let Some(')') = chars.next() {
+                        break;
+                    }
+
+                    validate_type(&mut chars, false)?;
                 }
 
-                validate_type(&mut chars, false)?;
-            }
-
-            validate_type(&mut chars, true)?;
-            if chars.next().is_none() {
-                return Ok(MethodDescriptor { input });
+                let return_index = (input.len() - chars.as_mstr().len()) as u16;
+                validate_type(&mut chars, true)?;
+                if chars.next().is_none() {
+                    return Ok(MethodDescriptor {
+                        input,
+                        return_index,
+                    });
+                }
             }
         }
 
@@ -151,44 +158,11 @@ impl<'a> MethodDescriptor<'a> {
 
             fn next(&mut self) -> Option<TypeDescriptor<'a>> {
                 if let Some(')') = self.chars.next() {
+                    self.chars = <&MStr>::default().chars();
                     return None;
                 }
 
-                let mut ch = self.chars.next();
-                let mut dimensions = 0;
-                while let Some('[') = ch {
-                    ch = self.chars.next();
-                    dimensions += 1;
-                }
-                if let Some(ch) = ch {
-                    use BaseType::*;
-
-                    let base = match ch {
-                        'Z' => Boolean,
-                        'B' => Byte,
-                        'S' => Short,
-                        'I' => Integer,
-                        'J' => Long,
-                        'F' => Float,
-                        'D' => Double,
-                        'L' => {
-                            let input = self.chars.as_mstr();
-                            while let Some(ch) = self.chars.next() {
-                                if ch == ';' {
-                                    break;
-                                }
-                            }
-
-                            let name = &input[..input.len() - self.chars.as_mstr().len()];
-                            Object(name)
-                        }
-                        _ => unreachable!("it's guaranteed to be valid"),
-                    };
-
-                    return Some(TypeDescriptor { dimensions, base });
-                }
-
-                None
+                read_type(&mut self.chars)
             }
         }
 
@@ -196,6 +170,15 @@ impl<'a> MethodDescriptor<'a> {
         // skip the `(`
         chars.next();
         Parameters { chars }
+    }
+
+    pub fn return_type(&self) -> Option<TypeDescriptor<'a>> {
+        let input = &self.input[self.return_index as usize..];
+        if input.as_bytes() == b"V" {
+            None
+        } else {
+            read_type(&mut input.chars())
+        }
     }
 }
 
@@ -233,6 +216,41 @@ fn validate_type(
         }
     }
     Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
+}
+
+fn read_type<'a>(chars: &mut Chars<'a>) -> Option<TypeDescriptor<'a>> {
+    use BaseType::*;
+
+    let mut ch = chars.next();
+    let mut dimensions = 0;
+    while let Some('[') = ch {
+        ch = chars.next();
+        dimensions += 1;
+    }
+
+    let base = match ch.unwrap() {
+        'Z' => Boolean,
+        'B' => Byte,
+        'S' => Short,
+        'I' => Integer,
+        'J' => Long,
+        'F' => Float,
+        'D' => Double,
+        'L' => {
+            let input = chars.as_mstr();
+            while let Some(ch) = chars.next() {
+                if ch == ';' {
+                    break;
+                }
+            }
+
+            let name = &input[..input.len() - chars.as_mstr().len()];
+            Object(name)
+        }
+        _ => unreachable!("the tag is guaranteed to be valid"),
+    };
+
+    return Some(TypeDescriptor { dimensions, base });
 }
 
 #[cfg(test)]
