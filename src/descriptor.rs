@@ -127,15 +127,16 @@ impl<'a> MethodDescriptor<'a> {
             let mut chars = input.chars();
             if let Some('(') = chars.next() {
                 loop {
-                    if let Some(')') = chars.next() {
+                    let ch = chars.next();
+                    if let Some(')') = ch {
                         break;
                     }
 
-                    validate_type(&mut chars, false)?;
+                    validate_type(ch, &mut chars, false)?;
                 }
 
                 let return_index = (input.len() - chars.as_mstr().len()) as u16;
-                validate_type(&mut chars, true)?;
+                validate_type(chars.next(), &mut chars, true)?;
                 if chars.next().is_none() {
                     return Ok(MethodDescriptor {
                         input,
@@ -157,12 +158,14 @@ impl<'a> MethodDescriptor<'a> {
             type Item = TypeDescriptor<'a>;
 
             fn next(&mut self) -> Option<TypeDescriptor<'a>> {
-                if let Some(')') = self.chars.next() {
+                let ch = self.chars.next();
+                if ch == Some(')') || ch == None {
                     self.chars = <&MStr>::default().chars();
-                    return None;
+                    None
+                } else {
+                    read_type(ch.unwrap(), &mut self.chars)
                 }
 
-                read_type(&mut self.chars)
             }
         }
 
@@ -177,22 +180,28 @@ impl<'a> MethodDescriptor<'a> {
         if input.as_bytes() == b"V" {
             None
         } else {
-            read_type(&mut input.chars())
+            let mut chars = input.chars();
+            read_type(chars.next().unwrap(), &mut chars)
         }
     }
 }
 
 fn validate_type(
+    mut ch: Option<char>,
     mut chars: impl Iterator<Item = char>,
     return_type: bool,
 ) -> Result<(), DecodeError> {
-    let mut ch = chars.next();
     if return_type && ch == Some('V') {
         return Ok(());
     }
 
+    let mut dimensions: u16 = 0;
     while let Some('[') = ch {
+        if dimensions == u8::max_value() as u16 {
+            return Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor));
+        }
         ch = chars.next();
+        dimensions += 1;
     }
     if let Some(ch) = ch {
         match ch {
@@ -218,17 +227,16 @@ fn validate_type(
     Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
 }
 
-fn read_type<'a>(chars: &mut Chars<'a>) -> Option<TypeDescriptor<'a>> {
+fn read_type<'a>(mut ch: char, chars: &mut Chars<'a>) -> Option<TypeDescriptor<'a>> {
     use BaseType::*;
 
-    let mut ch = chars.next();
     let mut dimensions = 0;
-    while let Some('[') = ch {
-        ch = chars.next();
+    while ch == '[' {
+        ch = chars.next().unwrap();
         dimensions += 1;
     }
 
-    let base = match ch.unwrap() {
+    let base = match ch {
         'Z' => Boolean,
         'B' => Byte,
         'S' => Short,
@@ -244,7 +252,7 @@ fn read_type<'a>(chars: &mut Chars<'a>) -> Option<TypeDescriptor<'a>> {
                 }
             }
 
-            let name = &input[..input.len() - chars.as_mstr().len()];
+            let name = &input[..input.len() - chars.as_mstr().len() - 1];
             Object(name)
         }
         _ => unreachable!("the tag is guaranteed to be valid"),
@@ -257,6 +265,7 @@ fn read_type<'a>(chars: &mut Chars<'a>) -> Option<TypeDescriptor<'a>> {
 mod test {
     use super::{BaseType::*, *};
     use crate::mutf8::MString;
+    use std::convert::TryInto;
 
     #[test]
     fn valid_type() {
@@ -301,5 +310,68 @@ mod test {
         check(&("[".repeat(256) + "I"));
         check("L;");
         check("Ljava/lang/Object;;");
+    }
+
+    #[test]
+    fn valid_method_descriptor() {
+        fn eq(s: &str, parameters: &[TypeDescriptor], return_type: Option<TypeDescriptor>) {
+            let m: MString = s.into();
+            let desc = MethodDescriptor::parse(&m).unwrap();
+
+            assert_eq!(desc.parameters().collect::<Vec<_>>(), parameters);
+            assert_eq!(desc.return_type(), return_type);
+        }
+
+        eq("()V", &[], None);
+        eq("(I)V", &[TypeDescriptor::new(Integer, 0)], None);
+        eq(
+            "([[IF)V",
+            &[
+                TypeDescriptor::new(Integer, 2),
+                TypeDescriptor::new(Float, 0),
+            ],
+            None,
+        );
+        eq(
+            "(I)F",
+            &[TypeDescriptor::new(Integer, 0)],
+            Some(TypeDescriptor::new(Float, 0)),
+        );
+        eq(
+            "(LFoo;)V",
+            &[TypeDescriptor::new(Object(&MString::from("Foo")), 0)],
+            None,
+        );
+        eq(
+            "()LBar;",
+            &[],
+            Some(TypeDescriptor::new(Object(&MString::from("Bar")), 0)),
+        );
+        eq(
+            "(LFoo;)LBar;",
+            &[TypeDescriptor::new(Object(&MString::from("Foo")), 0)],
+            Some(TypeDescriptor::new(Object(&MString::from("Bar")), 0)),
+        );
+    }
+
+    #[test]
+    fn invalid_method_descriptor() {
+        fn check(s: &str) {
+            let m: MString = s.into();
+            assert!(MethodDescriptor::parse(&m).is_err());
+        }
+
+        check("");
+        check("()");
+        check("I)F");
+        check("{I)F");
+        check("F");
+        check("(V)V");
+        check("(L)V");
+        check("(L;)V");
+        check("(L;;)V");
+        check("()LHmm");
+        check("(L");
+        check(&format!("({}I)V", "[".repeat(256)));
     }
 }
