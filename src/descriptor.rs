@@ -126,7 +126,6 @@ pub struct MethodDescriptor<'a> {
 
 impl<'a> MethodDescriptor<'a> {
     pub fn parse(input: &'a MStr) -> Result<MethodDescriptor, DecodeError> {
-        eprintln!("{}", input);
         if input.len() <= u16::max_value() as usize {
             let mut chars = input.chars();
             if let Some('(') = chars.next() {
