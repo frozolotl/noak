@@ -11,6 +11,7 @@ pub enum BaseType<'a> {
     Long,
     Float,
     Double,
+    Char,
     Object(&'a MStr),
 }
 
@@ -25,6 +26,7 @@ impl<'a> fmt::Display for BaseType<'a> {
             Long => write!(f, "J"),
             Float => write!(f, "F"),
             Double => write!(f, "D"),
+            Char => write!(f, "C"),
             Object(name) => write!(f, "L{};", name),
         }
     }
@@ -62,6 +64,7 @@ impl<'a> TypeDescriptor<'a> {
                     'J' => Long,
                     'F' => Float,
                     'D' => Double,
+                    'C' => Char,
                     'L' => {
                         let mut valid = false;
                         while let Some((_, ch)) = chars.next() {
@@ -123,6 +126,7 @@ pub struct MethodDescriptor<'a> {
 
 impl<'a> MethodDescriptor<'a> {
     pub fn parse(input: &'a MStr) -> Result<MethodDescriptor, DecodeError> {
+        eprintln!("{}", input);
         if input.len() <= u16::max_value() as usize {
             let mut chars = input.chars();
             if let Some('(') = chars.next() {
@@ -205,7 +209,7 @@ fn validate_type(
     }
     if let Some(ch) = ch {
         match ch {
-            'Z' | 'B' | 'S' | 'I' | 'J' | 'F' | 'D' => return Ok(()),
+            'Z' | 'B' | 'S' | 'I' | 'J' | 'F' | 'D' | 'C' => return Ok(()),
             'L' => {
                 let mut found_semicolon = false;
                 let mut found_character = false;
@@ -244,6 +248,7 @@ fn read_type<'a>(mut ch: char, chars: &mut Chars<'a>) -> Option<TypeDescriptor<'
         'J' => Long,
         'F' => Float,
         'D' => Double,
+        'C' => Char,
         'L' => {
             let input = chars.as_mstr();
             while let Some(ch) = chars.next() {
