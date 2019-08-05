@@ -7,7 +7,7 @@ mod method;
 pub use class::EnclosingMethod;
 pub use class::NestHost;
 pub use code::{Code, LocalVariable, LocalVariableIter, LocalVariableTable};
-pub use debug::SourceFile;
+pub use debug::{Signature, SourceFile};
 pub use field::ConstantValue;
 pub use method::{ExceptionIter, Exceptions};
 
@@ -56,6 +56,7 @@ impl<'a> Attribute<'a> {
             b"Exceptions" => Ok(AttributeContent::Exceptions(decoder.read()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
+            b"Signature" => Ok(AttributeContent::Signature(decoder.read()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
                 Ok(AttributeContent::SourceDebugExtension(content))
@@ -121,6 +122,7 @@ pub enum AttributeContent<'a> {
     Exceptions(Exceptions<'a>),
     LocalVariableTable(LocalVariableTable<'a>),
     NestHost(NestHost),
+    Signature(Signature),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
     Synthetic,

@@ -20,3 +20,22 @@ impl<'a> Decode<'a> for SourceFile {
         })
     }
 }
+
+#[derive(Debug)]
+pub struct Signature {
+    signature: cpool::Index<cpool::Utf8<'static>>,
+}
+
+impl Signature {
+    pub fn signature(&self) -> cpool::Index<cpool::Utf8<'static>> {
+        self.signature
+    }
+}
+
+impl<'a> Decode<'a> for Signature {
+    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+        Ok(Signature {
+            signature: decoder.read()?,
+        })
+    }
+}
