@@ -116,13 +116,17 @@ impl ExceptionHandler {
 
 impl<'a> Decode<'a> for ExceptionHandler {
     fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
-        let tag: u8 = decoder.read()?;
-        match tag {
-            _ => Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidInstruction,
-                decoder,
-            )),
-        }
+        let start: u16 = decoder.read()?;
+        let end: u16 = decoder.read()?;
+        let handler = decoder.read()?;
+        let catch_type = decoder.read()?;
+
+        Ok(ExceptionHandler {
+            start: Index::new(start as u32),
+            end: Index::new(end as u32),
+            handler,
+            catch_type,
+        })
     }
 }
 
