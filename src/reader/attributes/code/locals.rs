@@ -13,7 +13,7 @@ pub struct LocalVariableTable<'a> {
 impl<'a> Decode<'a> for LocalVariableTable<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let count: u16 = decoder.read()?;
-        let limit = count as usize * 2;
+        let limit = count as usize * 10;
         let lv_decoder = decoder.limit(limit, Context::AttributeContent)?;
         decoder.advance(limit)?;
 
