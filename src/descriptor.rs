@@ -168,7 +168,6 @@ impl<'a> MethodDescriptor<'a> {
                 } else {
                     read_type(ch.unwrap(), &mut self.chars)
                 }
-
             }
         }
 
