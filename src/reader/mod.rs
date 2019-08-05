@@ -4,7 +4,7 @@ mod fields;
 mod interfaces;
 mod methods;
 
-pub use attributes::{Attribute, Attributes};
+pub use attributes::{Attribute, AttributeContent, Attributes};
 pub use fields::{Field, Fields};
 pub use interfaces::{InterfaceNames, Interfaces};
 pub use methods::{Method, Methods};
