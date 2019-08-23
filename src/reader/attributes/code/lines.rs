@@ -48,13 +48,13 @@ impl<'a> FusedIterator for LineNumberIter<'a> {}
 
 #[derive(Debug, Clone)]
 pub struct LineNumber {
-    index: code::Index,
+    start: code::Index,
     line_number: u16,
 }
 
 impl LineNumber {
-    pub fn index(&self) -> code::Index {
-        self.index
+    pub fn start(&self) -> code::Index {
+        self.start
     }
 
     pub fn line_number(&self) -> u16 {
@@ -64,11 +64,11 @@ impl LineNumber {
 
 impl<'a> Decode<'a> for LineNumber {
     fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
-        let index = decoder.read()?;
+        let start = decoder.read()?;
         let line_number = decoder.read()?;
 
         Ok(LineNumber {
-            index,
+            start,
             line_number,
         })
     }
