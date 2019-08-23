@@ -1,9 +1,7 @@
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
 use crate::reader::attributes::code;
-use crate::reader::cpool;
 use std::iter::FusedIterator;
-use std::ops::Range;
 
 #[derive(Clone)]
 pub struct LineNumberTable<'a> {
@@ -37,7 +35,7 @@ pub struct LineNumberIter<'a> {
 }
 
 impl<'a> Iterator for LineNumberIter<'a> {
-    type Item = LineNumber;
+    type Item = Line;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.decoder.read().ok()
@@ -47,12 +45,12 @@ impl<'a> Iterator for LineNumberIter<'a> {
 impl<'a> FusedIterator for LineNumberIter<'a> {}
 
 #[derive(Debug, Clone)]
-pub struct LineNumber {
+pub struct Line {
     start: code::Index,
     line_number: u16,
 }
 
-impl LineNumber {
+impl Line {
     pub fn start(&self) -> code::Index {
         self.start
     }
@@ -62,12 +60,12 @@ impl LineNumber {
     }
 }
 
-impl<'a> Decode<'a> for LineNumber {
+impl<'a> Decode<'a> for Line {
     fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
         let start = decoder.read()?;
         let line_number = decoder.read()?;
 
-        Ok(LineNumber {
+        Ok(Line {
             start,
             line_number,
         })
