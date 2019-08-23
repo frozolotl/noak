@@ -4,12 +4,11 @@ mod debug;
 mod field;
 mod method;
 
-pub use class::EnclosingMethod;
-pub use class::NestHost;
-pub use code::{Code, LocalVariable, LocalVariableIter, LocalVariableTable};
-pub use debug::{Signature, SourceFile};
-pub use field::ConstantValue;
-pub use method::{ExceptionIter, Exceptions};
+pub use class::*;
+pub use code::*;
+pub use debug::*;
+pub use field::*;
+pub use method::*;
 
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
@@ -54,6 +53,7 @@ impl<'a> Attribute<'a> {
             b"Deprecated" => Ok(AttributeContent::Deprecated),
             b"EnclosingMethod" => Ok(AttributeContent::EnclosingMethod(decoder.read()?)),
             b"Exceptions" => Ok(AttributeContent::Exceptions(decoder.read()?)),
+            b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
             b"Signature" => Ok(AttributeContent::Signature(decoder.read()?)),
@@ -120,6 +120,7 @@ pub enum AttributeContent<'a> {
     Deprecated,
     EnclosingMethod(EnclosingMethod),
     Exceptions(Exceptions<'a>),
+    LineNumberTable(LineNumberTable<'a>),
     LocalVariableTable(LocalVariableTable<'a>),
     NestHost(NestHost),
     Signature(Signature),
