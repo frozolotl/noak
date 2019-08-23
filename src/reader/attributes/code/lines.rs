@@ -62,7 +62,7 @@ impl Line {
 
 impl<'a> Decode<'a> for Line {
     fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
-        let start = decoder.read()?;
+        let start = code::Index::new(decoder.read::<u16>()? as u32);
         let line_number = decoder.read()?;
 
         Ok(Line {
