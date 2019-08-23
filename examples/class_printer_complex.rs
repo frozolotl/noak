@@ -1,5 +1,6 @@
 use noak::error::DecodeError;
 use noak::reader::{cpool, Attributes, Class};
+use std::ops::Range;
 
 fn main() {
     let path = std::env::args()
@@ -116,10 +117,29 @@ fn print_attributes(
                         println!("{}        - {}", indent, class);
                     }
                 }
+                LineNumberTable(line_number_table) => {
+                    println!("{}      - Line Number Table:", indent);
+                    for line in line_number_table.iter() {
+                        println!("{}        {}: {}", indent, line.start(), line.line_number());
+                    }
+                }
+                LocalVariableTable(local_variable_table) => {
+                    println!("{}      - Local Variable Table:", indent);
+                    for local in local_variable_table.iter() {
+                        let Range { start, end } = local.range();
+                        let name = pool.get(local.name())?.content;
+                        let descriptor = pool.get(local.descriptor())?.content;
+                        println!("{}        {}…{}: {} ({})", indent, start, end, name, descriptor);
+                    }
+                }
                 NestHost(nest_host) => {
                     let class = pool.get(nest_host.host_class())?.name;
                     let content = pool.get(class)?.content;
                     println!("{}    - Nest Host: {}", indent, content);
+                }
+                Signature(signature) => {
+                    let signature = pool.get(signature.signature())?.content;
+                    println!("{}    - Signature: {}", indent, signature);
                 }
                 SourceDebugExtension(content) => {
                     println!("{}    - Source Debug Extension: {}", indent, content);
