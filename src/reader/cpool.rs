@@ -146,10 +146,18 @@ impl<'a> Decode<'a> for Item<'a> {
                     content: MStr::from_bytes(buf)?,
                 }))
             }
-            3 => Ok(Item::Integer(Integer(decoder.read()?))),
-            4 => Ok(Item::Float(Float(decoder.read()?))),
-            5 => Ok(Item::Long(Long(decoder.read()?))),
-            6 => Ok(Item::Double(Double(decoder.read()?))),
+            3 => Ok(Item::Integer(Integer {
+                value: decoder.read()?,
+            })),
+            4 => Ok(Item::Float(Float {
+                value: decoder.read()?,
+            })),
+            5 => Ok(Item::Long(Long {
+                value: decoder.read()?,
+            })),
+            6 => Ok(Item::Double(Double {
+                value: decoder.read()?,
+            })),
             7 => Ok(Item::Class(Class {
                 name: decoder.read()?,
             })),
@@ -285,16 +293,24 @@ pub struct String {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Integer(i32);
+pub struct Integer {
+    pub value: i32,
+}
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Long(i64);
+pub struct Long {
+    pub value: i64,
+}
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Float(f32);
+pub struct Float {
+    pub value: f32,
+}
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Double(f64);
+pub struct Double {
+    pub value: f64,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NameAndType {
