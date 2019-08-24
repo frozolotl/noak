@@ -66,7 +66,7 @@ fn print_attributes(
     let indent = "  ".repeat(indentation);
     println!("{}- Attributes:", indent);
     for attr in attributes {
-        let name = pool.get(attr.name)?.content;
+        let name = pool.get(attr.name())?.content;
         println!("{}  - {}", indent, name);
 
         if let Ok(content) = attr.read_content(pool) {
