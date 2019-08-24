@@ -5,9 +5,9 @@ use crate::reader::{attributes, cpool, Attributes};
 use std::iter::FusedIterator;
 
 pub struct Method<'a> {
-    pub access_flags: AccessFlags,
-    pub name: cpool::Index<cpool::Utf8<'a>>,
-    pub descriptor: cpool::Index<cpool::Utf8<'a>>,
+    access_flags: AccessFlags,
+    name: cpool::Index<cpool::Utf8<'a>>,
+    descriptor: cpool::Index<cpool::Utf8<'a>>,
     attributes: Attributes<'a>,
 }
 
