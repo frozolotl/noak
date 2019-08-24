@@ -268,7 +268,6 @@ fn read_type<'a>(mut ch: char, chars: &mut Chars<'a>) -> Option<TypeDescriptor<'
 mod test {
     use super::{BaseType::*, *};
     use crate::mutf8::MString;
-    use std::convert::TryInto;
 
     #[test]
     fn valid_type() {
