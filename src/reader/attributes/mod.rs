@@ -19,7 +19,6 @@ use std::iter::FusedIterator;
 #[derive(Clone)]
 pub struct Attribute<'a> {
     name: cpool::Index<cpool::Utf8<'a>>,
-    // the content of the attribute; will be changed later
     content: Decoder<'a>,
 }
 
