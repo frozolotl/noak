@@ -443,14 +443,14 @@ mod tests {
         ], Context::ConstantPool);
         let pool: ConstantPool = decoder.read().unwrap();
         let mut iter = pool.iter();
-        assert_eq!(iter.next(), Some(&Item::Integer(Integer(5))));
+        assert_eq!(iter.next(), Some(&Item::Integer(Integer { value: 5 })));
         assert_eq!(
             iter.next(),
             Some(&Item::Utf8(Utf8 {
                 content: MStr::from_bytes(b"hello world").unwrap(),
             }))
         );
-        assert_eq!(iter.next(), Some(&Item::Long(Long(0xFF))));
+        assert_eq!(iter.next(), Some(&Item::Long(Long { value: 0xFF })));
         assert_eq!(
             iter.next(),
             Some(&Item::String(String {
@@ -465,10 +465,10 @@ mod tests {
         // just to test that it will work with non-'static strings
         let some_string = b"hello world".to_vec();
         let content = vec![
-            Some(Item::Integer(Integer(2))),
-            Some(Item::Long(Long(3))),
+            Some(Item::Integer(Integer { value: 2 })),
+            Some(Item::Long(Long { value: 3 })),
             None,
-            Some(Item::Integer(Integer(4))),
+            Some(Item::Integer(Integer { value: 4 })),
             Some(Item::String(String {
                 string: Index::new(6).unwrap(),
             })),
@@ -478,9 +478,9 @@ mod tests {
         ];
 
         let pool = ConstantPool { content };
-        assert_eq!(pool.get(Index::new(1).unwrap()), Ok(&Integer(2)));
-        assert_eq!(pool.get(Index::new(2).unwrap()), Ok(&Long(3)));
-        assert_eq!(pool.get(Index::new(4).unwrap()), Ok(&Integer(4)));
+        assert_eq!(pool.get(Index::new(1).unwrap()), Ok(&Integer { value: 2 }));
+        assert_eq!(pool.get(Index::new(2).unwrap()), Ok(&Long { value: 3 }));
+        assert_eq!(pool.get(Index::new(4).unwrap()), Ok(&Integer { value: 4 }));
         let string: &String = pool.get(Index::new(5).unwrap()).unwrap();
         assert_eq!(
             pool.get(string.string),
