@@ -114,10 +114,24 @@ impl<'a> Decoder<'a> {
     pub fn read<T: Decode<'a>>(&mut self) -> Result<T, DecodeError> {
         T::decode(self)
     }
+
+    pub fn read_into<T: DecodeInto<'a>>(self) -> Result<T, DecodeError> {
+        T::decode_into(self)
+    }
 }
 
 pub trait Decode<'a>: Sized + 'a {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError>;
+}
+
+pub trait DecodeInto<'a>: Sized + 'a {
+    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError>;
+}
+
+impl<'a, D: Decode<'a>> DecodeInto<'a> for D {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+        Self::decode(&mut decoder)
+    }
 }
 
 macro_rules! impl_decode {
