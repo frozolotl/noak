@@ -157,43 +157,6 @@ impl<'a> Decode<'a> for f64 {
     }
 }
 
-pub enum LazyDecode<'a, R> {
-    NotRead(Decoder<'a>),
-    Read(R),
-    Error(DecodeError),
-}
-
-impl<'a, R: Decode<'a>> LazyDecode<'a, R> {
-    pub fn get(&mut self) -> Result<&R, DecodeError> {
-        use LazyDecode::*;
-
-        match self {
-            NotRead(decoder) => match decoder.read() {
-                Ok(v) => {
-                    *self = Read(v);
-                    if let Read(v) = self {
-                        Ok(v)
-                    } else {
-                        unreachable!();
-                    }
-                }
-                Err(err) => {
-                    *self = Error(err.clone());
-                    Err(err)
-                }
-            },
-            Read(v) => Ok(v),
-            Error(err) => Err(err.clone()),
-        }
-    }
-}
-
-impl<'a, R> From<Decoder<'a>> for LazyDecode<'a, R> {
-    fn from(decoder: Decoder<'a>) -> LazyDecode<'a, R> {
-        LazyDecode::NotRead(decoder)
-    }
-}
-
 pub enum LazyDecodeRef<R> {
     NotRead,
     Read(R),
