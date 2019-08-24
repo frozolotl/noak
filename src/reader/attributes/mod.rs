@@ -18,7 +18,7 @@ use std::iter::FusedIterator;
 
 #[derive(Clone)]
 pub struct Attribute<'a> {
-    pub name: cpool::Index<cpool::Utf8<'a>>,
+    name: cpool::Index<cpool::Utf8<'a>>,
     // the content of the attribute; will be changed later
     content: Decoder<'a>,
 }
@@ -37,7 +37,11 @@ impl<'a> Decode<'a> for Attribute<'a> {
 }
 
 impl<'a> Attribute<'a> {
-    pub fn get_content(&self) -> &'a [u8] {
+    pub fn name(&self) -> cpool::Index<cpool::Utf8<'a>> {
+        self.name
+    }
+
+    pub fn content(&self) -> &'a [u8] {
         self.content.buf()
     }
 
