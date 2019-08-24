@@ -5,9 +5,12 @@ authors = ["frozolotl <frozolotl@protonmail.com>"]
 edition = "2018"
 description = "A library for reading and writing java bytecode as fast and easy as possible"
 license = "MIT"
+readme = "README.md"
 documentation = "https://docs.rs/noak"
 repository = "https://gitlab.com/frozo/noak"
 homepage = "https://gitlab.com/frozo/noak"
+categories = ["parser-implementations", "encoding"]
+keywords = ["java", "jvm", "class", "bytecode"]
 
 [dependencies]
 bitflags = "1.0"
