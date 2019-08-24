@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
 
@@ -13,8 +13,8 @@ impl ConstantValue {
     }
 }
 
-impl<'a> Decode<'a> for ConstantValue {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+impl<'a> DecodeInto<'a> for ConstantValue {
+    fn decode_into(mut decoder: Decoder) -> Result<Self, DecodeError> {
         Ok(ConstantValue {
             value: decoder.read()?,
         })

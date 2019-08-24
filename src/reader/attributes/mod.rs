@@ -49,22 +49,22 @@ impl<'a> Attribute<'a> {
         pool: &cpool::ConstantPool<'a>,
     ) -> Result<AttributeContent<'a>, DecodeError> {
         let name = pool.get(self.name)?.content;
-        let mut decoder = self.content.with_context(Context::AttributeContent);
+        let decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
-            b"Code" => Ok(AttributeContent::Code(decoder.read()?)),
-            b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read()?)),
+            b"Code" => Ok(AttributeContent::Code(decoder.read_into()?)),
+            b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read_into()?)),
             b"Deprecated" => Ok(AttributeContent::Deprecated),
-            b"EnclosingMethod" => Ok(AttributeContent::EnclosingMethod(decoder.read()?)),
-            b"Exceptions" => Ok(AttributeContent::Exceptions(decoder.read()?)),
-            b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read()?)),
-            b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read()?)),
-            b"NestHost" => Ok(AttributeContent::NestHost(decoder.read()?)),
-            b"Signature" => Ok(AttributeContent::Signature(decoder.read()?)),
+            b"EnclosingMethod" => Ok(AttributeContent::EnclosingMethod(decoder.read_into()?)),
+            b"Exceptions" => Ok(AttributeContent::Exceptions(decoder.read_into()?)),
+            b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read_into()?)),
+            b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
+            b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
+            b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
-            b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read()?)),
+            b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read_into()?)),
             b"Synthetic" => Ok(AttributeContent::Synthetic),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,

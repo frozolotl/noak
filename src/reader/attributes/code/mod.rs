@@ -6,7 +6,7 @@ pub use locals::{LocalVariable, LocalVariableIter, LocalVariableTable};
 pub use lines::{Line, LineNumberIter, LineNumberTable};
 pub use raw::{ArrayType, RawInstruction, RawInstructions};
 
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::{cpool, Attributes};
 use std::fmt;
@@ -48,8 +48,8 @@ impl<'a> Code<'a> {
     }
 }
 
-impl<'a> Decode<'a> for Code<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'a> DecodeInto<'a> for Code<'a> {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         let max_stack = decoder.read()?;
         let max_locals = decoder.read()?;
 

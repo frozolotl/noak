@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
 
@@ -18,8 +18,8 @@ impl EnclosingMethod {
     }
 }
 
-impl<'a> Decode<'a> for EnclosingMethod {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+impl<'a> DecodeInto<'a> for EnclosingMethod {
+    fn decode_into(mut decoder: Decoder) -> Result<Self, DecodeError> {
         Ok(EnclosingMethod {
             class: decoder.read()?,
             method: decoder.read()?,
@@ -38,8 +38,8 @@ impl NestHost {
     }
 }
 
-impl<'a> Decode<'a> for NestHost {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+impl<'a> DecodeInto<'a> for NestHost {
+    fn decode_into(mut decoder: Decoder) -> Result<Self, DecodeError> {
         Ok(NestHost {
             host_class: decoder.read()?,
         })

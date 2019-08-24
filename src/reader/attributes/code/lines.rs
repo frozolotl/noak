@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::attributes::code;
 use std::iter::FusedIterator;
@@ -8,16 +8,14 @@ pub struct LineNumberTable<'a> {
     iter: LineNumberIter<'a>,
 }
 
-impl<'a> Decode<'a> for LineNumberTable<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let count: u16 = decoder.read()?;
-        let limit = count as usize * 4;
-        let ln_decoder = decoder.limit(limit, Context::AttributeContent)?;
-        decoder.advance(limit)?;
+impl<'a> DecodeInto<'a> for LineNumberTable<'a> {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+        // skip the count
+        decoder.advance(2)?;
 
         Ok(LineNumberTable {
             iter: LineNumberIter {
-                decoder: ln_decoder,
+                decoder,
             },
         })
     }

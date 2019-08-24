@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
 
@@ -13,8 +13,8 @@ impl SourceFile {
     }
 }
 
-impl<'a> Decode<'a> for SourceFile {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+impl<'a> DecodeInto<'a> for SourceFile {
+    fn decode_into(mut decoder: Decoder) -> Result<Self, DecodeError> {
         Ok(SourceFile {
             source_file: decoder.read()?,
         })
@@ -32,8 +32,8 @@ impl Signature {
     }
 }
 
-impl<'a> Decode<'a> for Signature {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+impl<'a> DecodeInto<'a> for Signature {
+    fn decode_into(mut decoder: Decoder) -> Result<Self, DecodeError> {
         Ok(Signature {
             signature: decoder.read()?,
         })

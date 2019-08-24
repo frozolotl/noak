@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::attributes::code;
 use crate::reader::cpool;
@@ -10,16 +10,14 @@ pub struct LocalVariableTable<'a> {
     iter: LocalVariableIter<'a>,
 }
 
-impl<'a> Decode<'a> for LocalVariableTable<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let count: u16 = decoder.read()?;
-        let limit = count as usize * 10;
-        let lv_decoder = decoder.limit(limit, Context::AttributeContent)?;
-        decoder.advance(limit)?;
+impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+        // skip the count
+        decoder.advance(2)?;
 
         Ok(LocalVariableTable {
             iter: LocalVariableIter {
-                decoder: lv_decoder,
+                decoder,
             },
         })
     }

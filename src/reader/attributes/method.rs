@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
 use std::iter::FusedIterator;
@@ -8,16 +8,13 @@ pub struct Exceptions<'a> {
     iter: ExceptionIter<'a>,
 }
 
-impl<'a> Decode<'a> for Exceptions<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let count: u16 = decoder.read()?;
-        let limit = count as usize * 2;
-        let exceptions_decoder = decoder.limit(limit, Context::AttributeContent)?;
-        decoder.advance(limit)?;
+impl<'a> DecodeInto<'a> for Exceptions<'a> {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+        let _count: u16 = decoder.read()?;
 
         Ok(Exceptions {
             iter: ExceptionIter {
-                decoder: exceptions_decoder,
+                decoder: decoder,
             },
         })
     }
