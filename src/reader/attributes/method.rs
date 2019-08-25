@@ -10,8 +10,8 @@ pub struct Exceptions<'a> {
 
 impl<'a> DecodeInto<'a> for Exceptions<'a> {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        let _count: u16 = decoder.read()?;
-
+        // skip exception count
+        decoder.advance(2)?;
         Ok(Exceptions {
             iter: ExceptionIter { decoder },
         })
