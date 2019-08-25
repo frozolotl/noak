@@ -128,12 +128,6 @@ pub trait DecodeInto<'a>: Sized + 'a {
     fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError>;
 }
 
-impl<'a, D: Decode<'a>> DecodeInto<'a> for D {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        Self::decode(&mut decoder)
-    }
-}
-
 macro_rules! impl_decode {
     ($($t:ty => $len:expr,)*) => {
         $(
