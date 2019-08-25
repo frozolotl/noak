@@ -2,8 +2,8 @@ mod lines;
 mod locals;
 mod raw;
 
-pub use locals::{LocalVariable, LocalVariableIter, LocalVariableTable};
 pub use lines::{Line, LineNumberIter, LineNumberTable};
+pub use locals::{LocalVariable, LocalVariableIter, LocalVariableTable};
 pub use raw::{ArrayType, RawInstruction, RawInstructions};
 
 use crate::encoding::{Decode, DecodeInto, Decoder};

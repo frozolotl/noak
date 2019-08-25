@@ -13,9 +13,7 @@ impl<'a> DecodeInto<'a> for Exceptions<'a> {
         let _count: u16 = decoder.read()?;
 
         Ok(Exceptions {
-            iter: ExceptionIter {
-                decoder,
-            },
+            iter: ExceptionIter { decoder },
         })
     }
 }

@@ -51,7 +51,7 @@ fn skip_element_value(decoder: &mut Decoder) -> Result<(), DecodeError> {
         b'e' => {
             // skip type and const name indices
             decoder.advance(4)?;
-        },
+        }
         b'@' => {
             // skip type index
             decoder.advance(2)?;

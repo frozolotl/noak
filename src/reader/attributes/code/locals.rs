@@ -16,9 +16,7 @@ impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
         decoder.advance(2)?;
 
         Ok(LocalVariableTable {
-            iter: LocalVariableIter {
-                decoder,
-            },
+            iter: LocalVariableIter { decoder },
         })
     }
 }

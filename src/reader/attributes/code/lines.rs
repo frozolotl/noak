@@ -14,9 +14,7 @@ impl<'a> DecodeInto<'a> for LineNumberTable<'a> {
         decoder.advance(2)?;
 
         Ok(LineNumberTable {
-            iter: LineNumberIter {
-                decoder,
-            },
+            iter: LineNumberIter { decoder },
         })
     }
 }
@@ -63,9 +61,6 @@ impl<'a> Decode<'a> for Line {
         let start = code::Index::new(decoder.read::<u16>()?.into());
         let line_number = decoder.read()?;
 
-        Ok(Line {
-            start,
-            line_number,
-        })
+        Ok(Line { start, line_number })
     }
 }

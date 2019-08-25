@@ -129,7 +129,10 @@ fn print_attributes(
                         let Range { start, end } = local.range();
                         let name = pool.get(local.name())?.content;
                         let descriptor = pool.get(local.descriptor())?.content;
-                        println!("{}        {}…{}: {} ({})", indent, start, end, name, descriptor);
+                        println!(
+                            "{}        {}…{}: {} ({})",
+                            indent, start, end, name, descriptor
+                        );
                     }
                 }
                 NestHost(nest_host) => {
