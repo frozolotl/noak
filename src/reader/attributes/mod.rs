@@ -1,3 +1,4 @@
+pub mod annotations;
 mod class;
 mod code;
 mod debug;
