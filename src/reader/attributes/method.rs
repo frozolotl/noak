@@ -14,7 +14,7 @@ impl<'a> DecodeInto<'a> for Exceptions<'a> {
 
         Ok(Exceptions {
             iter: ExceptionIter {
-                decoder: decoder,
+                decoder,
             },
         })
     }

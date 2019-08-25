@@ -124,8 +124,8 @@ impl<'a> Decode<'a> for ExceptionHandler {
         let catch_type = decoder.read()?;
 
         Ok(ExceptionHandler {
-            start: Index::new(start as u32),
-            end: Index::new(end as u32),
+            start: Index::new(start.into()),
+            end: Index::new(end.into()),
             handler,
             catch_type,
         })

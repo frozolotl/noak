@@ -30,7 +30,7 @@ impl<'a> Decode<'a> for Annotation<'a> {
         }
 
         Ok(Annotation {
-            r#type: r#type,
+            r#type,
             pairs: ElementValuePairs {
                 decoder: ev_decoder.limit(
                     remaining_start - decoder.bytes_remaining(),

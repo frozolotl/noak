@@ -83,8 +83,8 @@ impl<'a> Decode<'a> for LocalVariable {
         let index = decoder.read()?;
 
         Ok(LocalVariable {
-            start: code::Index::new(start as u32),
-            end: code::Index::new(start as u32 + end as u32),
+            start: code::Index::new(start.into()),
+            end: code::Index::new(u32::from(start) + u32::from(end)),
             name,
             descriptor,
             index,

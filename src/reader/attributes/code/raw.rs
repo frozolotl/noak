@@ -745,7 +745,7 @@ impl<'a> RawInstruction<'a> {
             0x09 => LConst0,
             0x0a => LConst1,
             0x12 => LdC {
-                index: cpool::Index::new(decoder.read::<u8>()? as u16)?,
+                index: cpool::Index::new(decoder.read::<u8>()?.into())?,
             },
             0x13 => LdCW {
                 index: decoder.read()?,
@@ -914,7 +914,7 @@ impl<'a> Decode<'a> for TablePairs<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let low: i32 = decoder.read()?;
         let high: i32 = decoder.read()?;
-        let count = (high as i64 - low as i64 + 1) * 4;
+        let count = (i64::from(high) - i64::from(low) + 1) * 4;
         if count < 0 {
             return Err(DecodeError::from_decoder(
                 DecodeErrorKind::InvalidInstruction,

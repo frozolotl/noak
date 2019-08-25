@@ -59,7 +59,7 @@ impl MStr {
     }
 
     #[inline]
-    pub fn chars<'a>(&'a self) -> Chars<'a> {
+    pub fn chars(&self) -> Chars {
         Chars { inner: &self.inner }
     }
 }

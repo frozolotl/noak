@@ -199,7 +199,7 @@ fn validate_type(
 
     let mut dimensions: u16 = 0;
     while let Some('[') = ch {
-        if dimensions == u8::max_value() as u16 {
+        if dimensions == u16::from(u8::max_value()) {
             return Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor));
         }
         ch = chars.next();
@@ -211,7 +211,7 @@ fn validate_type(
             'L' => {
                 let mut found_semicolon = false;
                 let mut found_character = false;
-                while let Some(ch) = chars.next() {
+                for ch in chars {
                     if ch == ';' {
                         found_semicolon = true;
                         break;
@@ -261,7 +261,7 @@ fn read_type<'a>(mut ch: char, chars: &mut Chars<'a>) -> Option<TypeDescriptor<'
         _ => unreachable!("the tag is guaranteed to be valid"),
     };
 
-    return Some(TypeDescriptor { dimensions, base });
+    Some(TypeDescriptor { dimensions, base })
 }
 
 #[cfg(test)]
