@@ -8,6 +8,20 @@ pub struct Annotations<'a> {
     iter: AnnotationIter<'a>,
 }
 
+impl<'a> Decode<'a> for Annotations<'a> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+        let count: u16 = decoder.read()?;
+        let iter_decoder = decoder.clone();
+        for _ in 0..count {
+            decoder.read::<Annotation>()?;
+        }
+
+        Ok(Annotations {
+            iter: AnnotationIter { decoder: iter_decoder },
+        })
+    }
+}
+
 impl<'a> DecodeInto<'a> for Annotations<'a> {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         // skip the count
@@ -39,6 +53,43 @@ impl<'a> Iterator for AnnotationIter<'a> {
 }
 
 impl<'a> FusedIterator for AnnotationIter<'a> {}
+
+#[derive(Clone)]
+pub struct ParameterAnnotations<'a> {
+    iter: ParameterAnnotationIter<'a>,
+}
+
+impl<'a> DecodeInto<'a> for ParameterAnnotations<'a> {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+        // skip the count
+        decoder.advance(1)?;
+
+        Ok(ParameterAnnotations {
+            iter: ParameterAnnotationIter { decoder },
+        })
+    }
+}
+
+impl<'a> ParameterAnnotations<'a> {
+    pub fn iter(&self) -> ParameterAnnotationIter<'a> {
+        self.iter.clone()
+    }
+}
+
+#[derive(Clone)]
+pub struct ParameterAnnotationIter<'a> {
+    decoder: Decoder<'a>,
+}
+
+impl<'a> Iterator for ParameterAnnotationIter<'a> {
+    type Item = Annotations<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.decoder.read().ok()
+    }
+}
+
+impl<'a> FusedIterator for ParameterAnnotationIter<'a> {}
 
 #[derive(Clone)]
 pub struct Annotation<'a> {

@@ -5,7 +5,7 @@ mod debug;
 mod field;
 mod method;
 
-pub use annotations::Annotations;
+pub use annotations::{Annotations, ParameterAnnotations};
 pub use class::*;
 pub use code::*;
 pub use debug::*;
@@ -63,6 +63,8 @@ impl<'a> Attribute<'a> {
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
             b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(decoder.read_into()?)),
             b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(decoder.read_into()?)),
+            b"RuntimeInvisibleParameterAnnotations" => Ok(AttributeContent::RuntimeInvisibleParameterAnnotations(decoder.read_into()?)),
+            b"RuntimeVisibleParameterAnnotations" => Ok(AttributeContent::RuntimeVisibleParameterAnnotations(decoder.read_into()?)),
             b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
@@ -132,6 +134,8 @@ pub enum AttributeContent<'a> {
     NestHost(NestHost),
     RuntimeInvisibleAnnotations(Annotations<'a>),
     RuntimeVisibleAnnotations(Annotations<'a>),
+    RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'a>),
+    RuntimeVisibleParameterAnnotations(ParameterAnnotations<'a>),
     Signature(Signature),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
