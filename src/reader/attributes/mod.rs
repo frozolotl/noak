@@ -5,6 +5,7 @@ mod debug;
 mod field;
 mod method;
 
+pub use annotations::Annotations;
 pub use class::*;
 pub use code::*;
 pub use debug::*;
@@ -60,6 +61,8 @@ impl<'a> Attribute<'a> {
             b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read_into()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
+            b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(decoder.read_into()?)),
+            b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(decoder.read_into()?)),
             b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
@@ -127,6 +130,8 @@ pub enum AttributeContent<'a> {
     LineNumberTable(LineNumberTable<'a>),
     LocalVariableTable(LocalVariableTable<'a>),
     NestHost(NestHost),
+    RuntimeInvisibleAnnotations(Annotations<'a>),
+    RuntimeVisibleAnnotations(Annotations<'a>),
     Signature(Signature),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),

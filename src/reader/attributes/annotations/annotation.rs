@@ -1,7 +1,44 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
 use std::iter::FusedIterator;
+
+#[derive(Clone)]
+pub struct Annotations<'a> {
+    iter: AnnotationIter<'a>,
+}
+
+impl<'a> DecodeInto<'a> for Annotations<'a> {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+        // skip the count
+        decoder.advance(2)?;
+
+        Ok(Annotations {
+            iter: AnnotationIter { decoder },
+        })
+    }
+}
+
+impl<'a> Annotations<'a> {
+    pub fn iter(&self) -> AnnotationIter<'a> {
+        self.iter.clone()
+    }
+}
+
+#[derive(Clone)]
+pub struct AnnotationIter<'a> {
+    decoder: Decoder<'a>,
+}
+
+impl<'a> Iterator for AnnotationIter<'a> {
+    type Item = Annotation<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.decoder.read().ok()
+    }
+}
+
+impl<'a> FusedIterator for AnnotationIter<'a> {}
 
 #[derive(Clone)]
 pub struct Annotation<'a> {
