@@ -5,7 +5,7 @@ mod debug;
 mod field;
 mod method;
 
-pub use annotations::{Annotations, ParameterAnnotations};
+pub use annotations::{Annotations, ParameterAnnotations, AnnotationDefault};
 pub use class::*;
 pub use code::*;
 pub use debug::*;
@@ -53,6 +53,7 @@ impl<'a> Attribute<'a> {
         let name = pool.get(self.name)?.content;
         let decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
+            b"AnnotationDefault" => Ok(AttributeContent::AnnotationDefault(decoder.read_into()?)),
             b"Code" => Ok(AttributeContent::Code(decoder.read_into()?)),
             b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read_into()?)),
             b"Deprecated" => Ok(AttributeContent::Deprecated),
@@ -124,6 +125,7 @@ impl<'a> Iterator for Attributes<'a> {
 impl<'a> FusedIterator for Attributes<'a> {}
 
 pub enum AttributeContent<'a> {
+    AnnotationDefault(AnnotationDefault<'a>),
     Code(Code<'a>),
     ConstantValue(ConstantValue),
     Deprecated,
