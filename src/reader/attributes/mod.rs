@@ -133,6 +133,7 @@ impl<'a> Iterator for Attributes<'a> {
 
 impl<'a> FusedIterator for Attributes<'a> {}
 
+#[derive(Clone)]
 pub enum AttributeContent<'a> {
     AnnotationDefault(AnnotationDefault<'a>),
     Code(Code<'a>),

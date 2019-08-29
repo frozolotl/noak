@@ -4,6 +4,7 @@ use crate::{header::AccessFlags, reader::cpool};
 use std::fmt;
 use std::iter::FusedIterator;
 
+#[derive(Clone)]
 pub struct EnclosingMethod {
     class: cpool::Index<cpool::Class>,
     method: cpool::Index<cpool::NameAndType>,
@@ -34,6 +35,7 @@ impl fmt::Debug for EnclosingMethod {
     }
 }
 
+#[derive(Clone)]
 pub struct NestHost {
     host_class: cpool::Index<cpool::Class>,
 }

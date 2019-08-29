@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::reader::attributes::annotations::ElementValue;
 use std::fmt;
 
+#[derive(Clone)]
 pub struct AnnotationDefault<'a> {
     value: ElementValue<'a>,
 }
