@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::cpool;
 use std::iter::FusedIterator;
+use std::fmt;
 
 /// An iterator over the interface indices in a class.
 #[derive(Clone)]
@@ -65,6 +66,12 @@ impl<'a> ExactSizeIterator for Interfaces<'a> {
 
 impl<'a> FusedIterator for Interfaces<'a> {}
 
+impl<'a> fmt::Debug for Interfaces<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Interfaces").finish()
+    }
+}
+
 /// An iterator over the interface names in a class.
 pub struct InterfaceNames<'a, 'b> {
     interfaces: Interfaces<'a>,
@@ -120,6 +127,12 @@ impl<'a, 'b> ExactSizeIterator for InterfaceNames<'a, 'b> {
 }
 
 impl<'a, 'b> FusedIterator for InterfaceNames<'a, 'b> {}
+
+impl<'a, 'b> fmt::Debug for InterfaceNames<'a, 'b> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("InterfaceNames").finish()
+    }
+}
 
 fn get_name<'a>(
     pool: &cpool::ConstantPool<'a>,

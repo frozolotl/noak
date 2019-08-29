@@ -24,6 +24,12 @@ impl<'a> Exceptions<'a> {
     }
 }
 
+impl<'a> fmt::Debug for Exceptions<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Exceptions").finish()
+    }
+}
+
 #[derive(Clone)]
 pub struct ExceptionIter<'a> {
     decoder: Decoder<'a>,
@@ -38,3 +44,9 @@ impl<'a> Iterator for ExceptionIter<'a> {
 }
 
 impl<'a> FusedIterator for ExceptionIter<'a> {}
+
+impl<'a> fmt::Debug for ExceptionIter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ExceptionIter").finish()
+    }
+}

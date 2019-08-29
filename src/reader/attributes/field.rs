@@ -1,8 +1,8 @@
 use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
+use std::fmt;
 
-#[derive(Debug)]
 pub struct ConstantValue {
     value: cpool::Index<cpool::Item<'static>>,
 }
@@ -18,5 +18,11 @@ impl<'a> DecodeInto<'a> for ConstantValue {
         Ok(ConstantValue {
             value: decoder.read()?,
         })
+    }
+}
+
+impl<'a> fmt::Debug for ConstantValue<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ConstantValue").finish()
     }
 }

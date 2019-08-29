@@ -1,8 +1,8 @@
 use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
+use std::fmt;
 
-#[derive(Debug)]
 pub struct SourceFile {
     source_file: cpool::Index<cpool::Utf8<'static>>,
 }
@@ -21,7 +21,12 @@ impl<'a> DecodeInto<'a> for SourceFile {
     }
 }
 
-#[derive(Debug)]
+impl fmt::Debug for SourceFile {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("SourceFile").finish()
+    }
+}
+
 pub struct Signature {
     signature: cpool::Index<cpool::Utf8<'static>>,
 }
@@ -37,5 +42,11 @@ impl<'a> DecodeInto<'a> for Signature {
         Ok(Signature {
             signature: decoder.read()?,
         })
+    }
+}
+
+impl fmt::Debug for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Signature").finish()
     }
 }

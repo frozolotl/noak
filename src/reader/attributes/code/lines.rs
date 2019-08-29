@@ -2,10 +2,17 @@ use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::attributes::code;
 use std::iter::FusedIterator;
+use std::fmt;
 
 #[derive(Clone)]
 pub struct LineNumberTable<'a> {
     iter: LineNumberIter<'a>,
+}
+
+impl<'a> LineNumberTable<'a> {
+    pub fn iter(&self) -> LineNumberIter<'a> {
+        self.iter.clone()
+    }
 }
 
 impl<'a> DecodeInto<'a> for LineNumberTable<'a> {
@@ -19,9 +26,9 @@ impl<'a> DecodeInto<'a> for LineNumberTable<'a> {
     }
 }
 
-impl<'a> LineNumberTable<'a> {
-    pub fn iter(&self) -> LineNumberIter<'a> {
-        self.iter.clone()
+impl<'a> fmt::Debug for LineNumberTable<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LineNumberTable").finish()
     }
 }
 
@@ -40,7 +47,7 @@ impl<'a> Iterator for LineNumberIter<'a> {
 
 impl<'a> FusedIterator for LineNumberIter<'a> {}
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Line {
     start: code::Index,
     line_number: u16,
@@ -62,5 +69,11 @@ impl<'a> Decode<'a> for Line {
         let line_number = decoder.read()?;
 
         Ok(Line { start, line_number })
+    }
+}
+
+impl fmt::Debug for Line {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Line").finish()
     }
 }

@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::header::AccessFlags;
 use crate::reader::{attributes, cpool, Attributes};
 use std::iter::FusedIterator;
+use std::fmt;
 
 pub struct Field<'a> {
     access_flags: AccessFlags,
@@ -37,6 +38,12 @@ impl<'a> Decode<'a> for Field<'a> {
             descriptor: decoder.read()?,
             attributes: decoder.read()?,
         })
+    }
+}
+
+impl<'a> fmt::Debug for Field<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Field").finish()
     }
 }
 
@@ -81,3 +88,9 @@ impl<'a> Iterator for Fields<'a> {
 }
 
 impl<'a> FusedIterator for Fields<'a> {}
+
+impl<'a> fmt::Debug for Fields<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Fields").finish()
+    }
+}

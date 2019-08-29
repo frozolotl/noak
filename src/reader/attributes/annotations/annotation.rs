@@ -2,6 +2,7 @@ use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
 use std::iter::FusedIterator;
+use std::fmt;
 
 #[derive(Clone)]
 pub struct Annotations<'a> {
@@ -39,6 +40,12 @@ impl<'a> Annotations<'a> {
     }
 }
 
+impl<'a> fmt::Debug for Annotations<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Annotations").finish()
+    }
+}
+
 #[derive(Clone)]
 pub struct AnnotationIter<'a> {
     decoder: Decoder<'a>,
@@ -53,6 +60,12 @@ impl<'a> Iterator for AnnotationIter<'a> {
 }
 
 impl<'a> FusedIterator for AnnotationIter<'a> {}
+
+impl<'a> fmt::Debug for AnnotationIter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("AnnotationIter").finish()
+    }
+}
 
 #[derive(Clone)]
 pub struct ParameterAnnotations<'a> {
@@ -76,6 +89,12 @@ impl<'a> ParameterAnnotations<'a> {
     }
 }
 
+impl<'a> fmt::Debug for ParameterAnnotations<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ParameterAnnotations").finish()
+    }
+}
+
 #[derive(Clone)]
 pub struct ParameterAnnotationIter<'a> {
     decoder: Decoder<'a>,
@@ -90,6 +109,12 @@ impl<'a> Iterator for ParameterAnnotationIter<'a> {
 }
 
 impl<'a> FusedIterator for ParameterAnnotationIter<'a> {}
+
+impl<'a> fmt::Debug for ParameterAnnotationIter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ParameterAnnotationIter").finish()
+    }
+}
 
 #[derive(Clone)]
 pub struct Annotation<'a> {
@@ -126,6 +151,12 @@ impl<'a> Decode<'a> for Annotation<'a> {
                 )?,
             },
         })
+    }
+}
+
+impl<'a> fmt::Debug for Annotation<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Annotation").finish()
     }
 }
 
@@ -183,6 +214,12 @@ impl<'a> Iterator for ElementValuePairs<'a> {
 
 impl<'a> FusedIterator for ElementValuePairs<'a> {}
 
+impl<'a> fmt::Debug for ElementValuePairs<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ElementValuePairs").finish()
+    }
+}
+
 #[derive(Clone)]
 pub struct ElementValuePair<'a> {
     name: cpool::Index<cpool::Utf8<'a>>,
@@ -208,7 +245,13 @@ impl<'a> Decode<'a> for ElementValuePair<'a> {
     }
 }
 
-#[derive(Clone)]
+impl<'a> fmt::Debug for ElementValuePair<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ElementValuePair").finish()
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum ElementValue<'a> {
     Boolean(cpool::Index<cpool::Integer>),
     Byte(cpool::Index<cpool::Integer>),
@@ -293,6 +336,12 @@ impl<'a> ElementArray<'a> {
     }
 }
 
+impl<'a> fmt::Debug for ElementArray<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ElementArray").finish()
+    }
+}
+
 #[derive(Clone)]
 pub struct ElementArrayIter<'a> {
     decoder: Decoder<'a>,
@@ -307,3 +356,9 @@ impl<'a> Iterator for ElementArrayIter<'a> {
 }
 
 impl<'a> FusedIterator for ElementArrayIter<'a> {}
+
+impl<'a> fmt::Debug for ElementArrayIter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ElementArrayIter").finish()
+    }
+}

@@ -1,8 +1,8 @@
 use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
+use std::fmt;
 
-#[derive(Debug)]
 pub struct EnclosingMethod {
     class: cpool::Index<cpool::Class>,
     method: cpool::Index<cpool::NameAndType>,
@@ -27,7 +27,12 @@ impl<'a> DecodeInto<'a> for EnclosingMethod {
     }
 }
 
-#[derive(Debug)]
+impl fmt::Debug for EnclosingMethod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("EnclosingMethod").finish()
+    }
+}
+
 pub struct NestHost {
     host_class: cpool::Index<cpool::Class>,
 }
@@ -43,5 +48,11 @@ impl<'a> DecodeInto<'a> for NestHost {
         Ok(NestHost {
             host_class: decoder.read()?,
         })
+    }
+}
+
+impl fmt::Debug for NestHost {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("NestHost").finish()
     }
 }

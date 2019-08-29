@@ -65,8 +65,14 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
     }
 }
 
+impl<'a> fmt::Debug for ConstantPool<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ConstantPool").finish()
+    }
+}
+
 /// A 1-based index into the constant pool.
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct Index<I> {
     index: NonZeroU16,
     mark: PhantomData<I>,
@@ -103,6 +109,12 @@ impl<I> Index<I> {
 impl<I> fmt::Display for Index<I> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "#{}", self.index)
+    }
+}
+
+impl<I> fmt::Debug for Index<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "cpool::Index({})", self.index)
     }
 }
 

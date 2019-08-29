@@ -1,6 +1,7 @@
 use crate::error::{Context, DecodeError, DecodeErrorKind};
+use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Decoder<'a> {
     buf: &'a [u8],
     file_position: usize,
@@ -117,6 +118,12 @@ impl<'a> Decoder<'a> {
 
     pub fn read_into<T: DecodeInto<'a>>(self) -> Result<T, DecodeError> {
         T::decode_into(self)
+    }
+}
+
+impl<'a> fmt::Debug for Decoder<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Decoder").finish()
     }
 }
 

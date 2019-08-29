@@ -4,10 +4,17 @@ use crate::reader::attributes::code;
 use crate::reader::cpool;
 use std::iter::FusedIterator;
 use std::ops::Range;
+use std::fmt;
 
 #[derive(Clone)]
 pub struct LocalVariableTable<'a> {
     iter: LocalVariableIter<'a>,
+}
+
+impl<'a> LocalVariableTable<'a> {
+    pub fn iter(&self) -> LocalVariableIter<'a> {
+        self.iter.clone()
+    }
 }
 
 impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
@@ -21,9 +28,9 @@ impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
     }
 }
 
-impl<'a> LocalVariableTable<'a> {
-    pub fn iter(&self) -> LocalVariableIter<'a> {
-        self.iter.clone()
+impl<'a> fmt::Debug for LocalVariableTable<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LocalVariableTable").finish()
     }
 }
 
@@ -42,7 +49,13 @@ impl<'a> Iterator for LocalVariableIter<'a> {
 
 impl<'a> FusedIterator for LocalVariableIter<'a> {}
 
-#[derive(Debug, Clone)]
+impl<'a> fmt::Debug for LocalVariableIter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LocalVariableIter").finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct LocalVariable {
     start: code::Index,
     end: code::Index,
@@ -87,5 +100,11 @@ impl<'a> Decode<'a> for LocalVariable {
             descriptor,
             index,
         })
+    }
+}
+
+impl fmt::Debug for LocalVariable {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LocalVariable").finish()
     }
 }

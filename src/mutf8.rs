@@ -11,7 +11,7 @@ use std::{
 };
 
 /// A Modified UTF-8 string slice, like [str].
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct MStr {
     inner: [u8],
@@ -185,7 +185,7 @@ impl ops::Index<ops::RangeFrom<usize>> for MStr {
 }
 
 /// A Modified UTF-8 string, but owned, like [String].
-#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MString {
     buf: Vec<u8>,
 }
@@ -277,6 +277,24 @@ impl fmt::Display for MStr {
         }
 
         Ok(())
+    }
+}
+
+impl fmt::Debug for MStr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_char('"')?;
+        for c in self.chars() {
+            for c in c.escape_debug() {
+                f.write_char(c)?;
+            }
+        }
+        f.write_char('"')
+    }
+}
+
+impl fmt::Debug for MString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (&**self).fmt(f)
     }
 }
 

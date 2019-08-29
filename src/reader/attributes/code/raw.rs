@@ -2,9 +2,10 @@ use crate::encoding::{Decode, Decoder};
 use crate::error::*;
 use crate::reader::attributes::code;
 use crate::reader::cpool;
+use std::fmt;
 
 /// An iterator over the instructions and their indices into the code table
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RawInstructions<'a> {
     pub(in crate::reader::attributes::code) start_position: usize,
     pub(in crate::reader::attributes::code) decoder: Decoder<'a>,
@@ -23,6 +24,12 @@ impl<'a> Iterator for RawInstructions<'a> {
             Ok(insn) => Some(Ok((code::Index::new(position as u32), insn))),
             Err(err) => Some(Err(err)),
         }
+    }
+}
+
+impl<'a> fmt::Debug for RawInstructions<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("RawInstructions").finish()
     }
 }
 
@@ -387,7 +394,7 @@ pub enum ArrayType {
     Long,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct LookUpSwitch<'a> {
     default_offset: i32,
     pairs: LookUpPairs<'a>,
@@ -403,7 +410,13 @@ impl<'a> LookUpSwitch<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+impl<'a> fmt::Debug for LookUpSwitch<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LookUpSwitch").finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct LookUpPairs<'a> {
     decoder: Decoder<'a>,
 }
@@ -416,6 +429,12 @@ impl<'a> Iterator for LookUpPairs<'a> {
             key: self.decoder.read().ok()?,
             offset: self.decoder.read().ok()?,
         })
+    }
+}
+
+impl<'a> fmt::Debug for LookUpPairs<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LookUpPairs").finish()
     }
 }
 
@@ -435,7 +454,7 @@ impl LookUpPair {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TableSwitch<'a> {
     default_offset: i32,
     pairs: TablePairs<'a>,
@@ -451,7 +470,13 @@ impl<'a> TableSwitch<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+impl<'a> fmt::Debug for TableSwitch<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("TableSwitch").finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct TablePairs<'a> {
     decoder: Decoder<'a>,
     key: i32,
@@ -468,6 +493,12 @@ impl<'a> Iterator for TablePairs<'a> {
     }
 }
 
+impl<'a> fmt::Debug for TablePairs<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("TablePairs").finish()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TablePair {
     key: i32,
@@ -481,6 +512,12 @@ impl TablePair {
 
     pub fn offset(&self) -> i32 {
         self.offset
+    }
+}
+
+impl fmt::Debug for TablePair {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("TablePair").finish()
     }
 }
 

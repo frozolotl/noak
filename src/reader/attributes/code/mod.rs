@@ -78,7 +78,13 @@ impl<'a> DecodeInto<'a> for Code<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+impl<'a> fmt::Debug for Code<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Code").finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct ExceptionHandlers<'a> {
     decoder: Decoder<'a>,
 }
@@ -91,7 +97,12 @@ impl<'a> Iterator for ExceptionHandlers<'a> {
     }
 }
 
-#[derive(Debug)]
+impl<'a> fmt::Debug for ExceptionHandlers<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ExceptionHandlers").finish()
+    }
+}
+
 pub struct ExceptionHandler {
     start: Index,
     end: Index,
@@ -133,7 +144,7 @@ impl<'a> Decode<'a> for ExceptionHandler {
 }
 
 /// A 0-based index into the code table.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Index {
     index: u32,
 }
@@ -148,14 +159,20 @@ impl Index {
     }
 }
 
+impl<'a> Decode<'a> for Index {
+    fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
+        Ok(Index::new(decoder.read()?))
+    }
+}
+
 impl fmt::Display for Index {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "'{}", self.index)
     }
 }
 
-impl<'a> Decode<'a> for Index {
-    fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
-        Ok(Index::new(decoder.read()?))
+impl fmt::Debug for Index {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "code::Index({})", self.index)
     }
 }
