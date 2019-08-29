@@ -219,6 +219,14 @@ impl<'a, T> DecodeIter<'a, T> {
             marker: PhantomData,
         }
     }
+
+    pub fn take_u16(self, count: u16) -> DecodeIterCount<'a, T> {
+        DecodeIterCount {
+            decoder: self.decoder,
+            remaining: count,
+            marker: PhantomData,
+        }
+    }
 }
 
 impl<'a, T: Decode<'a>> Iterator for DecodeIter<'a, T> {
@@ -243,33 +251,23 @@ impl<'a, T> fmt::Debug for DecodeIter<'a, T> {
 }
 
 #[derive(Debug, Clone)]
-pub struct TakeU16<I> {
-    iterator: I,
+pub struct DecodeIterCount<'a, T> {
+    decoder: Decoder<'a>,
     remaining: u16,
+    marker: PhantomData<T>,
 }
 
-impl<I: Iterator<Item = T>, T> Iterator for TakeU16<I> {
-    type Item = T;
+impl<'a, T: Decode<'a>> Iterator for DecodeIterCount<'a, T> {
+    type Item = Result<T, DecodeError>;
 
-    fn next(&mut self) -> Option<T> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.remaining == 0 {
             None
         } else {
             self.remaining -= 1;
-            self.iterator.next()
+            Some(self.decoder.read())
         }
     }
 }
 
-impl<I: FusedIterator> FusedIterator for TakeU16<I> {}
-
-pub trait IteratorExt<T>: Iterator<Item = T> + Sized {
-    fn take_u16(self, count: u16) -> TakeU16<Self> {
-        TakeU16 {
-            iterator: self,
-            remaining: count,
-        }
-    }
-}
-
-impl<I: Iterator<Item = T>, T> IteratorExt<T> for I {}
+impl<'a, T: Decode<'a>> FusedIterator for DecodeIterCount<'a, T> {}
