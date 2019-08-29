@@ -19,11 +19,8 @@ impl<'a> LocalVariableTable<'a> {
 
 impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        // skip the count
-        let count = decoder.read()?;
-
         Ok(LocalVariableTable {
-            iter: DecodeIter::new(decoder).take_u16(count),
+            iter: decoder.read_into()?,
         })
     }
 }

@@ -17,11 +17,8 @@ impl<'a> LineNumberTable<'a> {
 
 impl<'a> DecodeInto<'a> for LineNumberTable<'a> {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        // skip the count
-        decoder.advance(2)?;
-
         Ok(LineNumberTable {
-            iter: LineNumberIter { decoder },
+            iter: decoder.read_into()?,
         })
     }
 }
@@ -32,20 +29,7 @@ impl<'a> fmt::Debug for LineNumberTable<'a> {
     }
 }
 
-#[derive(Clone)]
-pub struct LineNumberIter<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for LineNumberIter<'a> {
-    type Item = Line;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for LineNumberIter<'a> {}
+type LineNumberIter<'a> = DecodeCounted<'a, Line>;
 
 #[derive(Clone)]
 pub struct Line {
