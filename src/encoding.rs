@@ -234,10 +234,8 @@ impl<'a, T: Decode<'a>> Iterator for DecodeIter<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.decoder.read() {
-            Err(ref err) if err.kind() == DecodeErrorKind::UnexpectedEoi => {
-                None
-            }
-            res => Some(res)
+            Err(ref err) if err.kind() == DecodeErrorKind::UnexpectedEoi => None,
+            res => Some(res),
         }
     }
 }
@@ -250,7 +248,7 @@ impl<'a, T> fmt::Debug for DecodeIter<'a, T> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DecodeIterCount<'a, T> {
     decoder: Decoder<'a>,
     remaining: u16,
@@ -271,3 +269,11 @@ impl<'a, T: Decode<'a>> Iterator for DecodeIterCount<'a, T> {
 }
 
 impl<'a, T: Decode<'a>> FusedIterator for DecodeIterCount<'a, T> {}
+
+impl<'a, T: Decode<'a>> fmt::Debug for DecodeIterCount<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("DecodeIterCount")
+            .field("remaining", self.remaining)
+            .finish()
+    }
+}
