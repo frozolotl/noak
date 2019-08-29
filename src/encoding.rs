@@ -1,5 +1,7 @@
 use crate::error::{Context, DecodeError, DecodeErrorKind};
 use std::fmt;
+use std::iter::FusedIterator;
+use std::marker::PhantomData;
 
 #[derive(Clone)]
 pub struct Decoder<'a> {
@@ -203,3 +205,60 @@ impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
         }
     }
 }
+
+#[derive(Clone)]
+pub struct DecodeIter<'a, T> {
+    decoder: Decoder<'a>,
+    marker: PhantomData<T>,
+}
+
+impl<'a, T> DecodeIter<'a, T> {
+    pub fn new(decoder: Decoder<'a>) -> DecodeIter<'a, T> {
+        DecodeIter {
+            decoder,
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, T: Decode<'a>> Iterator for DecodeIter<'a, T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        self.decoder.read().ok()
+    }
+}
+
+impl<'a, T: Decode<'a>> FusedIterator for DecodeIter<'a, T> {}
+
+#[derive(Clone)]
+pub struct TakeU16<I> {
+    iterator: I,
+    remaining: u16,
+}
+
+impl<I: Iterator<Item = T>, T> Iterator for TakeU16<I> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        if self.remaining == 0 {
+            None
+        } else {
+            self.remaining -= 1;
+            self.iterator.next()
+        }
+    }
+}
+
+impl<I: FusedIterator> FusedIterator for TakeU16<I> {}
+
+pub trait IteratorExt<T>: Iterator<Item = T> + Sized {
+    fn take_u16(self, count: u16) -> TakeU16<Self> {
+        TakeU16 {
+            iterator: self,
+            remaining: count,
+        }
+    }
+}
+
+impl<I: Iterator<Item = T>, T> IteratorExt<T> for I {}
