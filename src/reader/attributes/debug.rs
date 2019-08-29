@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::reader::cpool;
 use std::fmt;
 
+#[derive(Clone)]
 pub struct SourceFile {
     source_file: cpool::Index<cpool::Utf8<'static>>,
 }
@@ -27,6 +28,7 @@ impl fmt::Debug for SourceFile {
     }
 }
 
+#[derive(Clone)]
 pub struct Signature {
     signature: cpool::Index<cpool::Utf8<'static>>,
 }

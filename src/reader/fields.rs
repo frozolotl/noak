@@ -5,6 +5,7 @@ use crate::reader::{attributes, cpool, Attributes};
 use std::fmt;
 use std::iter::FusedIterator;
 
+#[derive(Clone)]
 pub struct Field<'a> {
     access_flags: AccessFlags,
     name: cpool::Index<cpool::Utf8<'a>>,

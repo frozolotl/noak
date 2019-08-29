@@ -1,8 +1,8 @@
 use crate::encoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
-use std::iter::FusedIterator;
 use std::fmt;
+use std::iter::FusedIterator;
 
 #[derive(Clone)]
 pub struct Exceptions<'a> {

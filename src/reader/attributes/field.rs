@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::reader::cpool;
 use std::fmt;
 
+#[derive(Clone)]
 pub struct ConstantValue {
     value: cpool::Index<cpool::Item<'static>>,
 }

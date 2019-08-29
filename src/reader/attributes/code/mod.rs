@@ -12,6 +12,7 @@ use crate::reader::{cpool, Attributes};
 use std::fmt;
 use std::ops::Range;
 
+#[derive(Clone)]
 pub struct Code<'a> {
     max_stack: u16,
     max_locals: u16,

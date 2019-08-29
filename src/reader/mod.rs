@@ -15,6 +15,7 @@ use crate::header::{AccessFlags, Version};
 use crate::mutf8::MStr;
 use cpool::ConstantPool;
 
+#[derive(Clone)]
 pub struct Class<'a> {
     read_level: ReadLevel,
     decoder: Decoder<'a>,

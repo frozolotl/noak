@@ -73,6 +73,7 @@ impl<'a> fmt::Debug for Interfaces<'a> {
 }
 
 /// An iterator over the interface names in a class.
+#[derive(Clone)]
 pub struct InterfaceNames<'a, 'b> {
     interfaces: Interfaces<'a>,
     pool: &'b cpool::ConstantPool<'a>,

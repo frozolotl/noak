@@ -172,6 +172,7 @@ impl<'a> Decode<'a> for f64 {
     }
 }
 
+#[derive(Clone)]
 pub enum LazyDecodeRef<R> {
     NotRead,
     Read(R),

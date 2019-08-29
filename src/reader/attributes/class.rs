@@ -1,7 +1,8 @@
-use crate::encoding::{DecodeInto, Decoder};
+use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
-use crate::reader::cpool;
+use crate::{header::AccessFlags, reader::cpool};
 use std::fmt;
+use std::iter::FusedIterator;
 
 pub struct EnclosingMethod {
     class: cpool::Index<cpool::Class>,
