@@ -257,8 +257,8 @@ impl<'a, T> DecodeCounted<'a, T> {
     }
 }
 
-impl<'a, T> DecodeInto for DecodeCounted<'a, T> {
-    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'a, T: 'a> DecodeInto<'a> for DecodeCounted<'a, T> {
+    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         let remaining = decoder.read()?;
         Ok(DecodeCounted {
             decoder,

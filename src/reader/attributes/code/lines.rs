@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, DecodeInto, Decoder};
+use crate::encoding::*;
 use crate::error::*;
 use crate::reader::attributes::code;
 use std::fmt;
@@ -29,7 +29,7 @@ impl<'a> fmt::Debug for LineNumberTable<'a> {
     }
 }
 
-type LineNumberIter<'a> = DecodeCounted<'a, Line>;
+pub type LineNumberIter<'a> = DecodeCounted<'a, Line>;
 
 #[derive(Clone)]
 pub struct Line {
