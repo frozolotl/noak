@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, DecodeInto, Decoder};
+use crate::encoding::*;
 use crate::error::*;
 use crate::reader::attributes::code;
 use crate::reader::cpool;
@@ -20,10 +20,10 @@ impl<'a> LocalVariableTable<'a> {
 impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         // skip the count
-        decoder.advance(2)?;
+        let count = decoder.read()?;
 
         Ok(LocalVariableTable {
-            iter: LocalVariableIter { decoder },
+            iter: DecodeIter::new(decoder).take_u16(count),
         })
     }
 }
@@ -34,26 +34,7 @@ impl<'a> fmt::Debug for LocalVariableTable<'a> {
     }
 }
 
-#[derive(Clone)]
-pub struct LocalVariableIter<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for LocalVariableIter<'a> {
-    type Item = LocalVariable;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for LocalVariableIter<'a> {}
-
-impl<'a> fmt::Debug for LocalVariableIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("LocalVariableIter").finish()
-    }
-}
+pub type LocalVariableIter<'a> = DecodeCounted<'a, LocalVariable>;
 
 #[derive(Clone)]
 pub struct LocalVariable {
