@@ -66,12 +66,12 @@ impl<'a> Attribute<'a> {
             b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(
                 decoder.read_into()?,
             )),
-            b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(
-                decoder.read_into()?,
-            )),
             b"RuntimeInvisibleParameterAnnotations" => Ok(
                 AttributeContent::RuntimeInvisibleParameterAnnotations(decoder.read_into()?),
             ),
+            b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(
+                decoder.read_into()?,
+            )),
             b"RuntimeVisibleParameterAnnotations" => Ok(
                 AttributeContent::RuntimeVisibleParameterAnnotations(decoder.read_into()?),
             ),
@@ -145,8 +145,8 @@ pub enum AttributeContent<'a> {
     LocalVariableTable(LocalVariableTable<'a>),
     NestHost(NestHost),
     RuntimeInvisibleAnnotations(Annotations<'a>),
-    RuntimeVisibleAnnotations(Annotations<'a>),
     RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'a>),
+    RuntimeVisibleAnnotations(Annotations<'a>),
     RuntimeVisibleParameterAnnotations(ParameterAnnotations<'a>),
     Signature(Signature),
     SourceDebugExtension(&'a MStr),
