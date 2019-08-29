@@ -288,7 +288,7 @@ impl<'a> Decode<'a> for ElementValue<'a> {
             b'D' => Double(decoder.read()?),
             b'C' => Char(decoder.read()?),
             b's' => String(decoder.read()?),
-            b'c' => String(decoder.read()?),
+            b'c' => Class(decoder.read()?),
             b'e' => Enum {
                 type_name: decoder.read()?,
                 const_name: decoder.read()?,
