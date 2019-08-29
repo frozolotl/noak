@@ -219,14 +219,6 @@ impl<'a, T> DecodeIter<'a, T> {
             marker: PhantomData,
         }
     }
-
-    pub fn take_u16(self, count: u16) -> DecodeCounted<'a, T> {
-        DecodeCounted {
-            decoder: self.decoder,
-            remaining: count,
-            marker: PhantomData,
-        }
-    }
 }
 
 impl<'a, T: Decode<'a>> Iterator for DecodeIter<'a, T> {
@@ -253,6 +245,27 @@ pub struct DecodeCounted<'a, T> {
     decoder: Decoder<'a>,
     remaining: u16,
     marker: PhantomData<T>,
+}
+
+impl<'a, T> DecodeCounted<'a, T> {
+    pub fn new(decoder: Decoder<'a>, count: u16) -> DecodeCounted<'a, T> {
+        DecodeCounted {
+            decoder,
+            remaining: count,
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, T> DecodeInto for DecodeCounted<'a, T> {
+    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+        let remaining = decoder.read()?;
+        Ok(DecodeCounted {
+            decoder,
+            remaining,
+            marker: PhantomData,
+        })
+    }
 }
 
 impl<'a, T: Decode<'a>> Iterator for DecodeCounted<'a, T> {
