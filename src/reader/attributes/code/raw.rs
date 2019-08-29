@@ -499,7 +499,7 @@ impl<'a> fmt::Debug for TablePairs<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TablePair {
     key: i32,
     offset: i32,

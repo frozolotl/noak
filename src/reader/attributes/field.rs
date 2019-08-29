@@ -21,7 +21,7 @@ impl<'a> DecodeInto<'a> for ConstantValue {
     }
 }
 
-impl<'a> fmt::Debug for ConstantValue<'a> {
+impl fmt::Debug for ConstantValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("ConstantValue").finish()
     }
