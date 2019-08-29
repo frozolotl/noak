@@ -231,7 +231,13 @@ impl<'a, T: Decode<'a>> Iterator for DecodeIter<'a, T> {
 
 impl<'a, T: Decode<'a>> FusedIterator for DecodeIter<'a, T> {}
 
-#[derive(Clone)]
+impl<'a, T> fmt::Debug for DecodeIter<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("DecodeIter").finish()
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct TakeU16<I> {
     iterator: I,
     remaining: u16,
