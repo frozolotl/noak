@@ -3,7 +3,6 @@ use crate::error::*;
 use crate::reader::attributes::code;
 use crate::reader::cpool;
 use std::fmt;
-use std::iter::FusedIterator;
 use std::ops::Range;
 
 #[derive(Clone)]

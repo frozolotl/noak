@@ -2,7 +2,6 @@ use crate::encoding::*;
 use crate::error::*;
 use crate::reader::attributes::code;
 use std::fmt;
-use std::iter::FusedIterator;
 
 #[derive(Clone)]
 pub struct LineNumberTable<'a> {
