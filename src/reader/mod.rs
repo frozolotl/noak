@@ -69,11 +69,7 @@ impl<'a> Class<'a> {
 
             self.access_flags = self.decoder.read()?;
             self.this_class = Some(self.decoder.read()?);
-            let super_class = self.decoder.read()?;
-            // super_class is 0 if this_class is `java/lang/Object`
-            if let Ok(index) = cpool::Index::new(super_class) {
-                self.super_class = Some(index);
-            }
+            self.super_class = self.decoder.read()?;
             self.interfaces = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Info;
         }

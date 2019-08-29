@@ -119,10 +119,16 @@ impl<I> fmt::Debug for Index<I> {
 }
 
 impl<'a, I: 'a> Decode<'a> for Index<I> {
-    fn decode(decoder: &mut Decoder) -> Result<Index<I>, DecodeError> {
+    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
         let index = Index::new(decoder.read()?)
             .map_err(|err| DecodeError::from_decoder(err.kind(), decoder))?;
         Ok(index)
+    }
+}
+
+impl<'a, I: 'a> Decode<'a> for Option<Index<I>> {
+    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+        Ok(Index::new(decoder.read()?).ok())
     }
 }
 
