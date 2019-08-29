@@ -1,8 +1,7 @@
-use crate::encoding::{DecodeInto, Decoder};
+use crate::encoding::*;
 use crate::error::*;
 use crate::reader::cpool;
 use std::fmt;
-use std::iter::FusedIterator;
 
 #[derive(Clone)]
 pub struct Exceptions<'a> {
@@ -10,11 +9,9 @@ pub struct Exceptions<'a> {
 }
 
 impl<'a> DecodeInto<'a> for Exceptions<'a> {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        // skip exception count
-        decoder.advance(2)?;
+    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(Exceptions {
-            iter: ExceptionIter { decoder },
+            iter: decoder.read_into()?,
         })
     }
 }
@@ -31,23 +28,4 @@ impl<'a> fmt::Debug for Exceptions<'a> {
     }
 }
 
-#[derive(Clone)]
-pub struct ExceptionIter<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for ExceptionIter<'a> {
-    type Item = cpool::Index<cpool::Class>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for ExceptionIter<'a> {}
-
-impl<'a> fmt::Debug for ExceptionIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ExceptionIter").finish()
-    }
-}
+type ExceptionIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
