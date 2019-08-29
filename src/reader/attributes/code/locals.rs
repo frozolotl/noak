@@ -2,9 +2,9 @@ use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::attributes::code;
 use crate::reader::cpool;
+use std::fmt;
 use std::iter::FusedIterator;
 use std::ops::Range;
-use std::fmt;
 
 #[derive(Clone)]
 pub struct LocalVariableTable<'a> {

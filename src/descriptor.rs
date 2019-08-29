@@ -267,9 +267,9 @@ fn read_type<'a>(mut ch: char, chars: &mut Chars<'a>) -> Option<TypeDescriptor<'
 impl<'a> fmt::Debug for MethodDescriptor<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("MethodDescriptor")
-         .field("parameters", &self.parameters().collect::<Vec<_>>())
-         .field("return_type", &self.return_type())
-         .finish()
+            .field("parameters", &self.parameters().collect::<Vec<_>>())
+            .field("return_type", &self.return_type())
+            .finish()
     }
 }
 

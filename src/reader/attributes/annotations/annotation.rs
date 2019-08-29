@@ -1,8 +1,8 @@
 use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
-use std::iter::FusedIterator;
 use std::fmt;
+use std::iter::FusedIterator;
 
 #[derive(Clone)]
 pub struct Annotations<'a> {
@@ -18,7 +18,9 @@ impl<'a> Decode<'a> for Annotations<'a> {
         }
 
         Ok(Annotations {
-            iter: AnnotationIter { decoder: iter_decoder },
+            iter: AnnotationIter {
+                decoder: iter_decoder,
+            },
         })
     }
 }

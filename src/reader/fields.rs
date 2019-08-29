@@ -2,8 +2,8 @@ use crate::encoding::{Decode, Decoder};
 use crate::error::*;
 use crate::header::AccessFlags;
 use crate::reader::{attributes, cpool, Attributes};
-use std::iter::FusedIterator;
 use std::fmt;
+use std::iter::FusedIterator;
 
 pub struct Field<'a> {
     access_flags: AccessFlags,

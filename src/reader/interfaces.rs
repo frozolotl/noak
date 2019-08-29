@@ -2,8 +2,8 @@ use crate::encoding::{Decode, Decoder};
 use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::cpool;
-use std::iter::FusedIterator;
 use std::fmt;
+use std::iter::FusedIterator;
 
 /// An iterator over the interface indices in a class.
 #[derive(Clone)]

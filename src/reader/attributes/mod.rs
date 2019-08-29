@@ -5,7 +5,7 @@ mod debug;
 mod field;
 mod method;
 
-pub use annotations::{Annotations, ParameterAnnotations, AnnotationDefault};
+pub use annotations::{AnnotationDefault, Annotations, ParameterAnnotations};
 pub use class::*;
 pub use code::*;
 pub use debug::*;
@@ -62,10 +62,18 @@ impl<'a> Attribute<'a> {
             b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read_into()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
-            b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(decoder.read_into()?)),
-            b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(decoder.read_into()?)),
-            b"RuntimeInvisibleParameterAnnotations" => Ok(AttributeContent::RuntimeInvisibleParameterAnnotations(decoder.read_into()?)),
-            b"RuntimeVisibleParameterAnnotations" => Ok(AttributeContent::RuntimeVisibleParameterAnnotations(decoder.read_into()?)),
+            b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(
+                decoder.read_into()?,
+            )),
+            b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(
+                decoder.read_into()?,
+            )),
+            b"RuntimeInvisibleParameterAnnotations" => Ok(
+                AttributeContent::RuntimeInvisibleParameterAnnotations(decoder.read_into()?),
+            ),
+            b"RuntimeVisibleParameterAnnotations" => Ok(
+                AttributeContent::RuntimeVisibleParameterAnnotations(decoder.read_into()?),
+            ),
             b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;
