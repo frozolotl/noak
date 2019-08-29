@@ -18,7 +18,7 @@ impl<'a> LocalVariableTable<'a> {
 }
 
 impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(LocalVariableTable {
             iter: decoder.read_into()?,
         })
