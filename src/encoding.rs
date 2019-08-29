@@ -222,10 +222,15 @@ impl<'a, T> DecodeIter<'a, T> {
 }
 
 impl<'a, T: Decode<'a>> Iterator for DecodeIter<'a, T> {
-    type Item = T;
+    type Item = Result<T, DecodeError>;
 
-    fn next(&mut self) -> Option<T> {
-        self.decoder.read().ok()
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.decoder.read() {
+            Err(ref err) if err.kind() == DecodeErrorKind::UnexpectedEoi => {
+                None
+            }
+            res => Some(res)
+        }
     }
 }
 
