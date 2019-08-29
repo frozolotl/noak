@@ -71,7 +71,7 @@ impl<'a> InnerClasses<'a> {
 }
 
 impl<'a> DecodeInto<'a> for InnerClasses<'a> {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(InnerClasses {
             iter: decoder.read_into()?,
         })
