@@ -220,8 +220,8 @@ impl<'a, T> DecodeIter<'a, T> {
         }
     }
 
-    pub fn take_u16(self, count: u16) -> DecodeIterCount<'a, T> {
-        DecodeIterCount {
+    pub fn take_u16(self, count: u16) -> DecodeCounted<'a, T> {
+        DecodeCounted {
             decoder: self.decoder,
             remaining: count,
             marker: PhantomData,
@@ -249,13 +249,13 @@ impl<'a, T> fmt::Debug for DecodeIter<'a, T> {
 }
 
 #[derive(Clone)]
-pub struct DecodeIterCount<'a, T> {
+pub struct DecodeCounted<'a, T> {
     decoder: Decoder<'a>,
     remaining: u16,
     marker: PhantomData<T>,
 }
 
-impl<'a, T: Decode<'a>> Iterator for DecodeIterCount<'a, T> {
+impl<'a, T: Decode<'a>> Iterator for DecodeCounted<'a, T> {
     type Item = Result<T, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -268,11 +268,11 @@ impl<'a, T: Decode<'a>> Iterator for DecodeIterCount<'a, T> {
     }
 }
 
-impl<'a, T: Decode<'a>> FusedIterator for DecodeIterCount<'a, T> {}
+impl<'a, T: Decode<'a>> FusedIterator for DecodeCounted<'a, T> {}
 
-impl<'a, T: Decode<'a>> fmt::Debug for DecodeIterCount<'a, T> {
+impl<'a, T: Decode<'a>> fmt::Debug for DecodeCounted<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("DecodeIterCount")
+        f.debug_struct("DecodeCounted")
             .field("remaining", self.remaining)
             .finish()
     }
