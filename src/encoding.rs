@@ -273,7 +273,7 @@ impl<'a, T: Decode<'a>> FusedIterator for DecodeCounted<'a, T> {}
 impl<'a, T: Decode<'a>> fmt::Debug for DecodeCounted<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("DecodeCounted")
-            .field("remaining", self.remaining)
+            .field("remaining", &self.remaining)
             .finish()
     }
 }
