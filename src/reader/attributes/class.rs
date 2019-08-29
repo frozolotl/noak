@@ -1,8 +1,7 @@
-use crate::encoding::{Decode, DecodeInto, Decoder};
+use crate::encoding::*;
 use crate::error::*;
 use crate::{header::AccessFlags, reader::cpool};
 use std::fmt;
-use std::iter::FusedIterator;
 
 #[derive(Clone)]
 pub struct EnclosingMethod {
@@ -73,11 +72,8 @@ impl<'a> InnerClasses<'a> {
 
 impl<'a> DecodeInto<'a> for InnerClasses<'a> {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        // skip the count
-        decoder.advance(2)?;
-
         Ok(InnerClasses {
-            iter: InnerClassIter { decoder },
+            iter: decoder.read_into()?,
         })
     }
 }
@@ -88,26 +84,7 @@ impl<'a> fmt::Debug for InnerClasses<'a> {
     }
 }
 
-#[derive(Clone)]
-pub struct InnerClassIter<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for InnerClassIter<'a> {
-    type Item = InnerClass;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for InnerClassIter<'a> {}
-
-impl<'a> fmt::Debug for InnerClassIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("InnerClassIter").finish()
-    }
-}
+type InnerClassIter<'a> = DecodeCounted<'a, InnerClass>;
 
 #[derive(Clone)]
 pub struct InnerClass {
