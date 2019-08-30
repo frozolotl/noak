@@ -131,6 +131,11 @@ impl<'a> fmt::Debug for Decoder<'a> {
 
 pub trait Decode<'a>: Sized + 'a {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError>;
+
+    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
+        Self::decode(decoder)?;
+        Ok(())
+    }
 }
 
 pub trait DecodeInto<'a>: Sized + 'a {
@@ -145,6 +150,10 @@ macro_rules! impl_decode {
                     let mut buf = <[u8; $len]>::default();
                     decoder.read_bytes(&mut buf)?;
                     Ok(Self::from_be_bytes(buf))
+                }
+
+                fn skip(decoder: &mut Decoder) -> Result<(), DecodeError> {
+                    decoder.advance($len)
                 }
             }
         )*
@@ -165,12 +174,20 @@ impl<'a> Decode<'a> for f32 {
         let bits = decoder.read()?;
         Ok(f32::from_bits(bits))
     }
+
+    fn skip(decoder: &mut Decoder) -> Result<(), DecodeError> {
+        decoder.advance(4)
+    }
 }
 
 impl<'a> Decode<'a> for f64 {
     fn decode(decoder: &mut Decoder) -> Result<f64, DecodeError> {
         let bits = decoder.read()?;
         Ok(f64::from_bits(bits))
+    }
+
+    fn skip(decoder: &mut Decoder) -> Result<(), DecodeError> {
+        decoder.advance(8)
     }
 }
 
