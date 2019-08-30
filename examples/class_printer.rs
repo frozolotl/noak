@@ -31,7 +31,8 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
     }
 
     println!("- Fields:");
-    for field in class.field_indices()? {
+    for field in class.fields()? {
+        let field = field?;
         let name = class.pool()?.get(field.name())?.content;
         let descriptor = class.pool()?.get(field.descriptor())?.content;
         println!("  - {}:", name);
@@ -40,7 +41,8 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
     }
 
     println!("- Methods:");
-    for method in class.method_indices()? {
+    for method in class.methods()? {
+        let method = method?;
         let name = class.pool()?.get(method.name())?.content;
         let descriptor = class.pool()?.get(method.descriptor())?.content;
         println!("  - {}:", name);
