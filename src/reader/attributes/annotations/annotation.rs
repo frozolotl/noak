@@ -101,6 +101,10 @@ pub struct Annotation<'a> {
 }
 
 impl<'a> Annotation<'a> {
+    pub fn r#type(&self) -> cpool::Index<cpool::Utf8<'a>> {
+        self.r#type
+    }
+
     pub fn pairs(&self) -> ElementValuePairIter<'a> {
         self.pairs.clone()
     }
