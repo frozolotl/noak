@@ -1,4 +1,4 @@
-use crate::error::{Context, DecodeError, DecodeErrorKind};
+use crate::error::*;
 use std::fmt;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
@@ -277,6 +277,14 @@ impl<'a, T: Decode<'a>> Iterator for DecodeCounted<'a, T> {
             self.remaining -= 1;
             Some(self.decoder.read())
         }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.remaining as usize))
+    }
+
+    fn count(self) -> usize {
+        self.remaining as usize
     }
 }
 
