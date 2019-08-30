@@ -121,6 +121,10 @@ impl<'a> Decoder<'a> {
     pub fn read_into<T: DecodeInto<'a>>(self) -> Result<T, DecodeError> {
         T::decode_into(self)
     }
+
+    pub fn skip<T: Decode<'a>>(&mut self) -> Result<(), DecodeError> {
+        T::skip(self)
+    }
 }
 
 impl<'a> fmt::Debug for Decoder<'a> {
