@@ -206,40 +206,6 @@ impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
     }
 }
 
-#[derive(Clone)]
-pub struct DecodeIter<'a, T> {
-    decoder: Decoder<'a>,
-    marker: PhantomData<T>,
-}
-
-impl<'a, T> DecodeIter<'a, T> {
-    pub fn new(decoder: Decoder<'a>) -> DecodeIter<'a, T> {
-        DecodeIter {
-            decoder,
-            marker: PhantomData,
-        }
-    }
-}
-
-impl<'a, T: Decode<'a>> Iterator for DecodeIter<'a, T> {
-    type Item = Result<T, DecodeError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.decoder.read() {
-            Err(ref err) if err.kind() == DecodeErrorKind::UnexpectedEoi => None,
-            res => Some(res),
-        }
-    }
-}
-
-impl<'a, T: Decode<'a>> FusedIterator for DecodeIter<'a, T> {}
-
-impl<'a, T> fmt::Debug for DecodeIter<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("DecodeIter").finish()
-    }
-}
-
 pub struct DecodeCounted<'a, T> {
     decoder: Decoder<'a>,
     remaining: u16,
