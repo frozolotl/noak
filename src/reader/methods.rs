@@ -1,9 +1,10 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::*;
 use crate::error::*;
 use crate::header::AccessFlags;
 use crate::reader::{attributes, cpool, Attributes};
 use std::fmt;
-use std::iter::FusedIterator;
+
+pub type MethodIter<'a> = DecodeCounted<'a, Method<'a>>;
 
 #[derive(Clone)]
 pub struct Method<'a> {
@@ -40,58 +41,18 @@ impl<'a> Decode<'a> for Method<'a> {
             attributes: decoder.read()?,
         })
     }
+
+    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
+        let _access_flags = decoder.skip::<u16>()?;
+        let _name = decoder.skip::<u16>()?;
+        let _descriptor = decoder.skip::<u16>()?;
+
+        attributes::skip_attributes(decoder)
+    }
 }
 
 impl<'a> fmt::Debug for Method<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Method").finish()
-    }
-}
-
-/// An iterator over the methods of a class
-#[derive(Clone)]
-pub struct Methods<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Decode<'a> for Methods<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let mut method_decoder = decoder.clone();
-        method_decoder.advance(2)?;
-        skip_methods(decoder)?;
-        let method_length = method_decoder.bytes_remaining() - decoder.bytes_remaining();
-
-        Ok(Methods {
-            decoder: method_decoder.limit(method_length, Context::Fields)?,
-        })
-    }
-}
-
-fn skip_methods(decoder: &mut Decoder) -> Result<(), DecodeError> {
-    let count: u16 = decoder.read()?;
-
-    for _ in 0..count {
-        // skipping the access flags, name and descriptor
-        decoder.advance(6)?;
-        attributes::skip_attributes(decoder)?;
-    }
-
-    Ok(())
-}
-
-impl<'a> Iterator for Methods<'a> {
-    type Item = Method<'a>;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for Methods<'a> {}
-
-impl<'a> fmt::Debug for Methods<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Methods").finish()
     }
 }

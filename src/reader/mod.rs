@@ -7,7 +7,7 @@ mod methods;
 pub use attributes::{Attribute, AttributeContent, Attributes};
 pub use fields::{Field, FieldIndices};
 pub use interfaces::{InterfaceNames, Interfaces};
-pub use methods::{Method, Methods};
+pub use methods::{Method, MethodIter};
 
 use crate::encoding::*;
 use crate::error::*;
@@ -27,7 +27,7 @@ pub struct Class<'a> {
     super_class: Option<cpool::Index<cpool::Class>>,
     interfaces: Option<Interfaces<'a>>,
     fields: Option<FieldIndices<'a>>,
-    methods: Option<Methods<'a>>,
+    methods: Option<MethodIter<'a>>,
     attributes: Option<Attributes<'a>>,
 }
 
@@ -128,7 +128,7 @@ impl<'a> Class<'a> {
         Ok(self.fields.clone().unwrap())
     }
 
-    pub fn method_indices(&mut self) -> Result<Methods<'a>, DecodeError> {
+    pub fn method_indices(&mut self) -> Result<MethodIter<'a>, DecodeError> {
         if self.read_level < ReadLevel::Methods {
             self.field_indices()?;
             self.methods = Some(self.decoder.read()?);
