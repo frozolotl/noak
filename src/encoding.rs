@@ -2,6 +2,7 @@ use crate::error::*;
 use std::fmt;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
+use num_traits::{Num, NumAssign, ToPrimitive};
 
 #[derive(Clone)]
 pub struct Decoder<'a> {
@@ -227,14 +228,14 @@ impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
     }
 }
 
-pub struct DecodeCounted<'a, T> {
+pub struct DecodeCounted<'a, T, R = u16> {
     decoder: Decoder<'a>,
-    remaining: u16,
+    remaining: R,
     marker: PhantomData<T>,
 }
 
-impl<'a, T> DecodeCounted<'a, T> {
-    pub fn new(decoder: Decoder<'a>, count: u16) -> DecodeCounted<'a, T> {
+impl<'a, T, R: 'a> DecodeCounted<'a, T, R> {
+    pub fn new(decoder: Decoder<'a>, count: R) -> DecodeCounted<'a, T, R> {
         DecodeCounted {
             decoder,
             remaining: count,
@@ -243,13 +244,21 @@ impl<'a, T> DecodeCounted<'a, T> {
     }
 }
 
-impl<'a, T: Decode<'a>> Decode<'a> for DecodeCounted<'a, T> {
+impl<'a, T, R> Decode<'a> for DecodeCounted<'a, T, R>
+where
+    T: Decode<'a>,
+    R: Decode<'a>,
+    R: Num + NumAssign,
+{
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let remaining = decoder.read()?;
+        let mut remaining: R = decoder.read()?;
         let old_decoder = decoder.clone();
-        for _ in 0..remaining {
-            T::skip(decoder)?;
+
+        while !remaining.is_zero() {
+            decoder.skip::<T>()?;
+            remaining -= R::one();
         }
+
         Ok(DecodeCounted {
             decoder: old_decoder,
             remaining,
@@ -258,7 +267,11 @@ impl<'a, T: Decode<'a>> Decode<'a> for DecodeCounted<'a, T> {
     }
 }
 
-impl<'a, T: Decode<'a>> DecodeInto<'a> for DecodeCounted<'a, T> {
+impl<'a, T, R> DecodeInto<'a> for DecodeCounted<'a, T, R>
+where
+    T: Decode<'a>,
+    R: Decode<'a>,
+{
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         let remaining = decoder.read()?;
         Ok(DecodeCounted {
@@ -269,24 +282,25 @@ impl<'a, T: Decode<'a>> DecodeInto<'a> for DecodeCounted<'a, T> {
     }
 }
 
-impl<'a, T: Decode<'a>> Iterator for DecodeCounted<'a, T> {
+impl<'a, T, R> Iterator for DecodeCounted<'a, T, R>
+where
+    T: Decode<'a>,
+    R: Decode<'a>,
+    R: Num + NumAssign + ToPrimitive,
+{
     type Item = Result<T, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.remaining == 0 {
+        if self.remaining.is_zero() {
             None
         } else {
-            self.remaining -= 1;
+            self.remaining -= R::one();
             Some(self.decoder.read())
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(self.remaining as usize))
-    }
-
-    fn count(self) -> usize {
-        self.remaining as usize
+        (0, self.remaining.to_usize())
     }
 }
 
