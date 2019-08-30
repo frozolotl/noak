@@ -13,5 +13,5 @@ categories = ["parser-implementations", "encoding"]
 keywords = ["java", "jvm", "class", "bytecode"]
 
 [dependencies]
-bitflags = "1.0"
+bitflags = "1.1.0"
 num-traits = "0.2.8"
