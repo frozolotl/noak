@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, DecodeInto, Decoder};
+use crate::encoding::*;
 use crate::error::*;
 use crate::reader::cpool;
 use std::fmt;
@@ -18,20 +18,15 @@ impl<'a> Decode<'a> for Annotations<'a> {
         }
 
         Ok(Annotations {
-            iter: AnnotationIter {
-                decoder: iter_decoder,
-            },
+            iter: AnnotationIter::new(iter_decoder, count),
         })
     }
 }
 
 impl<'a> DecodeInto<'a> for Annotations<'a> {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        // skip the count
-        decoder.advance(2)?;
-
+    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(Annotations {
-            iter: AnnotationIter { decoder },
+            iter: decoder.read_into()?,
         })
     }
 }
@@ -48,26 +43,7 @@ impl<'a> fmt::Debug for Annotations<'a> {
     }
 }
 
-#[derive(Clone)]
-pub struct AnnotationIter<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for AnnotationIter<'a> {
-    type Item = Annotation<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for AnnotationIter<'a> {}
-
-impl<'a> fmt::Debug for AnnotationIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("AnnotationIter").finish()
-    }
-}
+pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>>;
 
 #[derive(Clone)]
 pub struct ParameterAnnotations<'a> {
@@ -121,11 +97,11 @@ impl<'a> fmt::Debug for ParameterAnnotationIter<'a> {
 #[derive(Clone)]
 pub struct Annotation<'a> {
     r#type: cpool::Index<cpool::Utf8<'a>>,
-    pairs: ElementValuePairs<'a>,
+    pairs: ElementValuePairIter<'a>,
 }
 
 impl<'a> Annotation<'a> {
-    pub fn pairs(&self) -> ElementValuePairs<'a> {
+    pub fn pairs(&self) -> ElementValuePairIter<'a> {
         self.pairs.clone()
     }
 }
@@ -135,7 +111,6 @@ impl<'a> Decode<'a> for Annotation<'a> {
         let r#type = decoder.read()?;
 
         let pair_count: u16 = decoder.read()?;
-        let remaining_start = decoder.bytes_remaining();
         let ev_decoder = decoder.clone();
 
         for _ in 0..pair_count {
@@ -146,12 +121,10 @@ impl<'a> Decode<'a> for Annotation<'a> {
 
         Ok(Annotation {
             r#type,
-            pairs: ElementValuePairs {
-                decoder: ev_decoder.limit(
-                    remaining_start - decoder.bytes_remaining(),
-                    Context::AttributeContent,
-                )?,
-            },
+            pairs: ElementValuePairIter::new(
+                ev_decoder.clone(),
+                pair_count
+            )
         })
     }
 }
@@ -201,26 +174,7 @@ fn skip_element_value(decoder: &mut Decoder) -> Result<(), DecodeError> {
     Ok(())
 }
 
-#[derive(Clone)]
-pub struct ElementValuePairs<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for ElementValuePairs<'a> {
-    type Item = ElementValuePair<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for ElementValuePairs<'a> {}
-
-impl<'a> fmt::Debug for ElementValuePairs<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ElementValuePairs").finish()
-    }
-}
+pub type ElementValuePairIter<'a> = DecodeCounted<'a, ElementValuePair<'a>>;
 
 #[derive(Clone)]
 pub struct ElementValuePair<'a> {

@@ -3,31 +3,7 @@ use crate::error::*;
 use crate::reader::attributes::code;
 use std::fmt;
 
-#[derive(Clone)]
-pub struct LineNumberTable<'a> {
-    iter: LineNumberIter<'a>,
-}
-
-impl<'a> LineNumberTable<'a> {
-    pub fn iter(&self) -> LineNumberIter<'a> {
-        self.iter.clone()
-    }
-}
-
-impl<'a> DecodeInto<'a> for LineNumberTable<'a> {
-    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(LineNumberTable {
-            iter: decoder.read_into()?,
-        })
-    }
-}
-
-impl<'a> fmt::Debug for LineNumberTable<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("LineNumberTable").finish()
-    }
-}
-
+pub type LineNumberTable<'a> = DecodeCountedCopy<'a, Line>;
 pub type LineNumberIter<'a> = DecodeCounted<'a, Line>;
 
 #[derive(Clone)]

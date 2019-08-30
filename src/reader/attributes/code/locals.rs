@@ -5,31 +5,7 @@ use crate::reader::cpool;
 use std::fmt;
 use std::ops::Range;
 
-#[derive(Clone)]
-pub struct LocalVariableTable<'a> {
-    iter: LocalVariableIter<'a>,
-}
-
-impl<'a> LocalVariableTable<'a> {
-    pub fn iter(&self) -> LocalVariableIter<'a> {
-        self.iter.clone()
-    }
-}
-
-impl<'a> DecodeInto<'a> for LocalVariableTable<'a> {
-    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(LocalVariableTable {
-            iter: decoder.read_into()?,
-        })
-    }
-}
-
-impl<'a> fmt::Debug for LocalVariableTable<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("LocalVariableTable").finish()
-    }
-}
-
+pub type LocalVariableTable<'a> = DecodeCountedCopy<'a, LocalVariable>;
 pub type LocalVariableIter<'a> = DecodeCounted<'a, LocalVariable>;
 
 #[derive(Clone)]
