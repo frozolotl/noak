@@ -4,95 +4,11 @@ use crate::reader::cpool;
 use std::fmt;
 use std::iter::FusedIterator;
 
-#[derive(Clone)]
-pub struct Annotations<'a> {
-    iter: AnnotationIter<'a>,
-}
-
-impl<'a> Decode<'a> for Annotations<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let count: u16 = decoder.read()?;
-        let iter_decoder = decoder.clone();
-        for _ in 0..count {
-            decoder.read::<Annotation>()?;
-        }
-
-        Ok(Annotations {
-            iter: AnnotationIter::new(iter_decoder, count),
-        })
-    }
-}
-
-impl<'a> DecodeInto<'a> for Annotations<'a> {
-    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(Annotations {
-            iter: decoder.read_into()?,
-        })
-    }
-}
-
-impl<'a> Annotations<'a> {
-    pub fn iter(&self) -> AnnotationIter<'a> {
-        self.iter.clone()
-    }
-}
-
-impl<'a> fmt::Debug for Annotations<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Annotations").finish()
-    }
-}
-
+pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>>;
 pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>>;
 
-#[derive(Clone)]
-pub struct ParameterAnnotations<'a> {
-    iter: ParameterAnnotationIter<'a>,
-}
-
-impl<'a> DecodeInto<'a> for ParameterAnnotations<'a> {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        // skip the count
-        decoder.advance(1)?;
-
-        Ok(ParameterAnnotations {
-            iter: ParameterAnnotationIter { decoder },
-        })
-    }
-}
-
-impl<'a> ParameterAnnotations<'a> {
-    pub fn iter(&self) -> ParameterAnnotationIter<'a> {
-        self.iter.clone()
-    }
-}
-
-impl<'a> fmt::Debug for ParameterAnnotations<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ParameterAnnotations").finish()
-    }
-}
-
-#[derive(Clone)]
-pub struct ParameterAnnotationIter<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for ParameterAnnotationIter<'a> {
-    type Item = Annotations<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for ParameterAnnotationIter<'a> {}
-
-impl<'a> fmt::Debug for ParameterAnnotationIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ParameterAnnotationIter").finish()
-    }
-}
+pub type ParameterAnnotations<'a> = DecodeCountedCopy<'a, Annotations<'a>, u8>;
+pub type ParameterAnnotationIter<'a> = DecodeCounted<'a, Annotations<'a>, u8>;
 
 #[derive(Clone)]
 pub struct Annotation<'a> {
