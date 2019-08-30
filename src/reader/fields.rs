@@ -4,7 +4,7 @@ use crate::header::AccessFlags;
 use crate::reader::{attributes, cpool, Attributes};
 use std::fmt;
 
-pub type FieldIndices<'a> = DecodeCounted<'a, Field<'a>>;
+pub type FieldIter<'a> = DecodeCounted<'a, Field<'a>>;
 
 #[derive(Clone)]
 pub struct Field<'a> {

@@ -5,7 +5,7 @@ mod interfaces;
 mod methods;
 
 pub use attributes::{Attribute, AttributeContent, Attributes};
-pub use fields::{Field, FieldIndices};
+pub use fields::{Field, FieldIter};
 pub use interfaces::{InterfaceNames, Interfaces};
 pub use methods::{Method, MethodIter};
 
@@ -26,7 +26,7 @@ pub struct Class<'a> {
     this_class: Option<cpool::Index<cpool::Class>>,
     super_class: Option<cpool::Index<cpool::Class>>,
     interfaces: Option<Interfaces<'a>>,
-    fields: Option<FieldIndices<'a>>,
+    fields: Option<FieldIter<'a>>,
     methods: Option<MethodIter<'a>>,
     attributes: Option<Attributes<'a>>,
 }
@@ -119,7 +119,7 @@ impl<'a> Class<'a> {
         Ok(InterfaceNames::new(&pool, interfaces))
     }
 
-    pub fn field_indices(&mut self) -> Result<FieldIndices<'a>, DecodeError> {
+    pub fn fields(&mut self) -> Result<FieldIter<'a>, DecodeError> {
         self.read_info()?;
         if self.read_level < ReadLevel::Fields {
             self.fields = Some(self.decoder.read()?);
@@ -128,9 +128,9 @@ impl<'a> Class<'a> {
         Ok(self.fields.clone().unwrap())
     }
 
-    pub fn method_indices(&mut self) -> Result<MethodIter<'a>, DecodeError> {
+    pub fn methods(&mut self) -> Result<MethodIter<'a>, DecodeError> {
         if self.read_level < ReadLevel::Methods {
-            self.field_indices()?;
+            self.fields()?;
             self.methods = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Methods;
         }
@@ -139,7 +139,7 @@ impl<'a> Class<'a> {
 
     pub fn attribute_indices(&mut self) -> Result<Attributes<'a>, DecodeError> {
         if self.read_level < ReadLevel::Attributes {
-            self.method_indices()?;
+            self.methods()?;
             self.attributes = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Attributes;
         }
