@@ -239,7 +239,22 @@ impl<'a, T> DecodeCounted<'a, T> {
     }
 }
 
-impl<'a, T: 'a> DecodeInto<'a> for DecodeCounted<'a, T> {
+impl<'a, T: Decode<'a>> Decode<'a> for DecodeCounted<'a, T> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+        let remaining = decoder.read()?;
+        let old_decoder = decoder.clone();
+        for _ in 0..remaining {
+            T::skip(decoder)?;
+        }
+        Ok(DecodeCounted {
+            decoder: old_decoder,
+            remaining,
+            marker: PhantomData,
+        })
+    }
+}
+
+impl<'a, T: Decode<'a>> DecodeInto<'a> for DecodeCounted<'a, T> {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         let remaining = decoder.read()?;
         Ok(DecodeCounted {
@@ -296,7 +311,15 @@ pub struct DecodeCountedCopy<'a, T> {
     iter: DecodeCounted<'a, T>,
 }
 
-impl<'a, T: 'a> DecodeInto<'a> for DecodeCountedCopy<'a, T> {
+impl<'a, T: Decode<'a>> Decode<'a> for DecodeCountedCopy<'a, T> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+        Ok(DecodeCountedCopy {
+            iter: decoder.read()?,
+        })
+    }
+}
+
+impl<'a, T: Decode<'a>> DecodeInto<'a> for DecodeCountedCopy<'a, T> {
     fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(DecodeCountedCopy {
             iter: decoder.read_into()?,
