@@ -59,32 +59,8 @@ impl fmt::Debug for NestHost {
     }
 }
 
-#[derive(Clone)]
-pub struct InnerClasses<'a> {
-    iter: InnerClassIter<'a>,
-}
-
-impl<'a> InnerClasses<'a> {
-    pub fn iter(&self) -> InnerClassIter<'a> {
-        self.iter.clone()
-    }
-}
-
-impl<'a> DecodeInto<'a> for InnerClasses<'a> {
-    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(InnerClasses {
-            iter: decoder.read_into()?,
-        })
-    }
-}
-
-impl<'a> fmt::Debug for InnerClasses<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("InnerClasses").finish()
-    }
-}
-
-type InnerClassIter<'a> = DecodeCounted<'a, InnerClass>;
+pub type InnerClasses<'a> = DecodeCountedCopy<'a, InnerClass>;
+pub type InnerClassIter<'a> = DecodeCounted<'a, InnerClass>;
 
 #[derive(Clone)]
 pub struct InnerClass {
