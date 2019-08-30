@@ -1,9 +1,10 @@
-use crate::encoding::{Decode, Decoder};
+use crate::encoding::*;
 use crate::error::*;
 use crate::header::AccessFlags;
 use crate::reader::{attributes, cpool, Attributes};
 use std::fmt;
-use std::iter::FusedIterator;
+
+pub type FieldIndices<'a> = DecodeCounted<'a, Field<'a>>;
 
 #[derive(Clone)]
 pub struct Field<'a> {
@@ -40,6 +41,14 @@ impl<'a> Decode<'a> for Field<'a> {
             attributes: decoder.read()?,
         })
     }
+
+    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
+        let _access_flags = decoder.skip::<u16>()?;
+        let _name = decoder.skip::<u16>()?;
+        let _descriptor = decoder.skip::<u16>()?;
+
+        attributes::skip_attributes(decoder)
+    }
 }
 
 impl<'a> fmt::Debug for Field<'a> {
@@ -48,50 +57,3 @@ impl<'a> fmt::Debug for Field<'a> {
     }
 }
 
-/// An iterator over the fields of a class
-#[derive(Clone)]
-pub struct Fields<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Decode<'a> for Fields<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let mut field_decoder = decoder.clone();
-        field_decoder.advance(2)?;
-        skip_fields(decoder)?;
-        let field_length = field_decoder.bytes_remaining() - decoder.bytes_remaining();
-
-        Ok(Fields {
-            decoder: field_decoder.limit(field_length, Context::Fields)?,
-        })
-    }
-}
-
-fn skip_fields(decoder: &mut Decoder) -> Result<(), DecodeError> {
-    let count: u16 = decoder.read()?;
-
-    for _ in 0..count {
-        // skipping the access flags, name and descriptor
-        decoder.advance(6)?;
-        attributes::skip_attributes(decoder)?;
-    }
-
-    Ok(())
-}
-
-impl<'a> Iterator for Fields<'a> {
-    type Item = Field<'a>;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for Fields<'a> {}
-
-impl<'a> fmt::Debug for Fields<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Fields").finish()
-    }
-}

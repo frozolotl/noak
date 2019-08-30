@@ -5,7 +5,7 @@ mod interfaces;
 mod methods;
 
 pub use attributes::{Attribute, AttributeContent, Attributes};
-pub use fields::{Field, Fields};
+pub use fields::{Field, FieldIndices};
 pub use interfaces::{InterfaceNames, Interfaces};
 pub use methods::{Method, Methods};
 
@@ -26,7 +26,7 @@ pub struct Class<'a> {
     this_class: Option<cpool::Index<cpool::Class>>,
     super_class: Option<cpool::Index<cpool::Class>>,
     interfaces: Option<Interfaces<'a>>,
-    fields: Option<Fields<'a>>,
+    fields: Option<FieldIndices<'a>>,
     methods: Option<Methods<'a>>,
     attributes: Option<Attributes<'a>>,
 }
@@ -119,7 +119,7 @@ impl<'a> Class<'a> {
         Ok(InterfaceNames::new(&pool, interfaces))
     }
 
-    pub fn field_indices(&mut self) -> Result<Fields<'a>, DecodeError> {
+    pub fn field_indices(&mut self) -> Result<FieldIndices<'a>, DecodeError> {
         self.read_info()?;
         if self.read_level < ReadLevel::Fields {
             self.fields = Some(self.decoder.read()?);
