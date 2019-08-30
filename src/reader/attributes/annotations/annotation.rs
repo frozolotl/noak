@@ -118,9 +118,8 @@ impl<'a> Decode<'a> for Annotation<'a> {
         let ev_decoder = decoder.clone();
 
         for _ in 0..pair_count {
-            // skip name index
-            decoder.advance(2)?;
-            skip_element_value(decoder)?;
+            let _name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
+            let _value = decoder.skip::<ElementValue>()?;
         }
 
         Ok(Annotation {
@@ -131,51 +130,18 @@ impl<'a> Decode<'a> for Annotation<'a> {
             )
         })
     }
+
+    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
+        let _type = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
+        let _pairs = decoder.skip::<ElementValuePairIter>()?;
+        Ok(())
+    }
 }
 
 impl<'a> fmt::Debug for Annotation<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Annotation").finish()
     }
-}
-
-fn skip_element_value(decoder: &mut Decoder) -> Result<(), DecodeError> {
-    let tag = decoder.read()?;
-    match tag {
-        b'Z' | b'B' | b'S' | b'I' | b'J' | b'F' | b'D' | b'C' | b's' | b'c' => {
-            // skip constant pool index
-            decoder.advance(2)?;
-        }
-        b'e' => {
-            // skip type and const name indices
-            decoder.advance(4)?;
-        }
-        b'@' => {
-            // skip type index
-            decoder.advance(2)?;
-
-            let pair_count: u16 = decoder.read()?;
-            for _ in 0..pair_count {
-                // skip name index
-                decoder.advance(2)?;
-                skip_element_value(decoder)?;
-            }
-        }
-        b'[' => {
-            let count: u16 = decoder.read()?;
-            for _ in 0..count {
-                skip_element_value(decoder)?;
-            }
-        }
-        _ => {
-            return Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidTag,
-                decoder,
-            ))
-        }
-    }
-
-    Ok(())
 }
 
 pub type ElementValuePairIter<'a> = DecodeCounted<'a, ElementValuePair<'a>>;
@@ -202,6 +168,13 @@ impl<'a> Decode<'a> for ElementValuePair<'a> {
         let value = decoder.read()?;
 
         Ok(ElementValuePair { name, value })
+    }
+
+    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
+        let _name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
+        let _value = decoder.skip::<ElementValue>()?;
+
+        Ok(())
     }
 }
 
@@ -262,63 +235,34 @@ impl<'a> Decode<'a> for ElementValue<'a> {
         };
         Ok(value)
     }
-}
 
-#[derive(Clone)]
-pub struct ElementArray<'a> {
-    iter: ElementArrayIter<'a>,
-}
-
-impl<'a> Decode<'a> for ElementArray<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let count: u16 = decoder.read()?;
-
-        let ea_decoder = decoder.clone();
-        let remaining_start = decoder.bytes_remaining();
-        for _ in 0..count {
-            skip_element_value(decoder)?;
+    fn skip(decoder: &mut Decoder) -> Result<(), DecodeError> {
+        let tag = decoder.read()?;
+        match tag {
+            b'Z' | b'B' | b'S' | b'I' | b'J' | b'F' | b'D' | b'C' | b's' | b'c' => {
+                let _index = decoder.skip::<cpool::Index<cpool::Item>>()?;
+            }
+            b'e' => {
+                let _type_name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
+                let _const_name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
+            }
+            b'@' => {
+                let _annotation = decoder.skip::<Annotation>()?;
+            }
+            b'[' => {
+                let _array = decoder.skip::<ElementArray>()?;
+            }
+            _ => {
+                return Err(DecodeError::from_decoder(
+                    DecodeErrorKind::InvalidTag,
+                    decoder,
+                ))
+            }
         }
 
-        Ok(ElementArray {
-            iter: ElementArrayIter {
-                decoder: ea_decoder.limit(
-                    remaining_start - decoder.bytes_remaining(),
-                    Context::AttributeContent,
-                )?,
-            },
-        })
+        Ok(())
     }
 }
 
-impl<'a> ElementArray<'a> {
-    pub fn iter(&self) -> ElementArrayIter<'a> {
-        self.iter.clone()
-    }
-}
-
-impl<'a> fmt::Debug for ElementArray<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ElementArray").finish()
-    }
-}
-
-#[derive(Clone)]
-pub struct ElementArrayIter<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Iterator for ElementArrayIter<'a> {
-    type Item = ElementValue<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for ElementArrayIter<'a> {}
-
-impl<'a> fmt::Debug for ElementArrayIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ElementArrayIter").finish()
-    }
-}
+pub type ElementArray<'a> = DecodeCountedCopy<'a, ElementValue<'a>>;
+pub type ElementArrayIter<'a> = DecodeCounted<'a, ElementValue<'a>>;
