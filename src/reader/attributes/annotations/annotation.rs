@@ -2,7 +2,6 @@ use crate::encoding::*;
 use crate::error::*;
 use crate::reader::cpool;
 use std::fmt;
-use std::iter::FusedIterator;
 
 pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>>;
 pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>>;
