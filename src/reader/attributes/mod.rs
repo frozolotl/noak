@@ -64,6 +64,7 @@ impl<'a> Attribute<'a> {
             b"InnerClasses" => Ok(AttributeContent::InnerClasses(decoder.read_into()?)),
             b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read_into()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
+            b"ModuleMainClass" => Ok(AttributeContent::ModuleMainClass(decoder.read_into()?)),
             b"ModulePackages" => Ok(AttributeContent::ModulePackages(decoder.read_into()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
             b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(
@@ -147,6 +148,7 @@ pub enum AttributeContent<'a> {
     InnerClasses(InnerClasses<'a>),
     LineNumberTable(LineNumberTable<'a>),
     LocalVariableTable(LocalVariableTable<'a>),
+    ModuleMainClass(ModuleMainClass),
     ModulePackages(ModulePackages<'a>),
     NestHost(NestHost),
     RuntimeInvisibleAnnotations(Annotations<'a>),
