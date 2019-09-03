@@ -66,6 +66,7 @@ impl<'a> Attribute<'a> {
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
             b"ModuleMainClass" => Ok(AttributeContent::ModuleMainClass(decoder.read_into()?)),
             b"ModulePackages" => Ok(AttributeContent::ModulePackages(decoder.read_into()?)),
+            b"NestMembers" => Ok(AttributeContent::NestMembers(decoder.read_into()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
             b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(
                 decoder.read_into()?,
@@ -151,6 +152,7 @@ pub enum AttributeContent<'a> {
     ModuleMainClass(ModuleMainClass),
     ModulePackages(ModulePackages<'a>),
     NestHost(NestHost),
+    NestMembers(NestMembers<'a>),
     RuntimeInvisibleAnnotations(Annotations<'a>),
     RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'a>),
     RuntimeVisibleAnnotations(Annotations<'a>),

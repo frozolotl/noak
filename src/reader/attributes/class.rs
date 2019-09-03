@@ -59,6 +59,9 @@ impl fmt::Debug for NestHost {
     }
 }
 
+pub type NestMembers<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Class>>;
+pub type NestMemberIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
+
 pub type InnerClasses<'a> = DecodeCountedCopy<'a, InnerClass>;
 pub type InnerClassIter<'a> = DecodeCounted<'a, InnerClass>;
 
