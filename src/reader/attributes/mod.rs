@@ -4,6 +4,7 @@ mod code;
 mod debug;
 mod field;
 mod method;
+mod module;
 
 pub use annotations::{AnnotationDefault, Annotations, ParameterAnnotations};
 pub use class::*;
@@ -11,6 +12,7 @@ pub use code::*;
 pub use debug::*;
 pub use field::*;
 pub use method::*;
+pub use module::*;
 
 use crate::encoding::{Decode, Decoder};
 use crate::error::*;
@@ -62,6 +64,7 @@ impl<'a> Attribute<'a> {
             b"InnerClasses" => Ok(AttributeContent::InnerClasses(decoder.read_into()?)),
             b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read_into()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
+            b"ModulePackages" => Ok(AttributeContent::ModulePackages(decoder.read_into()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
             b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(
                 decoder.read_into()?,
@@ -144,6 +147,7 @@ pub enum AttributeContent<'a> {
     InnerClasses(InnerClasses<'a>),
     LineNumberTable(LineNumberTable<'a>),
     LocalVariableTable(LocalVariableTable<'a>),
+    ModulePackages(ModulePackages<'a>),
     NestHost(NestHost),
     RuntimeInvisibleAnnotations(Annotations<'a>),
     RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'a>),
