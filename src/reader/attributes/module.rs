@@ -1,5 +1,4 @@
 use crate::encoding::*;
-use crate::error::*;
 use crate::reader::cpool;
 
 pub type ModulePackages<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Package>>;
