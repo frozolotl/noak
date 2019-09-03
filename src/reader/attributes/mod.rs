@@ -86,6 +86,7 @@ impl<'a> Attribute<'a> {
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read_into()?)),
+            b"StackMapTable" => Ok(AttributeContent::StackMapTable(decoder.read_into()?),),
             b"Synthetic" => Ok(AttributeContent::Synthetic),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
@@ -160,5 +161,6 @@ pub enum AttributeContent<'a> {
     Signature(Signature),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),
+    StackMapTable(StackMapTable<'a>),
     Synthetic,
 }

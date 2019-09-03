@@ -1,10 +1,12 @@
 mod lines;
 mod locals;
 mod raw;
+mod stack_map;
 
-pub use lines::{Line, LineNumberIter, LineNumberTable};
-pub use locals::{LocalVariable, LocalVariableIter, LocalVariableTable};
-pub use raw::{ArrayType, RawInstruction, RawInstructions};
+pub use lines::*;
+pub use locals::*;
+pub use raw::*;
+pub use stack_map::*;
 
 use crate::encoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
