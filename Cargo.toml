@@ -1,6 +1,6 @@
 [package]
 name = "noak"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["frozolotl <frozolotl@protonmail.com>"]
 edition = "2018"
 description = "A library for reading and writing java bytecode as fast and easy as possible"
