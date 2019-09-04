@@ -102,6 +102,55 @@ impl fmt::Display for DecodeError {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EncodeErrorKind {}
+
+impl fmt::Display for EncodeErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use EncodeErrorKind::*;
+
+        match *self {}
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EncodeError {
+    kind: EncodeErrorKind,
+    context: Context,
+}
+
+impl EncodeError {
+    pub fn new(kind: EncodeErrorKind) -> EncodeError {
+        EncodeError {
+            kind,
+            context: Context::None,
+        }
+    }
+
+    pub fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
+        EncodeError {
+            kind,
+            context,
+        }
+    }
+
+    pub fn kind(&self) -> EncodeErrorKind {
+        self.kind
+    }
+
+    pub fn context(&self) -> Context {
+        self.context
+    }
+}
+
+impl std::error::Error for EncodeError {}
+
+impl fmt::Display for EncodeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} in {}", self.kind(), self.context())
+    }
+}
+
 /// The context in which a error occurred in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Context {
