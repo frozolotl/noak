@@ -91,7 +91,6 @@ impl Encoder for VecEncoder {
     }
 }
 
-#[derive(Clone)]
 pub struct ReplacingEncoder<'a> {
     buf: &'a mut [u8],
 }
@@ -111,7 +110,10 @@ pub struct InsertingEncoder<'a> {
 
 impl<'a> Encoder for InsertingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        self.buf.splice(self.cursor..self.cursor, bytes.iter().copied());
+        let mut v = self.buf.split_off(self.cursor);
+        buf.extend_from_slice(bytes);
+        buf.append(&mut v);
+
         self.cursor += bytes.len();
         Ok(())
     }
