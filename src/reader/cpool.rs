@@ -1,4 +1,4 @@
-use crate::encoding::*;
+use crate::reader::decoding::*;
 use crate::error::*;
 use crate::mutf8::MStr;
 use std::{fmt, marker::PhantomData, num::NonZeroU16};

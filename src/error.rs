@@ -1,4 +1,4 @@
-use crate::encoding::Decoder;
+use crate::reader::decoding::Decoder;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

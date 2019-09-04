@@ -1,4 +1,4 @@
-use crate::encoding::{DecodeInto, Decoder};
+use crate::reader::decoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::attributes::annotations::ElementValue;
 use std::fmt;

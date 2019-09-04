@@ -1,5 +1,4 @@
 pub mod descriptor;
-mod encoding;
 pub mod error;
 mod header;
 pub mod mutf8;

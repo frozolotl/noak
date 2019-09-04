@@ -1,5 +1,6 @@
 pub mod attributes;
 pub mod cpool;
+pub(crate) mod decoding;
 mod fields;
 mod interfaces;
 mod methods;
@@ -8,9 +9,9 @@ pub use attributes::{Attribute, AttributeContent, Attributes};
 pub use fields::{Field, FieldIter};
 pub use interfaces::{InterfaceNames, Interfaces};
 pub use methods::{Method, MethodIter};
-pub use crate::encoding::{DecodeCounted, DecodeCountedCopy};
+pub use crate::reader::decoding::{DecodeCounted, DecodeCountedCopy};
 
-use crate::encoding::*;
+use crate::reader::decoding::*;
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
 use crate::mutf8::MStr;

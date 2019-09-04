@@ -8,7 +8,7 @@ pub use locals::*;
 pub use raw::*;
 pub use stack_map::*;
 
-use crate::encoding::{Decode, DecodeInto, Decoder};
+use crate::reader::decoding::{Decode, DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::{cpool, Attributes};
 use std::fmt;

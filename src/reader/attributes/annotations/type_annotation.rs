@@ -1,4 +1,4 @@
-use crate::encoding::*;
+use crate::reader::decoding::*;
 use crate::error::*;
 use crate::reader::attributes::annotations::ElementValuePairIter;
 use crate::reader::{attributes::code, cpool};

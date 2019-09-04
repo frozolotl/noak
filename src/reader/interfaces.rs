@@ -1,4 +1,4 @@
-use crate::encoding::{Decode, Decoder};
+use crate::reader::decoding::{Decode, Decoder};
 use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::cpool;
