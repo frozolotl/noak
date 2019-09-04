@@ -1,6 +1,7 @@
 use crate::encoding::*;
 use crate::error::*;
 use crate::reader::cpool;
+use crate::header::AccessFlags;
 use std::fmt;
 
 #[derive(Clone)]
@@ -28,4 +29,38 @@ impl<'a> fmt::Debug for Exceptions<'a> {
     }
 }
 
-type ExceptionIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
+pub type ExceptionIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
+
+pub type MethodParameters<'a> = DecodeCountedCopy<'a, MethodParameter, u8>;
+pub type MethodParameterIter<'a> = DecodeCounted<'a, MethodParameter, u8>;
+
+#[derive(Clone)]
+pub struct MethodParameter {
+    name: cpool::Index<cpool::Utf8<'static>>,
+    access_flags: AccessFlags,
+}
+
+impl MethodParameter {
+    pub fn access_flags(&self) -> AccessFlags {
+        self.access_flags
+    }
+
+    pub fn name(&self) -> cpool::Index<cpool::Utf8<'static>> {
+        self.name
+    }
+}
+
+impl<'a> Decode<'a> for MethodParameter {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+        Ok(MethodParameter {
+            name: decoder.read()?,
+            access_flags: decoder.read()?,
+        })
+    }
+}
+
+impl fmt::Debug for MethodParameter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("MethodParameter").finish()
+    }
+}
