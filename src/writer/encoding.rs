@@ -83,3 +83,16 @@ impl Encoder for VecEncoder {
         Ok(())
     }
 }
+
+#[derive(Clone)]
+pub struct ReplacingEncoder<'a> {
+    buf: &'a mut [u8],
+}
+
+impl<'a> Encoder for ReplacingEncoder<'a> {
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
+        self.buf.copy_from_slice(bytes);
+        self.buf = self.buf[bytes.len()..];
+        Ok(())
+    }
+}
