@@ -112,3 +112,40 @@ impl fmt::Debug for InnerClass {
         f.debug_struct("InnerClass").finish()
     }
 }
+
+pub type BootstrapMethods<'a> = DecodeCountedCopy<'a, BootstrapMethod<'a>>;
+pub type BootstrapMethodIter<'a> = DecodeCounted<'a, BootstrapMethod<'a>>;
+
+#[derive(Clone)]
+pub struct BootstrapMethod<'a> {
+    method_ref: cpool::Index<cpool::MethodRef>,
+    arguments: BootstrapArguments<'a>,
+}
+
+impl<'a> BootstrapMethod<'a> {
+    pub fn method_ref(&self) -> cpool::Index<cpool::MethodRef> {
+        self.method_ref
+    }
+
+    pub fn arguments(&self) -> BootstrapArguments<'a> {
+        self.arguments.clone()
+    }
+}
+
+impl<'a> Decode<'a> for BootstrapMethod<'a> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+        Ok(BootstrapMethod {
+            method_ref: decoder.read()?,
+            arguments: decoder.read()?,
+        })
+    }
+
+    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
+        let _method_ref = decoder.skip::<u16>()?;
+        let _arguments = decoder.skip::<BootstrapArguments>()?;
+        Ok(())
+    }
+}
+
+pub type BootstrapArguments<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::MethodHandle>>;
+pub type BootstrapArgumentIter<'a> = DecodeCounted<'a, cpool::Index<cpool::MethodHandle>>;

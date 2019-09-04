@@ -56,6 +56,7 @@ impl<'a> Attribute<'a> {
         let decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
             b"AnnotationDefault" => Ok(AttributeContent::AnnotationDefault(decoder.read_into()?)),
+            b"BootstrapMethods" => Ok(AttributeContent::BootstrapMethods(decoder.read_into()?)),
             b"Code" => Ok(AttributeContent::Code(decoder.read_into()?)),
             b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read_into()?)),
             b"Deprecated" => Ok(AttributeContent::Deprecated),
@@ -142,6 +143,7 @@ impl<'a> FusedIterator for Attributes<'a> {}
 #[derive(Clone)]
 pub enum AttributeContent<'a> {
     AnnotationDefault(AnnotationDefault<'a>),
+    BootstrapMethods(BootstrapMethods<'a>),
     Code(Code<'a>),
     ConstantValue(ConstantValue),
     Deprecated,
