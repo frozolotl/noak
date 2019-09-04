@@ -8,6 +8,7 @@ pub use attributes::{Attribute, AttributeContent, Attributes};
 pub use fields::{Field, FieldIter};
 pub use interfaces::{InterfaceNames, Interfaces};
 pub use methods::{Method, MethodIter};
+pub use crate::encoding::{DecodeCounted, DecodeCountedCopy};
 
 use crate::encoding::*;
 use crate::error::*;
