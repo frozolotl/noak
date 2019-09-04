@@ -147,5 +147,11 @@ impl<'a> Decode<'a> for BootstrapMethod<'a> {
     }
 }
 
+impl<'a> fmt::Debug for BootstrapMethod<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("BootstrapMethod").finish()
+    }
+}
+
 pub type BootstrapArguments<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::MethodHandle>>;
 pub type BootstrapArgumentIter<'a> = DecodeCounted<'a, cpool::Index<cpool::MethodHandle>>;
