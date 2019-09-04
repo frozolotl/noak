@@ -328,8 +328,8 @@ pub struct DecodeCountedCopy<'a, T, R = u16> {
     iter: DecodeCounted<'a, T, R>,
 }
 
-impl<'a, T> DecodeCountedCopy<'a, T> {
-    pub fn iter(&self) -> DecodeCounted<'a, T> {
+impl<'a, T, R: Clone> DecodeCountedCopy<'a, T, R> {
+    pub fn iter(&self) -> DecodeCounted<'a, T, R> {
         self.iter.clone()
     }
 }
