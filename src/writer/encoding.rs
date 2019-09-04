@@ -1,29 +1,26 @@
 use crate::error::*;
 
-pub struct Encoder {
-    buf: Vec<u8>,
-}
+pub trait Encoder: Sized {
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
 
-impl Encoder {
-    pub fn write<T: Encode>(&mut self, value: T) -> Result<(), EncodeError> {
+    fn write<T: Encode>(&mut self, value: T) -> Result<(), EncodeError> {
         value.encode(self)
     }
 }
 
 pub trait Encode {
-    fn encode(&self, encoder: &mut Encoder) -> Result<(), EncodeError>;
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError>;
 }
 
-impl<T> Encode for &T {
-    fn encode(&self, encoder: &mut Encoder) -> Result<(), EncodeError> {
-        encoder.write(self)
+impl<T: Encode> Encode for &T {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
+        (*self).encode(encoder)
     }
 }
 
 impl Encode for &[u8] {
-    fn encode(&self, encoder: &mut Encoder) -> Result<(), EncodeError> {
-        encoder.buf.extend_from_slice(self);
-        Ok(())
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
+        encoder.write_bytes(self)
     }
 }
 
@@ -31,8 +28,8 @@ macro_rules! impl_encode {
     ($($t:ty,)*) => {
         $(
             impl Encode for $t {
-                fn encode(&self, encoder: &mut Encoder) -> Result<(), EncodeError> {
-                    encoder.write(&self.to_be_bytes())
+                fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
+                    encoder.write(self.to_be_bytes().as_ref())
                 }
             }
         )*
@@ -50,13 +47,39 @@ impl_encode! {
 }
 
 impl Encode for f32 {
-    fn encode(&self, encoder: &mut Encoder) -> Result<(), EncodeError> {
-        encoder.write(&self.to_bits().to_be_bytes())
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
+        encoder.write(self.to_bits().to_be_bytes().as_ref())
     }
 }
 
 impl Encode for f64 {
-    fn encode(&self, encoder: &mut Encoder) -> Result<(), EncodeError> {
-        encoder.write(&self.to_bits().to_be_bytes())
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
+        encoder.write(self.to_bits().to_be_bytes().as_ref())
+    }
+}
+
+#[derive(Clone)]
+pub struct VecEncoder {
+    buf: Vec<u8>,
+}
+
+impl VecEncoder {
+    pub fn new() -> VecEncoder {
+        VecEncoder {
+            buf: Vec::new(),
+        }
+    }
+
+    pub fn with_capacity(capacity: usize) -> VecEncoder {
+        VecEncoder {
+            buf: Vec::with_capacity(capacity),
+        }
+    }
+}
+
+impl Encoder for VecEncoder {
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
+        self.buf.extend_from_slice(bytes);
+        Ok(())
     }
 }
