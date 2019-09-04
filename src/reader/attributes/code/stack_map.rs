@@ -211,3 +211,9 @@ impl<'a> Iterator for VerificationTypeIter<'a> {
         }
     }
 }
+
+impl<'a> fmt::Debug for VerificationTypeIter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("VerificationTypeIter").finish()
+    }
+}
