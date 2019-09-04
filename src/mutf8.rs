@@ -512,6 +512,7 @@ fn encode_char(ch: char, buf: &mut [u8]) -> usize {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
