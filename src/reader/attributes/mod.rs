@@ -6,7 +6,7 @@ mod field;
 mod method;
 mod module;
 
-pub use annotations::{AnnotationDefault, Annotations, ParameterAnnotations};
+pub use annotations::{AnnotationDefault, Annotations, ParameterAnnotations, TypeAnnotations};
 pub use class::*;
 pub use code::*;
 pub use debug::*;
@@ -77,11 +77,17 @@ impl<'a> Attribute<'a> {
             b"RuntimeInvisibleParameterAnnotations" => Ok(
                 AttributeContent::RuntimeInvisibleParameterAnnotations(decoder.read_into()?),
             ),
+            b"RuntimeInvisibleTypeAnnotations" => Ok(
+                AttributeContent::RuntimeInvisibleTypeAnnotations(decoder.read_into()?),
+            ),
             b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(
                 decoder.read_into()?,
             )),
             b"RuntimeVisibleParameterAnnotations" => Ok(
                 AttributeContent::RuntimeVisibleParameterAnnotations(decoder.read_into()?),
+            ),
+            b"RuntimeVisibleTypeAnnotations" => Ok(
+                AttributeContent::RuntimeVisibleTypeAnnotations(decoder.read_into()?),
             ),
             b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
             b"SourceDebugExtension" => {
@@ -162,8 +168,10 @@ pub enum AttributeContent<'a> {
     NestMembers(NestMembers<'a>),
     RuntimeInvisibleAnnotations(Annotations<'a>),
     RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'a>),
+    RuntimeInvisibleTypeAnnotations(TypeAnnotations<'a>),
     RuntimeVisibleAnnotations(Annotations<'a>),
     RuntimeVisibleParameterAnnotations(ParameterAnnotations<'a>),
+    RuntimeVisibleTypeAnnotations(TypeAnnotations<'a>),
     Signature(Signature),
     SourceDebugExtension(&'a MStr),
     SourceFile(SourceFile),

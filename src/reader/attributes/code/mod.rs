@@ -153,11 +153,11 @@ pub struct Index {
 }
 
 impl Index {
-    fn new(index: u32) -> Index {
+    pub(crate) fn new(index: u32) -> Index {
         Index { index }
     }
 
-    fn as_u32(self) -> u32 {
+    pub fn as_u32(self) -> u32 {
         self.index
     }
 }
