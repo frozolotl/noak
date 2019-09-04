@@ -60,7 +60,7 @@ impl<'a> fmt::Debug for StackMapIter<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum StackMapFrame<'a> {
     Same,
     SameExtended,
@@ -129,12 +129,6 @@ fn decode_stack_map_frame<'a>(decoder: &mut Decoder<'a>, current_offset: u32) ->
         }))
     } else {
         Err(DecodeError::from_decoder(DecodeErrorKind::TagReserved, decoder))
-    }
-}
-
-impl<'a> fmt::Debug for StackMapFrame<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("StackMapFrame").finish()
     }
 }
 
