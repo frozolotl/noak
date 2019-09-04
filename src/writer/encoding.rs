@@ -75,6 +75,13 @@ impl VecEncoder {
             buf: Vec::with_capacity(capacity),
         }
     }
+
+    pub fn inserting(&mut self, at: usize) -> InsertingEncoder {
+        InsertingEncoder {
+            buf: &mut self.buf,
+            cursor: at,
+        }
+    }
 }
 
 impl Encoder for VecEncoder {
@@ -93,6 +100,19 @@ impl<'a> Encoder for ReplacingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         self.buf.copy_from_slice(bytes);
         self.buf = self.buf[bytes.len()..];
+        Ok(())
+    }
+}
+
+pub struct InsertingEncoder<'a> {
+    buf: &'a mut Vec<u8>,
+    cursor: usize,
+}
+
+impl<'a> Encoder for InsertingEncoder<'a> {
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
+        self.buf.splice(self.cursor..self.cursor, bytes.iter().copied());
+        self.cursor += bytes.len();
         Ok(())
     }
 }
