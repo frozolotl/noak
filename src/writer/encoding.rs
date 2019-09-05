@@ -36,7 +36,6 @@ macro_rules! impl_encode {
     }
 }
 
-
 impl_encode! {
     u8, i8,
     u16, i16,
@@ -65,9 +64,7 @@ pub struct VecEncoder {
 
 impl VecEncoder {
     pub fn new() -> VecEncoder {
-        VecEncoder {
-            buf: Vec::new(),
-        }
+        VecEncoder { buf: Vec::new() }
     }
 
     pub fn with_capacity(capacity: usize) -> VecEncoder {
@@ -80,6 +77,12 @@ impl VecEncoder {
         InsertingEncoder {
             buf: &mut self.buf,
             cursor: at,
+        }
+    }
+
+    pub fn replacing(&mut self, at: usize) -> ReplacingEncoder {
+        ReplacingEncoder {
+            buf: &mut self.buf[at..],
         }
     }
 }
@@ -97,8 +100,10 @@ pub struct ReplacingEncoder<'a> {
 
 impl<'a> Encoder for ReplacingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        self.buf.copy_from_slice(bytes);
-        self.buf = self.buf[bytes.len()..];
+        let amt = std::cmp::min(bytes.len(), self.buf.len());
+        let (a, b) = std::mem::replace(&mut self.buf, &mut []).split_at_mut(amt);
+        a.copy_from_slice(&bytes[..amt]);
+        self.buf = b;
         Ok(())
     }
 }
@@ -111,8 +116,8 @@ pub struct InsertingEncoder<'a> {
 impl<'a> Encoder for InsertingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         let mut v = self.buf.split_off(self.cursor);
-        buf.extend_from_slice(bytes);
-        buf.append(&mut v);
+        self.buf.extend_from_slice(bytes);
+        self.buf.append(&mut v);
 
         self.cursor += bytes.len();
         Ok(())
