@@ -57,6 +57,9 @@ impl Encode for f64 {
     }
 }
 
+#[derive(Copy, Clone)]
+pub struct Position(usize);
+
 #[derive(Clone)]
 pub struct VecEncoder {
     buf: Vec<u8>,
@@ -73,16 +76,20 @@ impl VecEncoder {
         }
     }
 
-    pub fn inserting(&mut self, at: usize) -> InsertingEncoder {
+    pub fn position(&self) -> Position {
+        Position(self.buf.len())
+    }
+
+    pub fn inserting(&mut self, at: Position) -> InsertingEncoder {
         InsertingEncoder {
             buf: &mut self.buf,
-            cursor: at,
+            cursor: at.0,
         }
     }
 
-    pub fn replacing(&mut self, at: usize) -> ReplacingEncoder {
+    pub fn replacing(&mut self, at: Position) -> ReplacingEncoder {
         ReplacingEncoder {
-            buf: &mut self.buf[at..],
+            buf: &mut self.buf[at.0..],
         }
     }
 }
@@ -100,9 +107,9 @@ pub struct ReplacingEncoder<'a> {
 
 impl<'a> Encoder for ReplacingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        let amt = std::cmp::min(bytes.len(), self.buf.len());
-        let (a, b) = std::mem::replace(&mut self.buf, &mut []).split_at_mut(amt);
-        a.copy_from_slice(&bytes[..amt]);
+        assert!(bytes.len() < self.buf.len(), "cannot replace bytes which do not exist");
+        let (a, b) = std::mem::replace(&mut self.buf, &mut []).split_at_mut(bytes.len());
+        a.copy_from_slice(&bytes[..bytes.len()]);
         self.buf = b;
         Ok(())
     }
