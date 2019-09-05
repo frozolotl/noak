@@ -103,13 +103,19 @@ impl fmt::Display for DecodeError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EncodeErrorKind {}
+pub enum EncodeErrorKind {
+    TooManyItems,
+    StringTooLong,
+}
 
 impl fmt::Display for EncodeErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use EncodeErrorKind::*;
 
-        match *self {}
+        match *self {
+            TooManyItems => write!(f, "too many items"),
+            StringTooLong => write!(f, "too many items"),
+        }
     }
 }
 

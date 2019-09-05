@@ -15,3 +15,4 @@ keywords = ["java", "jvm", "class", "bytecode"]
 [dependencies]
 bitflags = "1.1.0"
 num-traits = "0.2.8"
+indexmap = "1.1.0"

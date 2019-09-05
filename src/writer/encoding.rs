@@ -150,3 +150,9 @@ impl<'a> Encoder for InsertingEncoder<'a> {
         Ok(())
     }
 }
+
+impl<E: Encoder> Encoder for &mut E {
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
+        (*self).write_bytes(bytes)
+    }
+}

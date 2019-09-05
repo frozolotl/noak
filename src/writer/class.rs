@@ -1,11 +1,21 @@
-use crate::writer::encoding::*;
+use crate::writer::{
+    encoding::*,
+    cpool::{self, ConstantPool},
+};
 use crate::error::*;
 use crate::header::Version;
+
+const CAFEBABE_END: Position = Position::new(4);
+const POOL_START: Position = CAFEBABE_END.offset(2 + 2);
+const EMPTY_POOL_END: Position = POOL_START.offset(2);
 
 #[derive(Clone)]
 pub struct ClassWriter {
     encoder: VecEncoder,
     level: WriteLevel,
+
+    pool: ConstantPool,
+    pool_end: Position,
 }
 
 impl ClassWriter {
@@ -17,6 +27,8 @@ impl ClassWriter {
         ClassWriter {
             encoder: VecEncoder::with_capacity(capacity),
             level: WriteLevel::Start,
+            pool: ConstantPool::new(),
+            pool_end: EMPTY_POOL_END,
         }
     }
 
@@ -27,12 +39,21 @@ impl ClassWriter {
             self.encoder.write(version.major)?;
             self.level = WriteLevel::ConstantPool;
         } else {
-            // it starts at 4 as 0xCAFEBABE was already written
-            let mut encoder = self.encoder.replacing(Position::new(4));
+            let mut encoder = self.encoder.replacing(CAFEBABE_END);
             encoder.write(version.minor)?;
             encoder.write(version.major)?;
         }
         Ok(self)
+    }
+
+    pub fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
+        let mut encoder = self.encoder.inserting(self.pool_end);
+        let index = self.pool.insert(item, &mut encoder)?;
+        self.pool_end = encoder.position();
+
+        self.encoder.replacing(POOL_START).write(self.pool.len())?;
+
+        Ok(index)
     }
 
     fn write_missing(&mut self) -> Result<&mut ClassWriter, EncodeError> {
