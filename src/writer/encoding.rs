@@ -61,11 +61,11 @@ impl Encode for f64 {
 pub struct Position(usize);
 
 impl Position {
-    pub fn new(position: usize) -> Position {
+    pub const fn new(position: usize) -> Position {
         Position(position)
     }
 
-    pub fn offset(self, bytes: usize) -> Position {
+    pub const fn offset(self, bytes: usize) -> Position {
         Position(self.0 + bytes)
     }
 }
