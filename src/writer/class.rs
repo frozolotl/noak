@@ -16,6 +16,10 @@ impl ClassWriter {
         }
     }
 
+    pub fn as_bytes(&self) -> &[u8] {
+        self.encoder.as_bytes()
+    }
+
     pub fn finish(self) -> Vec<u8> {
         self.encoder.into_inner()
     }

@@ -86,6 +86,10 @@ impl VecEncoder {
         Position(self.buf.len())
     }
 
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.buf
+    }
+
     pub fn into_inner(self) -> Vec<u8> {
         self.buf
     }
