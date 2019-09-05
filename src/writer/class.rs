@@ -39,10 +39,6 @@ impl ClassWriter {
         self.write_version(Version::latest())
     }
 
-    pub fn as_bytes(&self) -> &[u8] {
-        self.encoder.as_bytes()
-    }
-
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
         self.write_missing()?;
         Ok(self.encoder.into_inner())
