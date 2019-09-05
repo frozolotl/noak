@@ -135,7 +135,7 @@ pub struct InsertingEncoder<'a> {
 }
 
 impl<'a> InsertingEncoder<'a> {
-    fn position(&self) -> Position {
+    pub fn position(&self) -> Position {
         Position::new(self.cursor)
     }
 }
