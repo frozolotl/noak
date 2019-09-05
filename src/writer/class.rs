@@ -35,12 +35,17 @@ impl ClassWriter {
         Ok(self)
     }
 
+    fn write_missing(&mut self) -> Result<&mut ClassWriter, EncodeError> {
+        self.write_version(Version::latest())
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         self.encoder.as_bytes()
     }
 
-    pub fn finish(self) -> Vec<u8> {
-        self.encoder.into_inner()
+    pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
+        self.write_missing()?;
+        Ok(self.encoder.into_inner())
     }
 }
 
