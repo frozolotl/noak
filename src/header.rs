@@ -8,6 +8,16 @@ pub struct Version {
     pub minor: u16,
 }
 
+impl Version {
+    /// The latest version which is guaranteed to work with this library.
+    pub fn latest() -> Version {
+        Version {
+            major: 56,
+            minor: 0,
+        }
+    }
+}
+
 bitflags! {
     pub struct AccessFlags: u16 {
         const PUBLIC       = 1;
