@@ -49,7 +49,7 @@ impl ClassWriter {
 
     fn write_empty_pool(&mut self) -> Result<&mut ClassWriter, EncodeError> {
         if self.level == WriteLevel::ConstantPool {
-            self.encoder.write(1u8);
+            self.encoder.write(1u16);
             self.level = WriteLevel::Info;
         }
         Ok(self)
@@ -59,6 +59,8 @@ impl ClassWriter {
         &mut self,
         item: I,
     ) -> Result<cpool::Index<I>, EncodeError> {
+        self.write_version(Version::latest())?;
+
         let mut encoder = self.encoder.inserting(self.pool_end);
         let index = self.pool.insert(item, &mut encoder)?;
         self.pool_end = encoder.position();
