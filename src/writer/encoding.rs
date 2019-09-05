@@ -119,6 +119,14 @@ pub struct ReplacingEncoder<'a> {
     buf: &'a mut [u8],
 }
 
+impl<'a> ReplacingEncoder<'a> {
+    pub fn skip(&mut self, amount: usize) {
+        self.buf = std::mem::replace(&mut self.buf, &mut [])
+            .split_at_mut(amount)
+            .1;
+    }
+}
+
 impl<'a> Encoder for ReplacingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         assert!(
