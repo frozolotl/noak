@@ -1,5 +1,5 @@
-use crate::reader::decoding::*;
 use crate::error::*;
+use crate::reader::decoding::*;
 use crate::{header::AccessFlags, reader::cpool};
 use std::fmt;
 

@@ -1,6 +1,6 @@
-use crate::reader::decoding::*;
 use crate::error::*;
 use crate::reader::attributes::code;
+use crate::reader::decoding::*;
 use std::fmt;
 
 pub type LineNumberTable<'a> = DecodeCountedCopy<'a, Line>;

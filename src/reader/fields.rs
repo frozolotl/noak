@@ -1,6 +1,6 @@
-use crate::reader::decoding::*;
 use crate::error::*;
 use crate::header::AccessFlags;
+use crate::reader::decoding::*;
 use crate::reader::{attributes, cpool, Attributes};
 use std::fmt;
 
@@ -56,4 +56,3 @@ impl<'a> fmt::Debug for Field<'a> {
         f.debug_struct("Field").finish()
     }
 }
-

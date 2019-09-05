@@ -1,5 +1,5 @@
-use crate::reader::decoding::{Decode, Decoder};
 use crate::error::*;
+use crate::reader::decoding::{Decode, Decoder};
 use bitflags::bitflags;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

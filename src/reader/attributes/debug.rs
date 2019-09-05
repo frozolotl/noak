@@ -1,6 +1,6 @@
-use crate::reader::decoding::{DecodeInto, Decoder};
 use crate::error::*;
 use crate::reader::cpool;
+use crate::reader::decoding::{DecodeInto, Decoder};
 use std::fmt;
 
 #[derive(Clone)]

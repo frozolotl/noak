@@ -134,10 +134,7 @@ impl EncodeError {
     }
 
     pub fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
-        EncodeError {
-            kind,
-            context,
-        }
+        EncodeError { kind, context }
     }
 
     pub fn kind(&self) -> EncodeErrorKind {

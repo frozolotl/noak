@@ -1,6 +1,6 @@
-use crate::reader::decoding::*;
 use crate::error::*;
 use crate::header::AccessFlags;
+use crate::reader::decoding::*;
 use crate::reader::{attributes, cpool, Attributes};
 use std::fmt;
 

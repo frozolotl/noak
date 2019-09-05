@@ -1,7 +1,7 @@
-use crate::reader::decoding::*;
 use crate::error::*;
-use crate::reader::cpool;
 use crate::header::AccessFlags;
+use crate::reader::cpool;
+use crate::reader::decoding::*;
 use std::fmt;
 
 pub type ModulePackages<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Package>>;

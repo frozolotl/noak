@@ -1,6 +1,6 @@
-use crate::reader::decoding::*;
 use crate::error::*;
 use crate::reader::cpool;
+use crate::reader::decoding::*;
 use std::fmt;
 
 pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>>;
@@ -39,10 +39,7 @@ impl<'a> Decode<'a> for Annotation<'a> {
 
         Ok(Annotation {
             r#type,
-            pairs: ElementValuePairIter::new(
-                ev_decoder.clone(),
-                pair_count
-            )
+            pairs: ElementValuePairIter::new(ev_decoder.clone(), pair_count),
         })
     }
 

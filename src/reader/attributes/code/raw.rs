@@ -1,7 +1,7 @@
-use crate::reader::decoding::{Decode, Decoder};
 use crate::error::*;
 use crate::reader::attributes::code;
 use crate::reader::cpool;
+use crate::reader::decoding::{Decode, Decoder};
 use std::fmt;
 
 /// An iterator over the instructions and their indices into the code table

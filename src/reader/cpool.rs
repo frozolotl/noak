@@ -1,6 +1,6 @@
-use crate::reader::decoding::*;
 use crate::error::*;
 use crate::mutf8::MStr;
+use crate::reader::decoding::*;
 use std::{fmt, marker::PhantomData, num::NonZeroU16};
 
 #[derive(Clone)]

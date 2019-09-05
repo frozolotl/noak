@@ -1,7 +1,7 @@
-use crate::reader::decoding::{Decode, Decoder};
 use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::cpool;
+use crate::reader::decoding::{Decode, Decoder};
 use std::fmt;
 use std::iter::FusedIterator;
 

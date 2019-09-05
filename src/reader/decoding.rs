@@ -1,8 +1,8 @@
 use crate::error::*;
+use num_traits::{Num, NumAssign, ToPrimitive};
 use std::fmt;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
-use num_traits::{Num, NumAssign, ToPrimitive};
 
 #[derive(Clone)]
 pub struct Decoder<'a> {
@@ -362,7 +362,7 @@ where
 impl<'a, T, R: Clone> Clone for DecodeCountedCopy<'a, T, R> {
     fn clone(&self) -> Self {
         DecodeCountedCopy {
-            iter: self.iter.clone()
+            iter: self.iter.clone(),
         }
     }
 }

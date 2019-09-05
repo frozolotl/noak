@@ -1,9 +1,9 @@
-use crate::writer::{
-    encoding::*,
-    cpool::{self, ConstantPool},
-};
 use crate::error::*;
 use crate::header::Version;
+use crate::writer::{
+    cpool::{self, ConstantPool},
+    encoding::*,
+};
 
 const CAFEBABE_END: Position = Position::new(4);
 const POOL_START: Position = CAFEBABE_END.offset(2 + 2);
@@ -46,7 +46,10 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
+    pub fn insert_constant<I: Into<cpool::Item>>(
+        &mut self,
+        item: I,
+    ) -> Result<cpool::Index<I>, EncodeError> {
         let mut encoder = self.encoder.inserting(self.pool_end);
         let index = self.pool.insert(item, &mut encoder)?;
         self.pool_end = encoder.position();

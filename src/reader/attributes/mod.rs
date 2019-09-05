@@ -14,10 +14,10 @@ pub use field::*;
 pub use method::*;
 pub use module::*;
 
-use crate::reader::decoding::{Decode, Decoder};
 use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::cpool;
+use crate::reader::decoding::{Decode, Decoder};
 use std::iter::FusedIterator;
 
 #[derive(Clone)]
@@ -65,7 +65,9 @@ impl<'a> Attribute<'a> {
             b"InnerClasses" => Ok(AttributeContent::InnerClasses(decoder.read_into()?)),
             b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read_into()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
-            b"LocalVariableTypeTable" => Ok(AttributeContent::LocalVariableTypeTable(decoder.read_into()?)),
+            b"LocalVariableTypeTable" => Ok(AttributeContent::LocalVariableTypeTable(
+                decoder.read_into()?,
+            )),
             b"MethodParameters" => Ok(AttributeContent::MethodParameters(decoder.read_into()?)),
             b"Module" => Ok(AttributeContent::Module(decoder.read_into()?)),
             b"ModuleMainClass" => Ok(AttributeContent::ModuleMainClass(decoder.read_into()?)),
@@ -96,7 +98,7 @@ impl<'a> Attribute<'a> {
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read_into()?)),
-            b"StackMapTable" => Ok(AttributeContent::StackMapTable(decoder.read_into()?),),
+            b"StackMapTable" => Ok(AttributeContent::StackMapTable(decoder.read_into()?)),
             b"Synthetic" => Ok(AttributeContent::Synthetic),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
