@@ -134,6 +134,12 @@ pub struct InsertingEncoder<'a> {
     cursor: usize,
 }
 
+impl<'a> InsertingEncoder<'a> {
+    fn position(&self) -> Position {
+        Position::new(self.cursor)
+    }
+}
+
 impl<'a> Encoder for InsertingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         let mut v = self.buf.split_off(self.cursor);
