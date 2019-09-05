@@ -28,7 +28,7 @@ impl ClassWriter {
             self.level = WriteLevel::ConstantPool;
         } else {
             // it starts at 4 as 0xCAFEBABE was already written
-            let encoder = self.encoder.replacing(Position::new(4));
+            let mut encoder = self.encoder.replacing(Position::new(4));
             encoder.write(version.minor)?;
             encoder.write(version.major)?;
         }
