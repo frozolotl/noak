@@ -86,6 +86,10 @@ impl VecEncoder {
         Position(self.buf.len())
     }
 
+    pub fn into_inner(self) -> Vec<u8> {
+        self.buf
+    }
+
     pub fn inserting(&mut self, at: Position) -> InsertingEncoder {
         InsertingEncoder {
             buf: &mut self.buf,
