@@ -43,6 +43,15 @@ impl ClassWriter {
             encoder.write(version.minor)?;
             encoder.write(version.major)?;
         }
+        self.write_empty_pool();
+        Ok(self)
+    }
+
+    fn write_empty_pool(&mut self) -> Result<&mut ClassWriter, EncodeError> {
+        if self.level == WriteLevel::ConstantPool {
+            self.encoder.write(1u8);
+            self.level = WriteLevel::Info;
+        }
         Ok(self)
     }
 
