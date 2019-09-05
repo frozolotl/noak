@@ -60,6 +60,12 @@ impl Encode for f64 {
 #[derive(Copy, Clone)]
 pub struct Position(usize);
 
+impl Position {
+    pub fn offset(self, bytes: usize) -> Position {
+        Position(self.0 + bytes)
+    }
+}
+
 #[derive(Clone)]
 pub struct VecEncoder {
     buf: Vec<u8>,
