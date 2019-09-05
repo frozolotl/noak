@@ -61,6 +61,10 @@ impl Encode for f64 {
 pub struct Position(usize);
 
 impl Position {
+    pub fn new(position: usize) -> Position {
+        Position(position)
+    }
+
     pub fn offset(self, bytes: usize) -> Position {
         Position(self.0 + bytes)
     }
@@ -83,7 +87,7 @@ impl VecEncoder {
     }
 
     pub fn position(&self) -> Position {
-        Position(self.buf.len())
+        Position::new(self.buf.len())
     }
 
     pub fn as_bytes(&self) -> &[u8] {
