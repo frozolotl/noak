@@ -1,5 +1,5 @@
 mod class;
-mod cpool;
+pub mod cpool;
 pub(crate) mod encoding;
 
 pub use class::*;
