@@ -58,15 +58,19 @@ impl Encode for f64 {
 }
 
 #[derive(Copy, Clone)]
-pub struct Position(usize);
+pub struct Offset(usize);
 
-impl Position {
-    pub const fn new(position: usize) -> Position {
-        Position(position)
+impl Offset {
+    pub const fn new(position: usize) -> Offset {
+        Offset(position)
     }
 
-    pub const fn offset(self, bytes: usize) -> Position {
-        Position(self.0 + bytes)
+    pub const fn offset(self, by: usize) -> Offset {
+        Offset(self.0 + by)
+    }
+
+    pub const fn add(self, by: Offset) -> Offset {
+        Offset(self.0 + by.0)
     }
 }
 
@@ -86,22 +90,22 @@ impl VecEncoder {
         }
     }
 
-    pub fn position(&self) -> Position {
-        Position::new(self.buf.len())
+    pub fn position(&self) -> Offset {
+        Offset::new(self.buf.len())
     }
 
     pub fn into_inner(self) -> Vec<u8> {
         self.buf
     }
 
-    pub fn inserting(&mut self, at: Position) -> InsertingEncoder {
+    pub fn inserting(&mut self, at: Offset) -> InsertingEncoder {
         InsertingEncoder {
             buf: &mut self.buf,
             cursor: at.0,
         }
     }
 
-    pub fn replacing(&mut self, at: Position) -> ReplacingEncoder {
+    pub fn replacing(&mut self, at: Offset) -> ReplacingEncoder {
         ReplacingEncoder {
             buf: &mut self.buf[at.0..],
         }
@@ -146,8 +150,8 @@ pub struct InsertingEncoder<'a> {
 }
 
 impl<'a> InsertingEncoder<'a> {
-    pub fn position(&self) -> Position {
-        Position::new(self.cursor)
+    pub fn position(&self) -> Offset {
+        Offset::new(self.cursor)
     }
 }
 

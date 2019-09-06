@@ -6,9 +6,14 @@ use crate::writer::{
 };
 use std::cmp::Ordering;
 
-const CAFEBABE_END: Position = Position::new(4);
-const POOL_START: Position = CAFEBABE_END.offset(2 + 2);
-const EMPTY_POOL_END: Position = POOL_START.offset(2);
+const CAFEBABE_END: Offset = Offset::new(4);
+const POOL_START: Offset = CAFEBABE_END.offset(2 + 2);
+const EMPTY_POOL_END: Offset = POOL_START.offset(2);
+
+/// This class offset starting from the pool end
+const THIS_CLASS_OFFSET: Offset = Offset::new(2);
+/// Super class offset starting from the pool end
+const SUPER_CLASS_OFFSET: Offset = Offset::new(4);
 
 #[derive(Clone)]
 pub struct ClassWriter {
@@ -16,7 +21,7 @@ pub struct ClassWriter {
     level: WriteLevel,
 
     pool: ConstantPool,
-    pool_end: Position,
+    pool_end: Offset,
 }
 
 impl ClassWriter {
@@ -111,7 +116,7 @@ impl ClassWriter {
             }
             Ordering::Greater => self
                 .encoder
-                .replacing(self.pool_end.offset(2))
+                .replacing(self.pool_end.add(THIS_CLASS_OFFSET))
                 .write(index)?,
         }
         Ok(self)
