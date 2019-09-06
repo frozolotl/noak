@@ -15,7 +15,7 @@ pub struct FieldWriter<'a> {
 }
 
 impl<'a> FieldWriter<'a> {
-    pub fn new(class_writer: &'a mut ClassWriter) -> FieldWriter<'a> {
+    pub(crate) fn new(class_writer: &'a mut ClassWriter) -> FieldWriter<'a> {
         FieldWriter {
             class_writer,
             state: WriteState::AccessFlags,
@@ -73,7 +73,7 @@ impl<'a> FieldWriter<'a> {
         name: cpool::Index<cpool::Utf8>,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
         let offset = self.class_writer.fields_end_offset.add(DESCRIPTOR_OFFSET);
-        match self.state.cmp(&WriteState::Name) {
+        match self.state.cmp(&WriteState::Descriptor) {
             Ordering::Less => {
                 return Err(EncodeError::with_context(
                     EncodeErrorKind::ValuesMissing,
@@ -103,9 +103,9 @@ impl<'a> FieldWriter<'a> {
         }
     }
 
-    pub fn finish(mut self) -> Result<&'a mut ClassWriter, EncodeError> {
+    pub(crate) fn finish(mut self) -> Result<(), EncodeError> {
         if self.state == WriteState::Attributes {
-            Ok(self.class_writer)
+            Ok(())
         } else {
             Err(EncodeError::with_context(
                 EncodeErrorKind::ValuesMissing,

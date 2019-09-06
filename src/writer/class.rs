@@ -8,6 +8,7 @@ use crate::writer::{
     methods::MethodWriter,
 };
 use std::cmp::Ordering;
+use std::fmt;
 
 const CAFEBABE_END: Offset = Offset::new(4);
 const POOL_START: Offset = CAFEBABE_END.offset(2 + 2);
@@ -231,31 +232,65 @@ impl ClassWriter {
                     .write(index)?;
                 self.encoder
                     .replacing(self.pool_end.add(INTERFACES_START_OFFSET))
-                    .write(self.interface_count);
+                    .write(self.interface_count)?;
             }
         }
         Ok(self)
     }
 
-    pub fn write_field(&mut self) -> Result<FieldWriter, EncodeError> {
-        Ok(FieldWriter::new(self))
+    pub fn write_field<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    where
+        F: FnOnce(&mut FieldWriter) -> Result<(), EncodeError>,
+    {
+        if self.field_count == 0 {
+            self.encoder.write(1u16)?;
+            self.field_count = 1;
+        } else {
+            self.field_count = self.field_count.checked_add(1).ok_or_else(|| {
+                EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Fields)
+            })?;
+            self.encoder
+                .replacing(self.interface_end_position().add(FIELDS_START_OFFSET))
+                .write(self.field_count)?;
+        }
+        let mut writer = FieldWriter::new(self);
+        f(&mut writer)?;
+        writer.finish()?;
+        Ok(self)
     }
 
-    pub fn write_method(&mut self) -> Result<MethodWriter, EncodeError> {
-        Ok(MethodWriter::new(self))
+    pub fn write_method<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    where
+        F: FnOnce(&mut MethodWriter) -> Result<(), EncodeError>,
+    {
+        if self.method_count == 0 {
+            self.encoder.write(1u16)?;
+            self.method_count = 1;
+        } else {
+            self.method_count = self.method_count.checked_add(1).ok_or_else(|| {
+                EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Methods)
+            })?;
+            self.encoder
+                .replacing(self.interface_end_position().add(METHODS_START_OFFSET))
+                .write(self.method_count)?;
+        }
+        let mut writer = MethodWriter::new(self);
+        f(&mut writer)?;
+        writer.finish()?;
+        Ok(self)
     }
 
-    pub fn interface_end_position(&self) -> Offset {
+    fn interface_end_position(&self) -> Offset {
         self.pool_end
             .add(INTERFACES_EMPTY_END_OFFSET)
             .offset(self.interface_count as usize * 2)
     }
 
-    pub fn fields_end_position(&self) -> Offset {
+    fn fields_end_position(&self) -> Offset {
         self.interface_end_position().add(self.fields_end_offset)
     }
 
-    pub fn methods_end_position(&self) -> Offset {
+    fn methods_end_position(&self) -> Offset {
         self.fields_end_position().add(self.methods_end_offset)
     }
 
