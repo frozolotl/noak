@@ -1,12 +1,12 @@
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
+use crate::mutf8::MString;
 use crate::writer::{
     cpool::{self, ConstantPool},
     encoding::*,
     fields::FieldWriter,
     methods::MethodWriter,
 };
-use crate::mutf8::MString;
 use std::cmp::Ordering;
 
 const CAFEBABE_END: Offset = Offset::new(4);
@@ -40,9 +40,11 @@ pub struct ClassWriter {
 
     pool: ConstantPool,
     pool_end: Offset,
-    interfaces_end_offset: Offset,
+    interface_count: u16,
     pub(in crate::writer) fields_end_offset: Offset,
+    field_count: u16,
     pub(in crate::writer) methods_end_offset: Offset,
+    method_count: u16,
 }
 
 impl ClassWriter {
@@ -56,9 +58,11 @@ impl ClassWriter {
             state: WriteState::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
-            interfaces_end_offset: INTERFACES_EMPTY_END_OFFSET,
+            interface_count: 0,
             fields_end_offset: FIELDS_EMPTY_END_OFFSET,
+            field_count: 0,
             methods_end_offset: METHODS_EMPTY_END_OFFSET,
+            method_count: 0,
         }
     }
 
@@ -122,8 +126,13 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_this_class_name(&mut self, name: impl Into<MString>) -> Result<&mut ClassWriter, EncodeError> {
-        let utf8_index = self.insert_constant(cpool::Utf8 { content: name.into() })?;
+    pub fn write_this_class_name(
+        &mut self,
+        name: impl Into<MString>,
+    ) -> Result<&mut ClassWriter, EncodeError> {
+        let utf8_index = self.insert_constant(cpool::Utf8 {
+            content: name.into(),
+        })?;
         let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
         self.write_this_class_index(class_index)
     }
@@ -150,8 +159,13 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_super_class_name(&mut self, name: impl Into<MString>) -> Result<&mut ClassWriter, EncodeError> {
-        let utf8_index = self.insert_constant(cpool::Utf8 { content: name.into() })?;
+    pub fn write_super_class_name(
+        &mut self,
+        name: impl Into<MString>,
+    ) -> Result<&mut ClassWriter, EncodeError> {
+        let utf8_index = self.insert_constant(cpool::Utf8 {
+            content: name.into(),
+        })?;
         let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
         self.write_super_class_index(class_index)
     }
@@ -179,8 +193,13 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_interface_name(&mut self, name: impl Into<MString>) -> Result<&mut ClassWriter, EncodeError> {
-        let utf8_index = self.insert_constant(cpool::Utf8 { content: name.into() })?;
+    pub fn write_interface_name(
+        &mut self,
+        name: impl Into<MString>,
+    ) -> Result<&mut ClassWriter, EncodeError> {
+        let utf8_index = self.insert_constant(cpool::Utf8 {
+            content: name.into(),
+        })?;
         let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
         self.write_interface_index(class_index)
     }
@@ -198,16 +217,23 @@ impl ClassWriter {
             }
             Ordering::Equal => {
                 // the amount of implemented interfaces
-                self.encoder.write(1u16)?;
+                self.interface_count += 1;
+                self.encoder.write(self.interface_count)?;
                 self.encoder.write(index)?;
                 self.state = WriteState::Fields;
             }
-            Ordering::Greater => self
-                .encoder
-                .replacing(self.pool_end.add(SUPER_CLASS_OFFSET))
-                .write(index)?,
+            Ordering::Greater => {
+                self.interface_count = self.interface_count.checked_add(1).ok_or_else(|| {
+                    EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Interfaces)
+                })?;
+                self.encoder
+                    .replacing(self.interface_end_position())
+                    .write(index)?;
+                self.encoder
+                    .replacing(self.pool_end.add(INTERFACES_START_OFFSET))
+                    .write(self.interface_count);
+            }
         }
-        self.interfaces_end_offset = self.interfaces_end_offset.offset(2);
         Ok(self)
     }
 
@@ -219,12 +245,18 @@ impl ClassWriter {
         Ok(MethodWriter::new(self))
     }
 
+    pub fn interface_end_position(&self) -> Offset {
+        self.pool_end
+            .add(INTERFACES_EMPTY_END_OFFSET)
+            .offset(self.interface_count as usize * 2)
+    }
+
     pub fn fields_end_position(&self) -> Offset {
-        self.pool_end.add(self.interfaces_end_offset).add(self.fields_end_offset)
+        self.interface_end_position().add(self.fields_end_offset)
     }
 
     pub fn methods_end_position(&self) -> Offset {
-        self.pool_end.add(self.interfaces_end_offset).add(self.fields_end_offset).add(self.methods_end_offset)
+        self.fields_end_position().add(self.methods_end_offset)
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
