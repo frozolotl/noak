@@ -3,6 +3,7 @@ use crate::header::{AccessFlags, Version};
 use crate::writer::{
     cpool::{self, ConstantPool},
     encoding::*,
+    fields::FieldWriter,
 };
 use std::cmp::Ordering;
 
@@ -13,15 +14,20 @@ const EMPTY_POOL_END: Offset = POOL_START.offset(2);
 /// This class offset starting from the pool end
 const THIS_CLASS_OFFSET: Offset = Offset::new(2);
 /// Super class offset starting from the pool end
-const SUPER_CLASS_OFFSET: Offset = Offset::new(4);
+const SUPER_CLASS_OFFSET: Offset = THIS_CLASS_OFFSET.offset(2);
+/// Fields table length offset starting from the pool end
+const FIELDS_START_OFFSET: Offset = SUPER_CLASS_OFFSET.offset(2);
+/// Fields table end offset starting from the pool end
+const FIELDS_END_OFFSET: Offset = FIELDS_START_OFFSET.offset(2);
 
 #[derive(Clone)]
 pub struct ClassWriter {
-    encoder: VecEncoder,
+    pub(in crate::writer) encoder: VecEncoder,
     level: WriteLevel,
 
     pool: ConstantPool,
     pool_end: Offset,
+    pub(in crate::writer) fields_end: Offset,
 }
 
 impl ClassWriter {
@@ -35,6 +41,7 @@ impl ClassWriter {
             level: WriteLevel::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
+            fields_end: EMPTY_POOL_END.add(FIELDS_END_OFFSET),
         }
     }
 
@@ -143,6 +150,10 @@ impl ClassWriter {
                 .write(index)?,
         }
         Ok(self)
+    }
+
+    fn write_field(&mut self) -> Result<FieldWriter, EncodeError> {
+        Ok(FieldWriter::new(self))
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
