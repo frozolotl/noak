@@ -1,9 +1,10 @@
 use crate::error::*;
-use crate::header::Version;
+use crate::header::{Version, AccessFlags};
 use crate::writer::{
     cpool::{self, ConstantPool},
     encoding::*,
 };
+use std::cmp::Ordering;
 
 const CAFEBABE_END: Position = Position::new(4);
 const POOL_START: Position = CAFEBABE_END.offset(2 + 2);
@@ -43,14 +44,19 @@ impl ClassWriter {
             encoder.write(version.minor)?;
             encoder.write(version.major)?;
         }
-        self.write_empty_pool()?;
         Ok(self)
     }
 
     fn write_empty_pool(&mut self) -> Result<&mut ClassWriter, EncodeError> {
+        if self.level == WriteLevel::Start {
+            self.write_version(Version::latest())?;
+        }
+
         if self.level == WriteLevel::ConstantPool {
+            self.write_version(Version::latest())?;
+
             self.encoder.write(1u16)?;
-            self.level = WriteLevel::Info;
+            self.level = WriteLevel::AccessFlags;
         }
         Ok(self)
     }
@@ -59,7 +65,7 @@ impl ClassWriter {
         &mut self,
         item: I,
     ) -> Result<cpool::Index<I>, EncodeError> {
-        self.write_version(Version::latest())?;
+        self.write_empty_pool();
 
         let mut encoder = self.encoder.inserting(self.pool_end);
         let index = self.pool.insert(item, &mut encoder)?;
@@ -70,8 +76,24 @@ impl ClassWriter {
         Ok(index)
     }
 
+    pub fn write_access_flags(&mut self, flags: AccessFlags) -> Result<&mut ClassWriter, EncodeError> {
+        match self.level.cmp(&WriteLevel::AccessFlags) {
+            Ordering::Less => {
+                self.write_empty_pool()?;
+                self.encoder.write(flags)?;
+                self.level = WriteLevel::ThisClass;
+            },
+            Ordering::Equal => {
+                self.encoder.write(flags)?;
+                self.level = WriteLevel::ThisClass;
+            },
+            Ordering::Greater => self.encoder.replacing(self.pool_end).write(flags)?,
+        }
+        Ok(self)
+    }
+
     fn write_missing(&mut self) -> Result<&mut ClassWriter, EncodeError> {
-        self.write_version(Version::latest())
+        self.write_empty_pool()
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
@@ -86,12 +108,10 @@ enum WriteLevel {
     // Version numbers
     Start,
     ConstantPool,
-    // Access Flags, Class Name, Super Class
-    Info,
-    // The field table
+    AccessFlags,
+    ThisClass,
+    SuperClass,
     Fields,
-    // The method table
     Methods,
-    // The attribute table
     Attributes,
 }

@@ -106,6 +106,7 @@ impl fmt::Display for DecodeError {
 pub enum EncodeErrorKind {
     TooManyItems,
     StringTooLong,
+    ValuesMissing,
 }
 
 impl fmt::Display for EncodeErrorKind {
@@ -114,7 +115,8 @@ impl fmt::Display for EncodeErrorKind {
 
         match *self {
             TooManyItems => write!(f, "too many items"),
-            StringTooLong => write!(f, "too many items"),
+            StringTooLong => write!(f, "string is too long"),
+            ValuesMissing => write!(f, "some values are missing"),
         }
     }
 }
@@ -162,6 +164,7 @@ pub enum Context {
     /// Either the `0xCAFEBABE` prefix or the major and minor versions.
     Start,
     ConstantPool,
+    ClassInfo,
     Interfaces,
     Fields,
     Attributes,
@@ -177,6 +180,7 @@ impl fmt::Display for Context {
             None => write!(f, "none"),
             Start => write!(f, "start"),
             ConstantPool => write!(f, "constant pool"),
+            ClassInfo => write!(f, "class information"),
             Interfaces => write!(f, "interfaces"),
             Fields => write!(f, "fields"),
             Attributes => write!(f, "attributes"),

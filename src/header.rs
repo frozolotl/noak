@@ -1,5 +1,6 @@
 use crate::error::*;
 use crate::reader::decoding::{Decode, Decoder};
+use crate::writer::encoding::{Encode, Encoder};
 use bitflags::bitflags;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -44,5 +45,11 @@ bitflags! {
 impl<'a> Decode<'a> for AccessFlags {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(AccessFlags::from_bits(decoder.read()?).unwrap())
+    }
+}
+
+impl Encode for AccessFlags {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
+        encoder.write(self.bits)
     }
 }
