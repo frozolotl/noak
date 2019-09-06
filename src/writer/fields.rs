@@ -25,7 +25,7 @@ impl<'a> FieldWriter<'a> {
         &mut self,
         flags: AccessFlags,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let offset = self.class_writer.fields_end.add(ACCESS_FLAGS_OFFSET);
+        let offset = self.class_writer.fields_end_offset.add(ACCESS_FLAGS_OFFSET);
         if self.state == WriteState::AccessFlags {
             self.class_writer.encoder.inserting(offset).write(flags)?;
             self.state = WriteState::Name;
@@ -39,7 +39,7 @@ impl<'a> FieldWriter<'a> {
         &mut self,
         name: cpool::Index<cpool::Utf8>,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let offset = self.class_writer.fields_end.add(NAME_OFFSET);
+        let offset = self.class_writer.fields_end_offset.add(NAME_OFFSET);
         match self.state.cmp(&WriteState::Name) {
             Ordering::Less => {
                 self.write_access_flags(AccessFlags::empty())?;
@@ -61,7 +61,7 @@ impl<'a> FieldWriter<'a> {
         &mut self,
         name: cpool::Index<cpool::Utf8>,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let offset = self.class_writer.fields_end.add(DESCRIPTOR_OFFSET);
+        let offset = self.class_writer.fields_end_offset.add(DESCRIPTOR_OFFSET);
         match self.state.cmp(&WriteState::Name) {
             Ordering::Less => {
                 return Err(EncodeError::with_context(

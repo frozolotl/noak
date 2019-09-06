@@ -15,10 +15,16 @@ const EMPTY_POOL_END: Offset = POOL_START.offset(2);
 const THIS_CLASS_OFFSET: Offset = Offset::new(2);
 /// Super class offset starting from the pool end
 const SUPER_CLASS_OFFSET: Offset = THIS_CLASS_OFFSET.offset(2);
-/// Fields table length offset starting from the pool end
-const FIELDS_START_OFFSET: Offset = SUPER_CLASS_OFFSET.offset(2);
-/// Fields table end offset starting from the pool end
-const FIELDS_END_OFFSET: Offset = FIELDS_START_OFFSET.offset(2);
+
+/// Interface table length offset starting from the pool end
+const INTERFACES_START_OFFSET: Offset = SUPER_CLASS_OFFSET.offset(2);
+/// Interface table end offset starting from the pool end
+const INTERFACES_EMPTY_END_OFFSET: Offset = INTERFACES_START_OFFSET.offset(2);
+
+/// Fields table length offset starting from the interfaces end
+const FIELDS_START_OFFSET: Offset = Offset::new(0);
+/// Fields table end offset starting from the interfaces end
+const FIELDS_EMPTY_END_OFFSET: Offset = FIELDS_START_OFFSET.offset(2);
 
 #[derive(Clone)]
 pub struct ClassWriter {
@@ -27,7 +33,8 @@ pub struct ClassWriter {
 
     pool: ConstantPool,
     pool_end: Offset,
-    pub(in crate::writer) fields_end: Offset,
+    interfaces_end_offset: Offset,
+    pub(in crate::writer) fields_end_offset: Offset,
 }
 
 impl ClassWriter {
@@ -41,7 +48,8 @@ impl ClassWriter {
             level: WriteLevel::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
-            fields_end: EMPTY_POOL_END.add(FIELDS_END_OFFSET),
+            interfaces_end_offset: INTERFACES_EMPTY_END_OFFSET,
+            fields_end_offset: FIELDS_EMPTY_END_OFFSET,
         }
     }
 
@@ -140,7 +148,7 @@ impl ClassWriter {
             }
             Ordering::Equal => {
                 self.encoder.write(index)?;
-                self.level = WriteLevel::Fields;
+                self.level = WriteLevel::Interfaces;
             }
             Ordering::Greater => self
                 .encoder
@@ -150,12 +158,42 @@ impl ClassWriter {
         Ok(self)
     }
 
+    pub fn write_interface(
+        &mut self,
+        index: cpool::Index<cpool::Class>,
+    ) -> Result<&mut ClassWriter, EncodeError> {
+        match self.level.cmp(&WriteLevel::Interfaces) {
+            Ordering::Less => {
+                return Err(EncodeError::with_context(
+                    EncodeErrorKind::ValuesMissing,
+                    Context::Interfaces,
+                ));
+            }
+            Ordering::Equal => {
+                // the amount of implemented interfaces
+                self.encoder.write(1u16)?;
+                self.encoder.write(index)?;
+                self.level = WriteLevel::Fields;
+            }
+            Ordering::Greater => self
+                .encoder
+                .replacing(self.pool_end.add(SUPER_CLASS_OFFSET))
+                .write(index)?,
+        }
+        self.interfaces_end_offset = self.interfaces_end_offset.offset(2);
+        Ok(self)
+    }
+
     fn write_field(&mut self) -> Result<FieldWriter, EncodeError> {
         Ok(FieldWriter::new(self))
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
         Ok(self.encoder.into_inner())
+    }
+
+    pub fn fields_end_position(&self) -> Offset {
+        self.pool_end.add(self.interfaces_end_offset).add(self.fields_end_offset)
     }
 }
 
@@ -168,6 +206,7 @@ enum WriteLevel {
     AccessFlags,
     ThisClass,
     SuperClass,
+    Interfaces,
     Fields,
     Methods,
     Attributes,
