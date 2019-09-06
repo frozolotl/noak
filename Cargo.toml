@@ -8,7 +8,6 @@ license = "MIT"
 readme = "README.md"
 documentation = "https://docs.rs/noak"
 repository = "https://gitlab.com/frozo/noak"
-homepage = "https://gitlab.com/frozo/noak"
 categories = ["parser-implementations", "encoding"]
 keywords = ["java", "jvm", "class", "bytecode"]
 
