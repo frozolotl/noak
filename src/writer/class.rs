@@ -128,7 +128,10 @@ impl ClassWriter {
     ) -> Result<&mut ClassWriter, EncodeError> {
         match self.level.cmp(&WriteLevel::SuperClass) {
             Ordering::Less => {
-                return Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, Context::ClassInfo));
+                return Err(EncodeError::with_context(
+                    EncodeErrorKind::ValuesMissing,
+                    Context::ClassInfo,
+                ));
             }
             Ordering::Equal => {
                 self.encoder.write(index)?;

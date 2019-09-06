@@ -1,6 +1,6 @@
 //! This example writes an example class.
 
-use noak::writer::{ClassWriter, cpool};
+use noak::writer::{cpool, ClassWriter};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args()
