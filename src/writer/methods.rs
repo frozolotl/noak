@@ -91,9 +91,9 @@ impl<'a> MethodWriter<'a> {
         self.write_empty_attributes()
     }
 
-    pub fn write_empty_attributes(&mut self) -> Result<&mut MethodWriter<'a>, EncodeError> {
+    fn write_empty_attributes(&mut self) -> Result<&mut MethodWriter<'a>, EncodeError> {
         if self.state == WriteState::Attributes {
-            self.class_writer.encoder.write(0u16);
+            self.class_writer.encoder.write(0u16)?;
             Ok(self)
         } else {
             Err(EncodeError::with_context(
