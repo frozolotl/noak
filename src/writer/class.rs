@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::header::{Version, AccessFlags};
+use crate::header::{AccessFlags, Version};
 use crate::writer::{
     cpool::{self, ConstantPool},
     encoding::*,
@@ -65,7 +65,7 @@ impl ClassWriter {
         &mut self,
         item: I,
     ) -> Result<cpool::Index<I>, EncodeError> {
-        self.write_empty_pool();
+        self.write_empty_pool()?;
 
         let mut encoder = self.encoder.inserting(self.pool_end);
         let index = self.pool.insert(item, &mut encoder)?;
@@ -76,28 +76,48 @@ impl ClassWriter {
         Ok(index)
     }
 
-    pub fn write_access_flags(&mut self, flags: AccessFlags) -> Result<&mut ClassWriter, EncodeError> {
+    pub fn write_access_flags(
+        &mut self,
+        flags: AccessFlags,
+    ) -> Result<&mut ClassWriter, EncodeError> {
         match self.level.cmp(&WriteLevel::AccessFlags) {
             Ordering::Less => {
                 self.write_empty_pool()?;
                 self.encoder.write(flags)?;
                 self.level = WriteLevel::ThisClass;
-            },
+            }
             Ordering::Equal => {
                 self.encoder.write(flags)?;
                 self.level = WriteLevel::ThisClass;
-            },
+            }
             Ordering::Greater => self.encoder.replacing(self.pool_end).write(flags)?,
         }
         Ok(self)
     }
 
-    fn write_missing(&mut self) -> Result<&mut ClassWriter, EncodeError> {
-        self.write_empty_pool()
+    pub fn write_this_class(
+        &mut self,
+        index: cpool::Index<cpool::Class>,
+    ) -> Result<&mut ClassWriter, EncodeError> {
+        match self.level.cmp(&WriteLevel::AccessFlags) {
+            Ordering::Less => {
+                self.write_access_flags(AccessFlags::empty())?;
+                self.encoder.write(index)?;
+                self.level = WriteLevel::SuperClass;
+            }
+            Ordering::Equal => {
+                self.encoder.write(index)?;
+                self.level = WriteLevel::SuperClass;
+            }
+            Ordering::Greater => self
+                .encoder
+                .replacing(self.pool_end.offset(2))
+                .write(index)?,
+        }
+        Ok(self)
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
-        self.write_missing()?;
         Ok(self.encoder.into_inner())
     }
 }
