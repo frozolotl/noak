@@ -65,8 +65,6 @@ impl ClassWriter {
         }
 
         if self.level == WriteLevel::ConstantPool {
-            self.write_version(Version::latest())?;
-
             self.encoder.write(1u16)?;
             self.level = WriteLevel::AccessFlags;
         }
