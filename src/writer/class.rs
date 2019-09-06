@@ -36,7 +36,7 @@ const METHODS_EMPTY_END_OFFSET: Offset = METHODS_START_OFFSET.offset(2);
 #[derive(Clone)]
 pub struct ClassWriter {
     pub(in crate::writer) encoder: VecEncoder,
-    level: WriteLevel,
+    state: WriteState,
 
     pool: ConstantPool,
     pool_end: Offset,
@@ -53,7 +53,7 @@ impl ClassWriter {
     pub fn with_capacity(capacity: usize) -> ClassWriter {
         ClassWriter {
             encoder: VecEncoder::with_capacity(capacity),
-            level: WriteLevel::Start,
+            state: WriteState::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
             interfaces_end_offset: INTERFACES_EMPTY_END_OFFSET,
@@ -63,11 +63,11 @@ impl ClassWriter {
     }
 
     pub fn write_version(&mut self, version: Version) -> Result<&mut ClassWriter, EncodeError> {
-        if self.level == WriteLevel::Start {
+        if self.state == WriteState::Start {
             self.encoder.write(0xCAFEBABEu32)?;
             self.encoder.write(version.minor)?;
             self.encoder.write(version.major)?;
-            self.level = WriteLevel::ConstantPool;
+            self.state = WriteState::ConstantPool;
         } else {
             let mut encoder = self.encoder.replacing(CAFEBABE_END);
             encoder.write(version.minor)?;
@@ -77,13 +77,13 @@ impl ClassWriter {
     }
 
     fn write_empty_pool(&mut self) -> Result<&mut ClassWriter, EncodeError> {
-        if self.level == WriteLevel::Start {
+        if self.state == WriteState::Start {
             self.write_version(Version::latest())?;
         }
 
-        if self.level == WriteLevel::ConstantPool {
+        if self.state == WriteState::ConstantPool {
             self.encoder.write(1u16)?;
-            self.level = WriteLevel::AccessFlags;
+            self.state = WriteState::AccessFlags;
         }
         Ok(self)
     }
@@ -107,15 +107,15 @@ impl ClassWriter {
         &mut self,
         flags: AccessFlags,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.level.cmp(&WriteLevel::AccessFlags) {
+        match self.state.cmp(&WriteState::AccessFlags) {
             Ordering::Less => {
                 self.write_empty_pool()?;
                 self.encoder.write(flags)?;
-                self.level = WriteLevel::ThisClass;
+                self.state = WriteState::ThisClass;
             }
             Ordering::Equal => {
                 self.encoder.write(flags)?;
-                self.level = WriteLevel::ThisClass;
+                self.state = WriteState::ThisClass;
             }
             Ordering::Greater => self.encoder.replacing(self.pool_end).write(flags)?,
         }
@@ -132,15 +132,15 @@ impl ClassWriter {
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.level.cmp(&WriteLevel::ThisClass) {
+        match self.state.cmp(&WriteState::ThisClass) {
             Ordering::Less => {
                 self.write_access_flags(AccessFlags::empty())?;
                 self.encoder.write(index)?;
-                self.level = WriteLevel::SuperClass;
+                self.state = WriteState::SuperClass;
             }
             Ordering::Equal => {
                 self.encoder.write(index)?;
-                self.level = WriteLevel::SuperClass;
+                self.state = WriteState::SuperClass;
             }
             Ordering::Greater => self
                 .encoder
@@ -160,7 +160,7 @@ impl ClassWriter {
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.level.cmp(&WriteLevel::SuperClass) {
+        match self.state.cmp(&WriteState::SuperClass) {
             Ordering::Less => {
                 return Err(EncodeError::with_context(
                     EncodeErrorKind::ValuesMissing,
@@ -169,7 +169,7 @@ impl ClassWriter {
             }
             Ordering::Equal => {
                 self.encoder.write(index)?;
-                self.level = WriteLevel::Interfaces;
+                self.state = WriteState::Interfaces;
             }
             Ordering::Greater => self
                 .encoder
@@ -189,7 +189,7 @@ impl ClassWriter {
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.level.cmp(&WriteLevel::Interfaces) {
+        match self.state.cmp(&WriteState::Interfaces) {
             Ordering::Less => {
                 return Err(EncodeError::with_context(
                     EncodeErrorKind::ValuesMissing,
@@ -200,7 +200,7 @@ impl ClassWriter {
                 // the amount of implemented interfaces
                 self.encoder.write(1u16)?;
                 self.encoder.write(index)?;
-                self.level = WriteLevel::Fields;
+                self.state = WriteState::Fields;
             }
             Ordering::Greater => self
                 .encoder
@@ -219,10 +219,6 @@ impl ClassWriter {
         Ok(MethodWriter::new(self))
     }
 
-    pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
-        Ok(self.encoder.into_inner())
-    }
-
     pub fn fields_end_position(&self) -> Offset {
         self.pool_end.add(self.interfaces_end_offset).add(self.fields_end_offset)
     }
@@ -230,11 +226,22 @@ impl ClassWriter {
     pub fn methods_end_position(&self) -> Offset {
         self.pool_end.add(self.interfaces_end_offset).add(self.fields_end_offset).add(self.methods_end_offset)
     }
+
+    pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
+        if self.state >= WriteState::Interfaces {
+            Ok(self.encoder.into_inner())
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                Context::Interfaces,
+            ))
+        }
+    }
 }
 
-/// How much of the class is already written.
+/// What's written next
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum WriteLevel {
+enum WriteState {
     // Version numbers
     Start,
     ConstantPool,
