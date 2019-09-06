@@ -1,7 +1,7 @@
 use crate::error::*;
 use crate::header::AccessFlags;
-use crate::writer::{cpool, encoding::*, ClassWriter};
 use crate::mutf8::MString;
+use crate::writer::{cpool, encoding::*, ClassWriter};
 use std::cmp::Ordering;
 
 const ACCESS_FLAGS_OFFSET: Offset = Offset::new(0);
@@ -36,8 +36,13 @@ impl<'a> FieldWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_name(&mut self, name: impl Into<MString>) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let utf8_index = self.class_writer.insert_constant(cpool::Utf8 { content: name.into() })?;
+    pub fn write_name(
+        &mut self,
+        name: impl Into<MString>,
+    ) -> Result<&mut FieldWriter<'a>, EncodeError> {
+        let utf8_index = self.class_writer.insert_constant(cpool::Utf8 {
+            content: name.into(),
+        })?;
         self.write_name_index(utf8_index)
     }
 
@@ -63,8 +68,13 @@ impl<'a> FieldWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_descriptor(&mut self, descriptor: impl Into<MString>) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let utf8_index = self.class_writer.insert_constant(cpool::Utf8 { content: descriptor.into() })?;
+    pub fn write_descriptor(
+        &mut self,
+        descriptor: impl Into<MString>,
+    ) -> Result<&mut FieldWriter<'a>, EncodeError> {
+        let utf8_index = self.class_writer.insert_constant(cpool::Utf8 {
+            content: descriptor.into(),
+        })?;
         self.write_descriptor_index(utf8_index)
     }
 
