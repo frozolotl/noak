@@ -6,6 +6,7 @@ use crate::writer::{
     fields::FieldWriter,
     methods::MethodWriter,
 };
+use crate::mutf8::MString;
 use std::cmp::Ordering;
 
 const CAFEBABE_END: Offset = Offset::new(4);
@@ -121,7 +122,13 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_this_class(
+    pub fn write_this_class_name(&mut self, name: impl Into<MString>) -> Result<&mut ClassWriter, EncodeError> {
+        let utf8_index = self.insert_constant(cpool::Utf8 { content: name.into() })?;
+        let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
+        self.write_this_class_index(class_index)
+    }
+
+    pub fn write_this_class_index(
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
@@ -143,7 +150,13 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_super_class(
+    pub fn write_super_class_name(&mut self, name: impl Into<MString>) -> Result<&mut ClassWriter, EncodeError> {
+        let utf8_index = self.insert_constant(cpool::Utf8 { content: name.into() })?;
+        let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
+        self.write_super_class_index(class_index)
+    }
+
+    pub fn write_super_class_index(
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
@@ -166,7 +179,13 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_interface(
+    pub fn write_interface_name(&mut self, name: impl Into<MString>) -> Result<&mut ClassWriter, EncodeError> {
+        let utf8_index = self.insert_constant(cpool::Utf8 { content: name.into() })?;
+        let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
+        self.write_interface_index(class_index)
+    }
+
+    pub fn write_interface_index(
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
