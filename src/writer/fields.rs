@@ -77,7 +77,19 @@ impl<'a> FieldWriter<'a> {
                 self.class_writer.encoder.replacing(offset).write(name)?;
             }
         }
-        Ok(self)
+        self.write_empty_attributes()
+    }
+
+    pub fn write_empty_attributes(&mut self) -> Result<&mut FieldWriter<'a>, EncodeError> {
+        if self.state == WriteState::Attributes {
+            self.class_writer.encoder.write(0u16);
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                Context::Fields,
+            ))
+        }
     }
 
     pub fn finish(mut self) -> Result<&'a mut ClassWriter, EncodeError> {
