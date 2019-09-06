@@ -1,5 +1,5 @@
 # Noak
-A library for reading and writing java bytecode as fast and easy as possible.
+A library for reading and writing java bytecode as fast as possible.
 
 # Example
 ```rust
