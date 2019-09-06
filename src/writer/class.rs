@@ -104,7 +104,7 @@ impl ClassWriter {
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.level.cmp(&WriteLevel::AccessFlags) {
+        match self.level.cmp(&WriteLevel::ThisClass) {
             Ordering::Less => {
                 self.write_access_flags(AccessFlags::empty())?;
                 self.encoder.write(index)?;
@@ -117,6 +117,26 @@ impl ClassWriter {
             Ordering::Greater => self
                 .encoder
                 .replacing(self.pool_end.add(THIS_CLASS_OFFSET))
+                .write(index)?,
+        }
+        Ok(self)
+    }
+
+    pub fn write_super_class(
+        &mut self,
+        index: cpool::Index<cpool::Class>,
+    ) -> Result<&mut ClassWriter, EncodeError> {
+        match self.level.cmp(&WriteLevel::SuperClass) {
+            Ordering::Less => {
+                return Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, Context::ClassInfo));
+            }
+            Ordering::Equal => {
+                self.encoder.write(index)?;
+                self.level = WriteLevel::Fields;
+            }
+            Ordering::Greater => self
+                .encoder
+                .replacing(self.pool_end.add(SUPER_CLASS_OFFSET))
                 .write(index)?,
         }
         Ok(self)
