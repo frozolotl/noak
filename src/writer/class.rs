@@ -4,6 +4,7 @@ use crate::writer::{
     cpool::{self, ConstantPool},
     encoding::*,
     fields::FieldWriter,
+    methods::MethodWriter,
 };
 use std::cmp::Ordering;
 
@@ -26,6 +27,11 @@ const FIELDS_START_OFFSET: Offset = Offset::new(0);
 /// Fields table end offset starting from the interfaces end
 const FIELDS_EMPTY_END_OFFSET: Offset = FIELDS_START_OFFSET.offset(2);
 
+/// Method table length offset starting from the field table end
+const METHODS_START_OFFSET: Offset = Offset::new(0);
+/// Method table end offset starting from the field table end
+const METHODS_EMPTY_END_OFFSET: Offset = METHODS_START_OFFSET.offset(2);
+
 #[derive(Clone)]
 pub struct ClassWriter {
     pub(in crate::writer) encoder: VecEncoder,
@@ -35,6 +41,7 @@ pub struct ClassWriter {
     pool_end: Offset,
     interfaces_end_offset: Offset,
     pub(in crate::writer) fields_end_offset: Offset,
+    pub(in crate::writer) methods_end_offset: Offset,
 }
 
 impl ClassWriter {
@@ -50,6 +57,7 @@ impl ClassWriter {
             pool_end: EMPTY_POOL_END,
             interfaces_end_offset: INTERFACES_EMPTY_END_OFFSET,
             fields_end_offset: FIELDS_EMPTY_END_OFFSET,
+            methods_end_offset: METHODS_EMPTY_END_OFFSET,
         }
     }
 
@@ -184,8 +192,12 @@ impl ClassWriter {
         Ok(self)
     }
 
-    fn write_field(&mut self) -> Result<FieldWriter, EncodeError> {
+    pub fn write_field(&mut self) -> Result<FieldWriter, EncodeError> {
         Ok(FieldWriter::new(self))
+    }
+
+    pub fn write_method(&mut self) -> Result<MethodWriter, EncodeError> {
+        Ok(MethodWriter::new(self))
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
@@ -194,6 +206,10 @@ impl ClassWriter {
 
     pub fn fields_end_position(&self) -> Offset {
         self.pool_end.add(self.interfaces_end_offset).add(self.fields_end_offset)
+    }
+
+    pub fn methods_end_position(&self) -> Offset {
+        self.pool_end.add(self.interfaces_end_offset).add(self.fields_end_offset).add(self.methods_end_offset)
     }
 }
 
