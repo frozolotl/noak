@@ -147,6 +147,12 @@ impl<'a> Class<'a> {
         }
         Ok(self.attributes.clone().unwrap())
     }
+
+    /// The count of bytes used by the class file.
+    pub fn buffer_size(&mut self) -> Result<usize, DecodeError> {
+        self.attribute_indices()?;
+        Ok(self.decoder.file_position())
+    }
 }
 
 /// How much of the class is already read.
