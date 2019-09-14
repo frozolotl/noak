@@ -233,6 +233,9 @@ impl ClassWriter {
             self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
             self.state = WriteState::Fields;
             Ok(())
+        } else if self.state == WriteState::Interfaces {
+            self.state = WriteState::Fields;
+            Ok(())
         } else {
             Ok(())
         }
@@ -243,6 +246,8 @@ impl ClassWriter {
         if self.field_encoder.is_none() {
             self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
             self.state = WriteState::Methods;
+        } else if self.state == WriteState::Fields {
+            self.state = WriteState::Methods;
         }
         Ok(())
     }
@@ -251,6 +256,8 @@ impl ClassWriter {
         self.write_empty_fields()?;
         if self.method_encoder.is_none() {
             self.method_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            self.state = WriteState::Attributes;
+        } else if self.state == WriteState::Methods {
             self.state = WriteState::Attributes;
         }
         Ok(())
