@@ -216,7 +216,7 @@ impl ClassWriter {
                 EncodeErrorKind::ValuesMissing,
                 Context::Interfaces,
             ))
-        } else if self.state == WriteState::Interfaces && self.interface_encoder.is_none() {
+        } else if self.interface_encoder.is_none() {
             self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
             self.state = WriteState::Fields;
             Ok(())
@@ -227,7 +227,7 @@ impl ClassWriter {
 
     pub fn write_empty_fields(&mut self) -> Result<(), EncodeError> {
         self.write_empty_interfaces()?;
-        if self.state == WriteState::Fields && self.field_encoder.is_none() {
+        if self.field_encoder.is_none() {
             self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
             self.state = WriteState::Methods;
         }
@@ -236,7 +236,7 @@ impl ClassWriter {
 
     pub fn write_empty_methods(&mut self) -> Result<(), EncodeError> {
         self.write_empty_fields()?;
-        if self.state == WriteState::Methods && self.method_encoder.is_none() {
+        if self.method_encoder.is_none() {
             self.method_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
             self.state = WriteState::Attributes;
         }
