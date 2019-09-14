@@ -13,8 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .write_access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
         .write_this_class_name("Test")?
         .write_super_class_name("java/lang/Object")?
-        .write_interface_name("java/io/Serializable")?
-        .write_interface_name("TestInterface")?;
+        .write_interface_name("java/io/Serializable")?;
 
     class_writer.write_field(|writer| {
         writer
