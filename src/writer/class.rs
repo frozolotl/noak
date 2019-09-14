@@ -92,18 +92,9 @@ impl ClassWriter {
         &mut self,
         flags: AccessFlags,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.state.cmp(&WriteState::AccessFlags) {
-            Ordering::Less => {
-                self.write_empty_pool()?;
-                self.encoder.write(flags)?;
-                self.state = WriteState::ThisClass;
-            }
-            Ordering::Equal => {
-                self.encoder.write(flags)?;
-                self.state = WriteState::ThisClass;
-            }
-            Ordering::Greater => self.encoder.replacing(self.pool_end).write(flags)?,
-        }
+        EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::ClassInfo)?;
+        self.encoder.write(flags)?;
+        self.state = WriteState::ThisClass;
         Ok(self)
     }
 
@@ -122,21 +113,9 @@ impl ClassWriter {
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.state.cmp(&WriteState::ThisClass) {
-            Ordering::Less => {
-                self.write_access_flags(AccessFlags::empty())?;
-                self.encoder.write(index)?;
-                self.state = WriteState::SuperClass;
-            }
-            Ordering::Equal => {
-                self.encoder.write(index)?;
-                self.state = WriteState::SuperClass;
-            }
-            Ordering::Greater => self
-                .encoder
-                .replacing(self.pool_end.add(THIS_CLASS_OFFSET))
-                .write(index)?,
-        }
+        EncodeError::result_from_state(self.state, &WriteState::ThisClass, Context::ClassInfo)?;
+        self.encoder.write(index)?;
+        self.state = WriteState::SuperClass;
         Ok(self)
     }
 
@@ -155,22 +134,9 @@ impl ClassWriter {
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.state.cmp(&WriteState::SuperClass) {
-            Ordering::Less => {
-                return Err(EncodeError::with_context(
-                    EncodeErrorKind::ValuesMissing,
-                    Context::ClassInfo,
-                ));
-            }
-            Ordering::Equal => {
-                self.encoder.write(index)?;
-                self.state = WriteState::Interfaces;
-            }
-            Ordering::Greater => self
-                .encoder
-                .replacing(self.pool_end.add(SUPER_CLASS_OFFSET))
-                .write(index)?,
-        }
+        EncodeError::result_from_state(self.state, &WriteState::SuperClass, Context::ClassInfo)?;
+        self.encoder.write(index)?;
+        self.state = WriteState::Interfaces;
         Ok(self)
     }
 
@@ -261,6 +227,7 @@ impl ClassWriter {
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
         if self.state >= WriteState::Interfaces {
+            self.encoder.write(0u16)?;
             Ok(self.encoder.into_inner())
         } else {
             Err(EncodeError::with_context(
