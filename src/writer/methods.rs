@@ -2,12 +2,6 @@ use crate::error::*;
 use crate::header::AccessFlags;
 use crate::mutf8::MString;
 use crate::writer::{cpool, encoding::*, ClassWriter};
-use std::cmp::Ordering;
-
-const ACCESS_FLAGS_OFFSET: Offset = Offset::new(0);
-const NAME_OFFSET: Offset = ACCESS_FLAGS_OFFSET.offset(2);
-const DESCRIPTOR_OFFSET: Offset = NAME_OFFSET.offset(2);
-const ATTRIBUTE_LENGTH_OFFSET: Offset = DESCRIPTOR_OFFSET.offset(2);
 
 pub struct MethodWriter<'a> {
     class_writer: &'a mut ClassWriter,
@@ -26,16 +20,10 @@ impl<'a> MethodWriter<'a> {
         &mut self,
         flags: AccessFlags,
     ) -> Result<&mut MethodWriter<'a>, EncodeError> {
-        let offset = self
-            .class_writer
-            .methods_end_offset
-            .add(ACCESS_FLAGS_OFFSET);
-        if self.state == WriteState::AccessFlags {
-            self.class_writer.encoder.inserting(offset).write(flags)?;
-            self.state = WriteState::Name;
-        } else {
-            self.class_writer.encoder.replacing(offset).write(flags)?;
-        }
+        EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::Methods)?;
+
+        self.class_writer.encoder.write(flags)?;
+        self.state = WriteState::Name;
         Ok(self)
     }
 
@@ -53,21 +41,10 @@ impl<'a> MethodWriter<'a> {
         &mut self,
         name: cpool::Index<cpool::Utf8>,
     ) -> Result<&mut MethodWriter<'a>, EncodeError> {
-        let offset = self.class_writer.methods_end_offset.add(NAME_OFFSET);
-        match self.state.cmp(&WriteState::Name) {
-            Ordering::Less => {
-                self.write_access_flags(AccessFlags::empty())?;
-                self.class_writer.encoder.inserting(offset).write(name)?;
-                self.state = WriteState::Descriptor;
-            }
-            Ordering::Equal => {
-                self.class_writer.encoder.inserting(offset).write(name)?;
-                self.state = WriteState::Descriptor;
-            }
-            Ordering::Greater => {
-                self.class_writer.encoder.replacing(offset).write(name)?;
-            }
-        }
+        EncodeError::result_from_state(self.state, &WriteState::Name, Context::Methods)?;
+
+        self.class_writer.encoder.write(name)?;
+        self.state = WriteState::Descriptor;
         Ok(self)
     }
 
@@ -83,24 +60,12 @@ impl<'a> MethodWriter<'a> {
 
     pub fn write_descriptor_index(
         &mut self,
-        name: cpool::Index<cpool::Utf8>,
+        descriptor: cpool::Index<cpool::Utf8>,
     ) -> Result<&mut MethodWriter<'a>, EncodeError> {
-        let offset = self.class_writer.methods_end_offset.add(DESCRIPTOR_OFFSET);
-        match self.state.cmp(&WriteState::Name) {
-            Ordering::Less => {
-                return Err(EncodeError::with_context(
-                    EncodeErrorKind::ValuesMissing,
-                    Context::Methods,
-                ));
-            }
-            Ordering::Equal => {
-                self.class_writer.encoder.inserting(offset).write(name)?;
-                self.state = WriteState::Attributes;
-            }
-            Ordering::Greater => {
-                self.class_writer.encoder.replacing(offset).write(name)?;
-            }
-        }
+        EncodeError::result_from_state(self.state, &WriteState::Descriptor, Context::Methods)?;
+
+        self.class_writer.encoder.write(descriptor)?;
+        self.state = WriteState::Attributes;
         self.write_empty_attributes()
     }
 
@@ -116,7 +81,7 @@ impl<'a> MethodWriter<'a> {
         }
     }
 
-    pub fn finish(mut self) -> Result<(), EncodeError> {
+    pub fn finish(self) -> Result<(), EncodeError> {
         if self.state == WriteState::Attributes {
             Ok(())
         } else {

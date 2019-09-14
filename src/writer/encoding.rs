@@ -1,4 +1,5 @@
 use crate::error::*;
+use num_traits::{Num, NumAssign, ToPrimitive};
 
 pub trait Encoder: Sized {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
@@ -169,5 +170,33 @@ impl<'a> Encoder for InsertingEncoder<'a> {
 impl<E: Encoder> Encoder for &mut E {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         (*self).write_bytes(bytes)
+    }
+}
+
+#[derive(Clone)]
+pub struct CountedEncoder<R = u16> {
+    start_offset: Offset,
+    count: R,
+}
+
+impl<R> CountedEncoder<R>
+where
+    R: Encode,
+    R: Num + NumAssign + ToPrimitive,
+{
+    pub fn new(encoder: &mut VecEncoder) -> Result<CountedEncoder<R>, EncodeError> {
+        let start_offset = encoder.position();
+        let count = R::zero();
+        encoder.write(&count)?;
+        Ok(CountedEncoder {
+            start_offset,
+            count,
+        })
+    }
+
+    pub fn increment_count(&mut self, encoder: &mut VecEncoder) -> Result<(), EncodeError> {
+        self.count += R::one();
+        encoder.replacing(self.start_offset).write(&self.count)?;
+        Ok(())
     }
 }

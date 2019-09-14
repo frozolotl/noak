@@ -8,7 +8,6 @@ use crate::writer::{
     methods::MethodWriter,
 };
 use std::cmp::Ordering;
-use std::fmt;
 
 const CAFEBABE_END: Offset = Offset::new(4);
 const POOL_START: Offset = CAFEBABE_END.offset(2 + 2);
@@ -19,21 +18,6 @@ const THIS_CLASS_OFFSET: Offset = Offset::new(2);
 /// Super class offset starting from the pool end
 const SUPER_CLASS_OFFSET: Offset = THIS_CLASS_OFFSET.offset(2);
 
-/// Interface table length offset starting from the pool end
-const INTERFACES_START_OFFSET: Offset = SUPER_CLASS_OFFSET.offset(2);
-/// Interface table end offset starting from the pool end
-const INTERFACES_EMPTY_END_OFFSET: Offset = INTERFACES_START_OFFSET.offset(2);
-
-/// Fields table length offset starting from the interfaces end
-const FIELDS_START_OFFSET: Offset = Offset::new(0);
-/// Fields table end offset starting from the interfaces end
-const FIELDS_EMPTY_END_OFFSET: Offset = FIELDS_START_OFFSET.offset(2);
-
-/// Method table length offset starting from the field table end
-const METHODS_START_OFFSET: Offset = Offset::new(0);
-/// Method table end offset starting from the field table end
-const METHODS_EMPTY_END_OFFSET: Offset = METHODS_START_OFFSET.offset(2);
-
 #[derive(Clone)]
 pub struct ClassWriter {
     pub(in crate::writer) encoder: VecEncoder,
@@ -41,11 +25,9 @@ pub struct ClassWriter {
 
     pool: ConstantPool,
     pool_end: Offset,
-    interface_count: u16,
-    pub(in crate::writer) fields_end_offset: Offset,
-    field_count: u16,
-    pub(in crate::writer) methods_end_offset: Offset,
-    method_count: u16,
+    interface_encoder: Option<CountedEncoder>,
+    field_encoder: Option<CountedEncoder>,
+    method_encoder: Option<CountedEncoder>,
 }
 
 impl ClassWriter {
@@ -59,11 +41,9 @@ impl ClassWriter {
             state: WriteState::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
-            interface_count: 0,
-            fields_end_offset: FIELDS_EMPTY_END_OFFSET,
-            field_count: 0,
-            methods_end_offset: METHODS_EMPTY_END_OFFSET,
-            method_count: 0,
+            interface_encoder: None,
+            field_encoder: None,
+            method_encoder: None,
         }
     }
 
@@ -194,9 +174,9 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_interface_name(
+    pub fn write_interface_name<I: Into<MString>>(
         &mut self,
-        name: impl Into<MString>,
+        name: I,
     ) -> Result<&mut ClassWriter, EncodeError> {
         let utf8_index = self.insert_constant(cpool::Utf8 {
             content: name.into(),
@@ -209,32 +189,17 @@ impl ClassWriter {
         &mut self,
         index: cpool::Index<cpool::Class>,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        match self.state.cmp(&WriteState::Interfaces) {
-            Ordering::Less => {
-                return Err(EncodeError::with_context(
-                    EncodeErrorKind::ValuesMissing,
-                    Context::Interfaces,
-                ));
-            }
-            Ordering::Equal => {
-                // the amount of implemented interfaces
-                self.interface_count += 1;
-                self.encoder.write(self.interface_count)?;
-                self.encoder.write(index)?;
-                self.state = WriteState::Fields;
-            }
-            Ordering::Greater => {
-                self.interface_count = self.interface_count.checked_add(1).ok_or_else(|| {
-                    EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Interfaces)
-                })?;
-                self.encoder
-                    .replacing(self.interface_end_position())
-                    .write(index)?;
-                self.encoder
-                    .replacing(self.pool_end.add(INTERFACES_START_OFFSET))
-                    .write(self.interface_count)?;
-            }
-        }
+        EncodeError::result_from_state(self.state, &WriteState::Interfaces, Context::Interfaces)?;
+        let encoder = if let Some(encoder) = self.interface_encoder.as_mut() {
+            encoder
+        } else {
+            self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            self.interface_encoder.as_mut().unwrap()
+        };
+
+        self.encoder.write(index)?;
+        encoder.increment_count(&mut self.encoder)?;
+
         Ok(self)
     }
 
@@ -242,20 +207,24 @@ impl ClassWriter {
     where
         F: FnOnce(&mut FieldWriter) -> Result<(), EncodeError>,
     {
-        if self.field_count == 0 {
-            self.encoder.write(1u16)?;
-            self.field_count = 1;
-        } else {
-            self.field_count = self.field_count.checked_add(1).ok_or_else(|| {
-                EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Fields)
-            })?;
-            self.encoder
-                .replacing(self.interface_end_position().add(FIELDS_START_OFFSET))
-                .write(self.field_count)?;
+        if self.state == WriteState::Interfaces {
+            if self.interface_encoder.is_none() {
+                self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            }
+            self.state = WriteState::Fields;
         }
+        EncodeError::result_from_state(self.state, &WriteState::Fields, Context::Fields)?;
+
+        if self.field_encoder.is_none() {
+            self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+        }
+
         let mut writer = FieldWriter::new(self);
         f(&mut writer)?;
         writer.finish()?;
+
+        self.field_encoder.as_mut().unwrap().increment_count(&mut self.encoder)?;
+
         Ok(self)
     }
 
@@ -263,35 +232,31 @@ impl ClassWriter {
     where
         F: FnOnce(&mut MethodWriter) -> Result<(), EncodeError>,
     {
-        if self.method_count == 0 {
-            self.encoder.write(1u16)?;
-            self.method_count = 1;
-        } else {
-            self.method_count = self.method_count.checked_add(1).ok_or_else(|| {
-                EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Methods)
-            })?;
-            self.encoder
-                .replacing(self.interface_end_position().add(METHODS_START_OFFSET))
-                .write(self.method_count)?;
+        if self.state == WriteState::Interfaces {
+            if self.interface_encoder.is_none() {
+                self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            }
+            self.state = WriteState::Fields;
         }
+        if self.state == WriteState::Fields {
+            if self.field_encoder.is_none() {
+                self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            }
+            self.state = WriteState::Methods;
+        }
+        EncodeError::result_from_state(self.state, &WriteState::Methods, Context::Methods)?;
+
+        if self.method_encoder.is_none() {
+            self.method_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+        }
+
         let mut writer = MethodWriter::new(self);
         f(&mut writer)?;
         writer.finish()?;
+
+        self.method_encoder.as_mut().unwrap().increment_count(&mut self.encoder)?;
+
         Ok(self)
-    }
-
-    fn interface_end_position(&self) -> Offset {
-        self.pool_end
-            .add(INTERFACES_EMPTY_END_OFFSET)
-            .offset(self.interface_count as usize * 2)
-    }
-
-    fn fields_end_position(&self) -> Offset {
-        self.interface_end_position().add(self.fields_end_offset)
-    }
-
-    fn methods_end_position(&self) -> Offset {
-        self.fields_end_position().add(self.methods_end_offset)
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {

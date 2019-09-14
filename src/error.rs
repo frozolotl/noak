@@ -1,5 +1,6 @@
 use crate::reader::decoding::Decoder;
 use std::fmt;
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecodeErrorKind {
@@ -107,6 +108,7 @@ pub enum EncodeErrorKind {
     TooManyItems,
     StringTooLong,
     ValuesMissing,
+    CantChangeAnymore,
 }
 
 impl fmt::Display for EncodeErrorKind {
@@ -117,6 +119,7 @@ impl fmt::Display for EncodeErrorKind {
             TooManyItems => write!(f, "too many items"),
             StringTooLong => write!(f, "string is too long"),
             ValuesMissing => write!(f, "some values are missing"),
+            CantChangeAnymore => write!(f, "can't change some values anymore"),
         }
     }
 }
@@ -137,6 +140,15 @@ impl EncodeError {
 
     pub fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
         EncodeError { kind, context }
+    }
+
+    #[inline]
+    pub fn result_from_state<S: Ord>(prev: S, now: &S, context: Context) -> Result<(), EncodeError> {
+        match prev.cmp(now) {
+            Ordering::Less => Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, context)),
+            Ordering::Equal => Ok(()),
+            Ordering::Greater => Err(EncodeError::with_context(EncodeErrorKind::CantChangeAnymore, context)),
+        }
     }
 
     pub fn kind(&self) -> EncodeErrorKind {

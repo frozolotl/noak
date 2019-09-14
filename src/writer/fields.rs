@@ -2,12 +2,6 @@ use crate::error::*;
 use crate::header::AccessFlags;
 use crate::mutf8::MString;
 use crate::writer::{cpool, encoding::*, ClassWriter};
-use std::cmp::Ordering;
-
-const ACCESS_FLAGS_OFFSET: Offset = Offset::new(0);
-const NAME_OFFSET: Offset = ACCESS_FLAGS_OFFSET.offset(2);
-const DESCRIPTOR_OFFSET: Offset = NAME_OFFSET.offset(2);
-const ATTRIBUTE_LENGTH_OFFSET: Offset = DESCRIPTOR_OFFSET.offset(2);
 
 pub struct FieldWriter<'a> {
     class_writer: &'a mut ClassWriter,
@@ -26,13 +20,10 @@ impl<'a> FieldWriter<'a> {
         &mut self,
         flags: AccessFlags,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let offset = self.class_writer.fields_end_offset.add(ACCESS_FLAGS_OFFSET);
-        if self.state == WriteState::AccessFlags {
-            self.class_writer.encoder.inserting(offset).write(flags)?;
-            self.state = WriteState::Name;
-        } else {
-            self.class_writer.encoder.replacing(offset).write(flags)?;
-        }
+        EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::Fields)?;
+
+        self.class_writer.encoder.write(flags)?;
+        self.state = WriteState::Name;
         Ok(self)
     }
 
@@ -50,21 +41,10 @@ impl<'a> FieldWriter<'a> {
         &mut self,
         name: cpool::Index<cpool::Utf8>,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let offset = self.class_writer.fields_end_offset.add(NAME_OFFSET);
-        match self.state.cmp(&WriteState::Name) {
-            Ordering::Less => {
-                self.write_access_flags(AccessFlags::empty())?;
-                self.class_writer.encoder.inserting(offset).write(name)?;
-                self.state = WriteState::Descriptor;
-            }
-            Ordering::Equal => {
-                self.class_writer.encoder.inserting(offset).write(name)?;
-                self.state = WriteState::Descriptor;
-            }
-            Ordering::Greater => {
-                self.class_writer.encoder.replacing(offset).write(name)?;
-            }
-        }
+        EncodeError::result_from_state(self.state, &WriteState::Name, Context::Fields)?;
+
+        self.class_writer.encoder.write(name)?;
+        self.state = WriteState::Descriptor;
         Ok(self)
     }
 
@@ -80,24 +60,12 @@ impl<'a> FieldWriter<'a> {
 
     pub fn write_descriptor_index(
         &mut self,
-        name: cpool::Index<cpool::Utf8>,
+        descriptor: cpool::Index<cpool::Utf8>,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
-        let offset = self.class_writer.fields_end_offset.add(DESCRIPTOR_OFFSET);
-        match self.state.cmp(&WriteState::Descriptor) {
-            Ordering::Less => {
-                return Err(EncodeError::with_context(
-                    EncodeErrorKind::ValuesMissing,
-                    Context::Fields,
-                ));
-            }
-            Ordering::Equal => {
-                self.class_writer.encoder.inserting(offset).write(name)?;
-                self.state = WriteState::Attributes;
-            }
-            Ordering::Greater => {
-                self.class_writer.encoder.replacing(offset).write(name)?;
-            }
-        }
+        EncodeError::result_from_state(self.state, &WriteState::Descriptor, Context::Fields)?;
+
+        self.class_writer.encoder.write(descriptor)?;
+        self.state = WriteState::Attributes;
         self.write_empty_attributes()
     }
 
@@ -113,7 +81,7 @@ impl<'a> FieldWriter<'a> {
         }
     }
 
-    pub(crate) fn finish(mut self) -> Result<(), EncodeError> {
+    pub(crate) fn finish(self) -> Result<(), EncodeError> {
         if self.state == WriteState::Attributes {
             Ok(())
         } else {
