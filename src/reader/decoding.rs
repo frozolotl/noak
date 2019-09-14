@@ -248,12 +248,13 @@ impl<'a, T, R> Decode<'a> for DecodeCounted<'a, T, R>
 where
     T: Decode<'a>,
     R: Decode<'a>,
-    R: Num + NumAssign,
+    R: Num + NumAssign + Copy,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let mut remaining: R = decoder.read()?;
+        let count: R = decoder.read()?;
         let old_decoder = decoder.clone();
 
+        let mut remaining = count;
         while !remaining.is_zero() {
             decoder.skip::<T>()?;
             remaining -= R::one();
@@ -261,7 +262,7 @@ where
 
         Ok(DecodeCounted {
             decoder: old_decoder,
-            remaining,
+            remaining: count,
             marker: PhantomData,
         })
     }
@@ -338,7 +339,7 @@ impl<'a, T, R> Decode<'a> for DecodeCountedCopy<'a, T, R>
 where
     T: Decode<'a>,
     R: Decode<'a>,
-    R: Num + NumAssign,
+    R: Num + NumAssign + Copy,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(DecodeCountedCopy {
