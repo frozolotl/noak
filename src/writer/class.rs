@@ -174,12 +174,7 @@ impl ClassWriter {
     where
         F: FnOnce(&mut FieldWriter) -> Result<(), EncodeError>,
     {
-        if self.state == WriteState::Interfaces {
-            if self.interface_encoder.is_none() {
-                self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-            }
-            self.state = WriteState::Fields;
-        }
+        self.write_empty_interfaces()?;
         EncodeError::result_from_state(self.state, &WriteState::Fields, Context::Fields)?;
 
         if self.field_encoder.is_none() {
@@ -199,18 +194,7 @@ impl ClassWriter {
     where
         F: FnOnce(&mut MethodWriter) -> Result<(), EncodeError>,
     {
-        if self.state == WriteState::Interfaces {
-            if self.interface_encoder.is_none() {
-                self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-            }
-            self.state = WriteState::Fields;
-        }
-        if self.state == WriteState::Fields {
-            if self.field_encoder.is_none() {
-                self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-            }
-            self.state = WriteState::Methods;
-        }
+        self.write_empty_fields()?;
         EncodeError::result_from_state(self.state, &WriteState::Methods, Context::Methods)?;
 
         if self.method_encoder.is_none() {
@@ -226,16 +210,50 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
-        if self.state >= WriteState::Interfaces {
-            self.encoder.write(0u16)?;
-            Ok(self.encoder.into_inner())
-        } else {
+    pub fn write_empty_interfaces(&mut self) -> Result<(), EncodeError> {
+        if self.state < WriteState::Interfaces {
             Err(EncodeError::with_context(
                 EncodeErrorKind::ValuesMissing,
                 Context::Interfaces,
             ))
+        } else if self.state == WriteState::Interfaces && self.interface_encoder.is_none() {
+            self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            self.state = WriteState::Fields;
+            Ok(())
+        } else {
+            Ok(())
         }
+    }
+
+    pub fn write_empty_fields(&mut self) -> Result<(), EncodeError> {
+        self.write_empty_interfaces()?;
+        if self.state == WriteState::Fields && self.field_encoder.is_none() {
+            self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            self.state = WriteState::Methods;
+        }
+        Ok(())
+    }
+
+    pub fn write_empty_methods(&mut self) -> Result<(), EncodeError> {
+        self.write_empty_fields()?;
+        if self.state == WriteState::Methods && self.method_encoder.is_none() {
+            self.method_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
+            self.state = WriteState::Attributes;
+        }
+        Ok(())
+    }
+
+    pub fn write_empty_attributes(&mut self) -> Result<(), EncodeError> {
+        self.write_empty_methods()?;
+        if self.state == WriteState::Attributes {
+            self.encoder.write(0u16)?;
+        }
+        Ok(())
+    }
+
+    pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
+        self.write_empty_attributes()?;
+        Ok(self.encoder.into_inner())
     }
 }
 
