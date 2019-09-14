@@ -92,6 +92,7 @@ impl ClassWriter {
         &mut self,
         flags: AccessFlags,
     ) -> Result<&mut ClassWriter, EncodeError> {
+        self.write_empty_pool()?;
         EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::ClassInfo)?;
         self.encoder.write(flags)?;
         self.state = WriteState::ThisClass;
