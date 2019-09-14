@@ -80,10 +80,23 @@ impl ClassWriter {
         self.write_empty_pool()?;
 
         let mut encoder = self.encoder.inserting(self.pool_end);
+
+        let start_end = self.pool_end;
         let index = self.pool.insert(item, &mut encoder)?;
         self.pool_end = encoder.position();
 
         self.encoder.replacing(POOL_START).write(self.pool.len())?;
+
+        if let Some(interface_encoder) = &mut self.interface_encoder {
+            let offset = self.pool_end.sub(start_end);
+            interface_encoder.move_start_offset_by(offset);
+            if let Some(field_encoder) = &mut self.field_encoder {
+                field_encoder.move_start_offset_by(offset);
+                if let Some(method_encoder) = &mut self.method_encoder {
+                    method_encoder.move_start_offset_by(offset);
+                }
+            }
+        }
 
         Ok(index)
     }

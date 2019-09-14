@@ -73,6 +73,10 @@ impl Offset {
     pub const fn add(self, by: Offset) -> Offset {
         Offset(self.0 + by.0)
     }
+
+    pub const fn sub(self, by: Offset) -> Offset {
+        Offset(self.0 - by.0)
+    }
 }
 
 #[derive(Clone)]
@@ -139,7 +143,7 @@ impl<'a> Encoder for ReplacingEncoder<'a> {
             "cannot replace bytes which do not exist"
         );
         let (a, b) = std::mem::replace(&mut self.buf, &mut []).split_at_mut(bytes.len());
-        a.copy_from_slice(&bytes[..bytes.len()]);
+        a.copy_from_slice(&bytes);
         self.buf = b;
         Ok(())
     }
@@ -192,6 +196,10 @@ where
             start_offset,
             count,
         })
+    }
+
+    pub fn move_start_offset_by(&mut self, offset: Offset) {
+        self.start_offset = self.start_offset.add(offset);
     }
 
     pub fn increment_count(&mut self, encoder: &mut VecEncoder) -> Result<(), EncodeError> {
