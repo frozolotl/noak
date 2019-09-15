@@ -1,6 +1,6 @@
 use crate::reader::decoding::Decoder;
-use std::fmt;
 use std::cmp::Ordering;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecodeErrorKind {
@@ -143,11 +143,21 @@ impl EncodeError {
     }
 
     #[inline]
-    pub fn result_from_state<S: Ord>(prev: S, now: &S, context: Context) -> Result<(), EncodeError> {
+    pub fn result_from_state<S: Ord>(
+        prev: S,
+        now: &S,
+        context: Context,
+    ) -> Result<(), EncodeError> {
         match prev.cmp(now) {
-            Ordering::Less => Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, context)),
+            Ordering::Less => Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                context,
+            )),
             Ordering::Equal => Ok(()),
-            Ordering::Greater => Err(EncodeError::with_context(EncodeErrorKind::CantChangeAnymore, context)),
+            Ordering::Greater => Err(EncodeError::with_context(
+                EncodeErrorKind::CantChangeAnymore,
+                context,
+            )),
         }
     }
 
