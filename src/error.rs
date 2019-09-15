@@ -45,7 +45,7 @@ pub struct DecodeError {
 }
 
 impl DecodeError {
-    pub fn new(kind: DecodeErrorKind) -> DecodeError {
+    pub(crate) fn new(kind: DecodeErrorKind) -> DecodeError {
         DecodeError {
             kind,
             position: None,
@@ -53,7 +53,7 @@ impl DecodeError {
         }
     }
 
-    pub fn with_context(kind: DecodeErrorKind, context: Context) -> DecodeError {
+    pub(crate) fn with_context(kind: DecodeErrorKind, context: Context) -> DecodeError {
         DecodeError {
             kind,
             position: None,
@@ -61,7 +61,7 @@ impl DecodeError {
         }
     }
 
-    pub fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
+    pub(crate) fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
         DecodeError {
             kind,
             position: Some(position),
@@ -69,7 +69,7 @@ impl DecodeError {
         }
     }
 
-    pub fn from_decoder(kind: DecodeErrorKind, decoder: &Decoder) -> DecodeError {
+    pub(crate) fn from_decoder(kind: DecodeErrorKind, decoder: &Decoder) -> DecodeError {
         DecodeError {
             kind,
             position: Some(decoder.file_position()),
@@ -131,19 +131,19 @@ pub struct EncodeError {
 }
 
 impl EncodeError {
-    pub fn new(kind: EncodeErrorKind) -> EncodeError {
+    pub(crate) fn new(kind: EncodeErrorKind) -> EncodeError {
         EncodeError {
             kind,
             context: Context::None,
         }
     }
 
-    pub fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
+    pub(crate) fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
         EncodeError { kind, context }
     }
 
     #[inline]
-    pub fn result_from_state<S: Ord>(
+    pub(crate) fn result_from_state<S: Ord>(
         prev: S,
         now: &S,
         context: Context,
