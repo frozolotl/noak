@@ -6,7 +6,7 @@ use crate::reader::{
     cpool::{self, ConstantPool},
     decoding::*,
     fields::FieldIter,
-    interfaces::{InterfaceNames, Interfaces},
+    interfaces::{InterfaceIter, InterfaceNameIter},
     methods::MethodIter,
 };
 
@@ -20,7 +20,7 @@ pub struct Class<'a> {
 
     this_class: Option<cpool::Index<cpool::Class>>,
     super_class: Option<cpool::Index<cpool::Class>>,
-    interfaces: Option<Interfaces<'a>>,
+    interfaces: Option<InterfaceIter<'a>>,
     fields: Option<FieldIter<'a>>,
     methods: Option<MethodIter<'a>>,
     attributes: Option<AttributeIter<'a>>,
@@ -103,15 +103,15 @@ impl<'a> Class<'a> {
         }
     }
 
-    pub fn interface_indices(&mut self) -> Result<Interfaces<'a>, DecodeError> {
+    pub fn interface_indices(&mut self) -> Result<InterfaceIter<'a>, DecodeError> {
         self.read_info()?;
         Ok(self.interfaces.clone().unwrap())
     }
 
-    pub fn interface_names(&mut self) -> Result<InterfaceNames<'a, '_>, DecodeError> {
+    pub fn interface_names(&mut self) -> Result<InterfaceNameIter<'a, '_>, DecodeError> {
         let interfaces = self.interface_indices()?;
         let pool = self.pool()?;
-        Ok(InterfaceNames::new(&pool, interfaces))
+        Ok(InterfaceNameIter::new(&pool, interfaces))
     }
 
     pub fn fields(&mut self) -> Result<FieldIter<'a>, DecodeError> {

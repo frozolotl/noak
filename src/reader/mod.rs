@@ -10,5 +10,5 @@ pub use crate::reader::decoding::{DecodeCounted, DecodeCountedCopy};
 pub use attributes::{Attribute, AttributeContent, AttributeIter};
 pub use class::Class;
 pub use fields::{Field, FieldIter};
-pub use interfaces::{InterfaceNames, Interfaces};
+pub use interfaces::{InterfaceIter, InterfaceNameIter};
 pub use methods::{Method, MethodIter};
