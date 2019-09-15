@@ -131,13 +131,6 @@ pub struct EncodeError {
 }
 
 impl EncodeError {
-    pub(crate) fn new(kind: EncodeErrorKind) -> EncodeError {
-        EncodeError {
-            kind,
-            context: Context::None,
-        }
-    }
-
     pub(crate) fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
         EncodeError { kind, context }
     }
