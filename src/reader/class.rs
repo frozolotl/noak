@@ -2,12 +2,12 @@ use crate::error::*;
 use crate::header::{AccessFlags, Version};
 use crate::mutf8::MStr;
 use crate::reader::{
-    decoding::*,
+    attributes::AttributeIter,
     cpool::{self, ConstantPool},
-    interfaces::{Interfaces, InterfaceNames},
+    decoding::*,
     fields::FieldIter,
+    interfaces::{InterfaceNames, Interfaces},
     methods::MethodIter,
-    attributes::Attributes,
 };
 
 #[derive(Clone)]
@@ -23,7 +23,7 @@ pub struct Class<'a> {
     interfaces: Option<Interfaces<'a>>,
     fields: Option<FieldIter<'a>>,
     methods: Option<MethodIter<'a>>,
-    attributes: Option<Attributes<'a>>,
+    attributes: Option<AttributeIter<'a>>,
 }
 
 impl<'a> Class<'a> {
@@ -132,7 +132,7 @@ impl<'a> Class<'a> {
         Ok(self.methods.clone().unwrap())
     }
 
-    pub fn attribute_indices(&mut self) -> Result<Attributes<'a>, DecodeError> {
+    pub fn attribute_indices(&mut self) -> Result<AttributeIter<'a>, DecodeError> {
         if self.read_level < ReadLevel::Attributes {
             self.methods()?;
             self.attributes = Some(self.decoder.read()?);

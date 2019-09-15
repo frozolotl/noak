@@ -1,7 +1,7 @@
 use crate::error::*;
 use crate::header::AccessFlags;
 use crate::reader::decoding::*;
-use crate::reader::{attributes, cpool, Attributes};
+use crate::reader::{cpool, AttributeIter};
 use std::fmt;
 
 pub type FieldIter<'a> = DecodeCounted<'a, Field<'a>>;
@@ -11,7 +11,7 @@ pub struct Field<'a> {
     access_flags: AccessFlags,
     name: cpool::Index<cpool::Utf8<'a>>,
     descriptor: cpool::Index<cpool::Utf8<'a>>,
-    attributes: Attributes<'a>,
+    attributes: AttributeIter<'a>,
 }
 
 impl<'a> Field<'a> {
@@ -27,7 +27,7 @@ impl<'a> Field<'a> {
         self.descriptor
     }
 
-    pub fn attribute_indices(&self) -> Attributes<'a> {
+    pub fn attribute_indices(&self) -> AttributeIter<'a> {
         self.attributes.clone()
     }
 }
@@ -46,8 +46,8 @@ impl<'a> Decode<'a> for Field<'a> {
         let _access_flags = decoder.skip::<u16>()?;
         let _name = decoder.skip::<u16>()?;
         let _descriptor = decoder.skip::<u16>()?;
-
-        attributes::skip_attributes(decoder)
+        let _attributes = decoder.skip::<AttributeIter>()?;
+        Ok(())
     }
 }
 

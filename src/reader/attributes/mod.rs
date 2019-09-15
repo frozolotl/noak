@@ -17,8 +17,9 @@ pub use module::*;
 use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::cpool;
-use crate::reader::decoding::{Decode, Decoder};
-use std::iter::FusedIterator;
+use crate::reader::decoding::*;
+
+pub type AttributeIter<'a> = DecodeCounted<'a, Attribute<'a>>;
 
 #[derive(Clone)]
 pub struct Attribute<'a> {
@@ -107,49 +108,6 @@ impl<'a> Attribute<'a> {
         }
     }
 }
-
-/// An iterator over the attributes of some item
-#[derive(Clone)]
-pub struct Attributes<'a> {
-    decoder: Decoder<'a>,
-}
-
-impl<'a> Decode<'a> for Attributes<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let mut attribute_decoder = decoder.clone();
-        attribute_decoder.advance(2)?;
-        skip_attributes(decoder)?;
-        let attribute_length = attribute_decoder.bytes_remaining() - decoder.bytes_remaining();
-
-        Ok(Attributes {
-            decoder: attribute_decoder.limit(attribute_length, Context::Attributes)?,
-        })
-    }
-}
-
-pub(in crate::reader) fn skip_attributes(decoder: &mut Decoder) -> Result<(), DecodeError> {
-    let count: u16 = decoder.read()?;
-
-    for _ in 0..count {
-        // skipping the name
-        decoder.advance(2)?;
-        let len: u32 = decoder.read()?;
-        decoder.advance(len as usize)?;
-    }
-
-    Ok(())
-}
-
-impl<'a> Iterator for Attributes<'a> {
-    type Item = Attribute<'a>;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.decoder.read().ok()
-    }
-}
-
-impl<'a> FusedIterator for Attributes<'a> {}
 
 #[derive(Clone)]
 pub enum AttributeContent<'a> {

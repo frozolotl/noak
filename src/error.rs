@@ -61,7 +61,11 @@ impl DecodeError {
         }
     }
 
-    pub(crate) fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
+    pub(crate) fn with_info(
+        kind: DecodeErrorKind,
+        position: usize,
+        context: Context,
+    ) -> DecodeError {
         DecodeError {
             kind,
             position: Some(position),

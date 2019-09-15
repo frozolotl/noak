@@ -10,7 +10,7 @@ pub use stack_map::*;
 
 use crate::error::*;
 use crate::reader::decoding::{Decode, DecodeInto, Decoder};
-use crate::reader::{cpool, Attributes};
+use crate::reader::{cpool, AttributeIter};
 use std::fmt;
 use std::ops::Range;
 
@@ -20,7 +20,7 @@ pub struct Code<'a> {
     max_locals: u16,
     raw_instructions: RawInstructions<'a>,
     exception_handlers: ExceptionHandlers<'a>,
-    attributes: Attributes<'a>,
+    attributes: AttributeIter<'a>,
 }
 
 impl<'a> Code<'a> {
@@ -46,7 +46,7 @@ impl<'a> Code<'a> {
         self.exception_handlers.clone()
     }
 
-    pub fn attribute_indices(&self) -> Attributes<'a> {
+    pub fn attribute_indices(&self) -> AttributeIter<'a> {
         self.attributes.clone()
     }
 }

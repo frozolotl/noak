@@ -1,13 +1,13 @@
 pub mod attributes;
+mod class;
 pub mod cpool;
 pub(crate) mod decoding;
 mod fields;
 mod interfaces;
 mod methods;
-mod class;
 
 pub use crate::reader::decoding::{DecodeCounted, DecodeCountedCopy};
-pub use attributes::{Attribute, AttributeContent, Attributes};
+pub use attributes::{Attribute, AttributeContent, AttributeIter};
 pub use class::Class;
 pub use fields::{Field, FieldIter};
 pub use interfaces::{InterfaceNames, Interfaces};
