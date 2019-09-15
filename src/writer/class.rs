@@ -112,9 +112,9 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_this_class_name(
+    pub fn write_this_class_name<I: Into<MString>>(
         &mut self,
-        name: impl Into<MString>,
+        name: I,
     ) -> Result<&mut ClassWriter, EncodeError> {
         let utf8_index = self.insert_constant(cpool::Utf8 {
             content: name.into(),
@@ -133,9 +133,9 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_super_class_name(
+    pub fn write_super_class_name<I: Into<MString>>(
         &mut self,
-        name: impl Into<MString>,
+        name: I,
     ) -> Result<&mut ClassWriter, EncodeError> {
         let utf8_index = self.insert_constant(cpool::Utf8 {
             content: name.into(),
@@ -198,7 +198,10 @@ impl ClassWriter {
         f(&mut writer)?;
         writer.finish()?;
 
-        self.field_encoder.as_mut().unwrap().increment_count(&mut self.encoder)?;
+        self.field_encoder
+            .as_mut()
+            .unwrap()
+            .increment_count(&mut self.encoder)?;
 
         Ok(self)
     }
@@ -218,7 +221,10 @@ impl ClassWriter {
         f(&mut writer)?;
         writer.finish()?;
 
-        self.method_encoder.as_mut().unwrap().increment_count(&mut self.encoder)?;
+        self.method_encoder
+            .as_mut()
+            .unwrap()
+            .increment_count(&mut self.encoder)?;
 
         Ok(self)
     }

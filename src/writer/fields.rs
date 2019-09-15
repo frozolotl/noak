@@ -27,9 +27,9 @@ impl<'a> FieldWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_name(
+    pub fn write_name<I: Into<MString>>(
         &mut self,
-        name: impl Into<MString>,
+        name: I,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
         let utf8_index = self.class_writer.insert_constant(cpool::Utf8 {
             content: name.into(),
@@ -48,9 +48,9 @@ impl<'a> FieldWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_descriptor(
+    pub fn write_descriptor<I: Into<MString>>(
         &mut self,
-        descriptor: impl Into<MString>,
+        descriptor: I,
     ) -> Result<&mut FieldWriter<'a>, EncodeError> {
         let utf8_index = self.class_writer.insert_constant(cpool::Utf8 {
             content: descriptor.into(),
