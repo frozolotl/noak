@@ -7,16 +7,10 @@ use crate::writer::{
     fields::FieldWriter,
     methods::MethodWriter,
 };
-use std::cmp::Ordering;
 
 const CAFEBABE_END: Offset = Offset::new(4);
 const POOL_START: Offset = CAFEBABE_END.offset(2 + 2);
 const EMPTY_POOL_END: Offset = POOL_START.offset(2);
-
-/// This class offset starting from the pool end
-const THIS_CLASS_OFFSET: Offset = Offset::new(2);
-/// Super class offset starting from the pool end
-const SUPER_CLASS_OFFSET: Offset = THIS_CLASS_OFFSET.offset(2);
 
 #[derive(Clone)]
 pub struct ClassWriter {

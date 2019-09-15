@@ -85,10 +85,6 @@ pub struct VecEncoder {
 }
 
 impl VecEncoder {
-    pub fn new() -> VecEncoder {
-        VecEncoder { buf: Vec::new() }
-    }
-
     pub fn with_capacity(capacity: usize) -> VecEncoder {
         VecEncoder {
             buf: Vec::with_capacity(capacity),
@@ -126,14 +122,6 @@ impl Encoder for VecEncoder {
 
 pub struct ReplacingEncoder<'a> {
     buf: &'a mut [u8],
-}
-
-impl<'a> ReplacingEncoder<'a> {
-    pub fn skip(&mut self, amount: usize) {
-        self.buf = std::mem::replace(&mut self.buf, &mut [])
-            .split_at_mut(amount)
-            .1;
-    }
 }
 
 impl<'a> Encoder for ReplacingEncoder<'a> {
