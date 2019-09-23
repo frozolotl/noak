@@ -27,6 +27,15 @@ pub struct Class<'a> {
 }
 
 impl<'a> Class<'a> {
+    /// Initializes a class reader.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
     pub fn new(v: &'a [u8]) -> Result<Class, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
@@ -46,10 +55,34 @@ impl<'a> Class<'a> {
         })
     }
 
+    /// Returns the class version.
+    ///
+    /// ```no_run
+    /// use noak::{Version, reader::Class};
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// assert_eq!(class.version(), Version::latest());
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
     pub fn version(&self) -> Version {
         self.version
     }
 
+    /// Returns the constant pool of this class.
+    ///
+    /// ```no_run
+    /// use noak::reader::{cpool, Class};
+    ///
+    /// # let data = &[];
+    /// # let index = cpool::Index::new(10)?;
+    /// let mut class = Class::new(data)?;
+    /// let pool = class.pool()?;
+    ///
+    /// let item: &cpool::Utf8 = pool.get(index)?;
+    /// println!("Item: {}", item.content);
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
     pub fn pool(&mut self) -> Result<&ConstantPool<'a>, DecodeError> {
         if self.read_level < ReadLevel::ConstantPool {
             self.read_level = ReadLevel::ConstantPool;
@@ -73,11 +106,42 @@ impl<'a> Class<'a> {
         Ok(())
     }
 
+    /// Returns the access flags of the class.
+    ///
+    /// The flags returned may not be valid in this context.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    /// use noak::AccessFlags;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// let flags = class.access_flags()?;
+    /// assert!(flags.contains(AccessFlags::PUBLIC | AccessFlags::SUPER));
+    ///
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
     pub fn access_flags(&mut self) -> Result<AccessFlags, DecodeError> {
         self.read_info()?;
         Ok(self.access_flags)
     }
 
+    /// Returns the index of this class name.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    /// use noak::AccessFlags;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// let class_index = class.this_class_index()?;
+    /// let pool = class.pool()?;
+    /// let name_index = pool.get(class_index)?.name;
+    /// let class_name = pool.get(name_index)?.content;
+    /// println!("Class: {}", class_name);
+    ///
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
     pub fn this_class_index(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
         self.read_info()?;
         Ok(self.this_class.unwrap())
@@ -103,11 +167,39 @@ impl<'a> Class<'a> {
         }
     }
 
+    /// Returns an iterator over the interface indices into the constant pool.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// for interface_index in class.interface_indices()? {
+    ///     let pool = class.pool()?;
+    ///    
+    ///     let name_index = pool.get(interface_index?)?.name;
+    ///     let interface = pool.get(name_index)?.content;
+    ///     println!("Interface: {}", interface);
+    /// }
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
     pub fn interface_indices(&mut self) -> Result<InterfaceIter<'a>, DecodeError> {
         self.read_info()?;
         Ok(self.interfaces.clone().unwrap())
     }
 
+    /// Returns an iterator over the interface names.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// for interface in class.interface_names()? {
+    ///     println!("Interface: {}", interface?);
+    /// }
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
     pub fn interface_names(&mut self) -> Result<InterfaceNameIter<'a, '_>, DecodeError> {
         let interfaces = self.interface_indices()?;
         let pool = self.pool()?;
