@@ -39,6 +39,7 @@ impl<'a> ConstantPool<'a> {
 
 impl<'a> Decode<'a> for ConstantPool<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<ConstantPool<'a>, DecodeError> {
+        decoder.set_context(Context::ConstantPool);
         let length = decoder.read::<u16>()?;
         if length == 0 {
             return Err(DecodeError::from_decoder(

@@ -96,6 +96,7 @@ impl<'a> Class<'a> {
             // advance the decoder
             self.pool()?;
 
+            self.decoder.set_context(Context::ClassInfo);
             self.access_flags = self.decoder.read()?;
             self.this_class = Some(self.decoder.read()?);
             self.super_class = self.decoder.read()?;
@@ -209,6 +210,7 @@ impl<'a> Class<'a> {
     pub fn fields(&mut self) -> Result<FieldIter<'a>, DecodeError> {
         self.read_info()?;
         if self.read_level < ReadLevel::Fields {
+            self.decoder.set_context(Context::Fields);
             self.fields = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Fields;
         }
@@ -218,6 +220,7 @@ impl<'a> Class<'a> {
     pub fn methods(&mut self) -> Result<MethodIter<'a>, DecodeError> {
         if self.read_level < ReadLevel::Methods {
             self.fields()?;
+            self.decoder.set_context(Context::Methods);
             self.methods = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Methods;
         }
@@ -227,6 +230,7 @@ impl<'a> Class<'a> {
     pub fn attribute_indices(&mut self) -> Result<AttributeIter<'a>, DecodeError> {
         if self.read_level < ReadLevel::Attributes {
             self.methods()?;
+            self.decoder.set_context(Context::Attributes);
             self.attributes = Some(self.decoder.read()?);
             self.read_level = ReadLevel::Attributes;
         }
