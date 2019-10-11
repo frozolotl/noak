@@ -1,3 +1,4 @@
+pub mod attributes;
 mod class;
 pub mod cpool;
 pub(crate) mod encoding;
