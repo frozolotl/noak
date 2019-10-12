@@ -1,6 +1,5 @@
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
-use crate::mutf8::MString;
 use crate::writer::{
     attributes::AttributeWriter,
     cpool::{self, ConstantPool},
@@ -90,43 +89,23 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_this_class_name<I: Into<MString>>(
+    pub fn write_this_class<I: cpool::Insertable<cpool::Utf8>>(
         &mut self,
         name: I,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        let utf8_index = self.insert_constant(cpool::Utf8 {
-            content: name.into(),
-        })?;
-        let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
-        self.write_this_class_index(class_index)
-    }
-
-    pub fn write_this_class_index(
-        &mut self,
-        index: cpool::Index<cpool::Class>,
-    ) -> Result<&mut ClassWriter, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::ThisClass, Context::ClassInfo)?;
+        let index = name.insert(self)?;
         self.encoder.write(index)?;
         self.state = WriteState::SuperClass;
         Ok(self)
     }
 
-    pub fn write_super_class_name<I: Into<MString>>(
+    pub fn write_super_class<I: cpool::Insertable<cpool::Utf8>>(
         &mut self,
         name: I,
     ) -> Result<&mut ClassWriter, EncodeError> {
-        let utf8_index = self.insert_constant(cpool::Utf8 {
-            content: name.into(),
-        })?;
-        let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
-        self.write_super_class_index(class_index)
-    }
-
-    pub fn write_super_class_index(
-        &mut self,
-        index: cpool::Index<cpool::Class>,
-    ) -> Result<&mut ClassWriter, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::SuperClass, Context::ClassInfo)?;
+        let index = name.insert(self)?;
         self.encoder.write(index)?;
         self.state = WriteState::Interfaces;
         Ok(self)

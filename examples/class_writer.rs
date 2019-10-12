@@ -11,8 +11,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     class_writer
         .write_access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
-        .write_this_class_name("Test")?
-        .write_super_class_name("java/lang/Object")?;
+        .write_this_class("Test")?
+        .write_super_class("java/lang/Object")?;
 
     class_writer.write_interfaces(|writer| {
         writer.write(|writer| {
