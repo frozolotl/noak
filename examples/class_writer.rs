@@ -12,36 +12,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     class_writer
         .write_access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
         .write_this_class("Test")?
-        .write_super_class("java/lang/Object")?;
-
-    class_writer.write_interfaces(|writer| {
-        writer.write(|writer| {
-            writer.write_interface("java/io/Serializable")?;
-            Ok(())
-        })
-    })?;
-
-    class_writer.write_fields(|writer| {
-        writer.write(|writer| {
-            writer
-                .write_access_flags(
-                    AccessFlags::PRIVATE | AccessFlags::STATIC | AccessFlags::FINAL,
-                )?
-                .write_name("ZERO")?
-                .write_descriptor("I")?;
-            Ok(())
-        })
-    })?;
-
-    class_writer.write_methods(|writer| {
-        writer.write(|writer| {
-            writer
-                .write_access_flags(AccessFlags::PUBLIC)?
-                .write_name("<init>")?
-                .write_descriptor("()V")?;
-            Ok(())
-        })
-    })?;
+        .write_super_class("java/lang/Object")?
+        .write_interfaces(|writer| {
+            writer.write(|writer| {
+                writer.write_interface("java/io/Serializable")?;
+                Ok(())
+            })
+        })?
+        .write_fields(|writer| {
+            writer.write(|writer| {
+                writer
+                    .write_access_flags(
+                        AccessFlags::PRIVATE | AccessFlags::STATIC | AccessFlags::FINAL,
+                    )?
+                    .write_name("ZERO")?
+                    .write_descriptor("I")?;
+                Ok(())
+            })
+        })?
+        .write_methods(|writer| {
+            writer.write(|writer| {
+                writer
+                    .write_access_flags(AccessFlags::PUBLIC)?
+                    .write_name("<init>")?
+                    .write_descriptor("()V")?;
+                Ok(())
+            })
+        })?;
 
     let bytes = class_writer.finish()?;
     std::fs::write(path, &bytes)?;
