@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::writer::ClassWriter;
+use crate::writer::{cpool, ClassWriter};
 use num_traits::{Num, NumAssign, ToPrimitive};
 use std::marker::PhantomData;
 
@@ -198,7 +198,7 @@ where
         })
     }
 
-    pub fn write<F>(&mut self, f: F) -> Result<(), EncodeError>
+    pub fn write<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(&'f mut W) -> Result<(), EncodeError>,
     {
@@ -215,6 +215,6 @@ where
             .replacing(self.count_offset.add(class_writer.pool_end))
             .write(&self.count)?;
         self.class_writer = Some(class_writer);
-        Ok(())
+        Ok(self)
     }
 }

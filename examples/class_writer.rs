@@ -17,7 +17,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             writer.write(|writer| {
                 writer.write_interface("java/io/Serializable")?;
                 Ok(())
-            })
+            })?;
+            Ok(())
         })?
         .write_fields(|writer| {
             writer.write(|writer| {
@@ -28,7 +29,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .write_name("ZERO")?
                     .write_descriptor("I")?;
                 Ok(())
-            })
+            })?;
+            Ok(())
         })?
         .write_methods(|writer| {
             writer.write(|writer| {
@@ -37,7 +39,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .write_name("<init>")?
                     .write_descriptor("()V")?;
                 Ok(())
-            })
+            })?;
+            Ok(())
         })?;
 
     let bytes = class_writer.finish()?;
