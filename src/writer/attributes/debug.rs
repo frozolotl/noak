@@ -1,5 +1,6 @@
 use crate::error::*;
 use crate::writer::{cpool, encoding::*, AttributeWriter};
+use crate::mutf8::MString;
 
 impl<'a> AttributeWriter<'a> {
     pub fn write_source_file<I>(&mut self, file_name: I) -> Result<&mut Self, EncodeError>
@@ -9,6 +10,18 @@ impl<'a> AttributeWriter<'a> {
         let mut writer = self.attribute_writer("SourceFile")?;
         let file_name_index = file_name.insert(writer.class_writer())?;
         writer.write(file_name_index)?;
+        writer.finish()?;
+        self.finished = true;
+
+        Ok(self)
+    }
+
+    pub fn write_source_debug_extension<I>(&mut self, debug_extension: I) -> Result<&mut Self, EncodeError>
+    where
+        I: Into<MString>,
+    {
+        let mut writer = self.attribute_writer("SourceDebugExtension")?;
+        writer.write(debug_extension.into().as_bytes())?;
         writer.finish()?;
         self.finished = true;
 
