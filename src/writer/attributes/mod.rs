@@ -6,6 +6,22 @@ pub struct AttributeWriter<'a> {
     finished: bool,
 }
 
+impl<'a> AttributeWriter<'a> {
+    pub fn write_attribute<I>(&mut self, name: I, bytes: &[u8]) -> Result<&mut Self, EncodeError>
+    where
+        I: cpool::Insertable<cpool::Utf8>,
+    {
+        let index = name.insert(self.class_writer)?;
+        self.class_writer
+            .encoder
+            .write(index)?
+            .write(bytes.len() as u32)?
+            .write(bytes)?;
+
+        Ok(self)
+    }
+}
+
 impl<'a> WriteBuilder<'a> for AttributeWriter<'a> {
     fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
         Ok(AttributeWriter {
