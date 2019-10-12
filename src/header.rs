@@ -50,6 +50,7 @@ impl<'a> Decode<'a> for AccessFlags {
 
 impl Encode for AccessFlags {
     fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        encoder.write(self.bits())
+        encoder.write(self.bits())?;
+        Ok(())
     }
 }

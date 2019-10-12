@@ -96,17 +96,19 @@ impl<I> fmt::Debug for Index<I> {
 
 impl<I> Encode for Index<I> {
     fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        encoder.write(self.index.get())
+        encoder.write(self.index.get())?;
+        Ok(())
     }
 }
 
 impl<I> Encode for Option<Index<I>> {
     fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
         if let Some(index) = self {
-            encoder.write(index.index.get())
+            encoder.write(index.index.get())?;
         } else {
-            encoder.write(0u16)
+            encoder.write(0u16)?;
         }
+        Ok(())
     }
 }
 
@@ -369,7 +371,8 @@ impl Encode for MethodKind {
             InvokeInterface => 9,
         };
 
-        encoder.write(tag)
+        encoder.write(tag)?;
+        Ok(())
     }
 }
 

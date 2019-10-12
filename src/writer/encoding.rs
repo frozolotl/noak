@@ -5,8 +5,9 @@ use std::marker::PhantomData;
 pub trait Encoder: Sized {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
 
-    fn write<T: Encode>(&mut self, value: T) -> Result<(), EncodeError> {
-        value.encode(self)
+    fn write<T: Encode>(&mut self, value: T) -> Result<&mut Self, EncodeError> {
+        value.encode(self)?;
+        Ok(self)
     }
 }
 
@@ -31,7 +32,8 @@ macro_rules! impl_encode {
         $(
             impl Encode for $t {
                 fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-                    encoder.write(self.to_be_bytes().as_ref())
+                    encoder.write(self.to_be_bytes().as_ref())?;
+                    Ok(())
                 }
             }
         )*
@@ -49,13 +51,15 @@ impl_encode! {
 
 impl Encode for f32 {
     fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        encoder.write(self.to_bits().to_be_bytes().as_ref())
+        encoder.write(self.to_bits().to_be_bytes().as_ref())?;
+        Ok(())
     }
 }
 
 impl Encode for f64 {
     fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        encoder.write(self.to_bits().to_be_bytes().as_ref())
+        encoder.write(self.to_bits().to_be_bytes().as_ref())?;
+        Ok(())
     }
 }
 
