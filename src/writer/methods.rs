@@ -46,9 +46,9 @@ impl<'a> MethodWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_attributes<F, T>(&mut self, f: F) -> Result<(), EncodeError>
+    pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
     where
-        F: FnOnce(&mut CountedWriter<AttributeWriter>) -> Result<T, EncodeError>,
+        F: for<'f> FnOnce(&mut CountedWriter<'f, AttributeWriter<'f>>) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
         let mut builder = CountedWriter::new(self.class_writer)?;
