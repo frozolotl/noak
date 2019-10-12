@@ -176,6 +176,7 @@ pub struct LengthPrefixedEncoder<'a> {
 impl<'a> LengthPrefixedEncoder<'a> {
     pub fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
         let length_offset = class_writer.encoder.position().sub(class_writer.pool_end);
+        class_writer.encoder.write(0u32)?;
         Ok(LengthPrefixedEncoder {
             class_writer,
             length_offset,
