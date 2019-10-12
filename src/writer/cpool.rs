@@ -219,38 +219,6 @@ impl Encode for Item {
     }
 }
 
-macro_rules! impl_into_item {
-    ($($name:ident;)*) => {
-        $(
-            impl From<$name> for Item {
-                fn from(item: $name) -> Item {
-                    Item::$name(item)
-                }
-            }
-        )*
-    }
-}
-
-impl_into_item! {
-    Class;
-    FieldRef;
-    MethodRef;
-    InterfaceMethodRef;
-    String;
-    Integer;
-    Long;
-    Float;
-    Double;
-    NameAndType;
-    Utf8;
-    MethodHandle;
-    MethodType;
-    Dynamic;
-    InvokeDynamic;
-    Module;
-    Package;
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Class {
     pub name: Index<Utf8>,
@@ -402,5 +370,141 @@ impl Encode for MethodKind {
         };
 
         encoder.write(tag)
+    }
+}
+
+macro_rules! impl_into_item {
+    ($($name:ident;)*) => {
+        $(
+            impl From<$name> for Item {
+                fn from(item: $name) -> Item {
+                    Item::$name(item)
+                }
+            }
+        )*
+    }
+}
+
+impl_into_item! {
+    Class;
+    FieldRef;
+    MethodRef;
+    InterfaceMethodRef;
+    String;
+    Integer;
+    Long;
+    Float;
+    Double;
+    NameAndType;
+    Utf8;
+    MethodHandle;
+    MethodType;
+    Dynamic;
+    InvokeDynamic;
+    Module;
+    Package;
+}
+
+pub trait Insertable {
+    type Output;
+
+    fn insert<E: Encoder>(
+        self,
+        pool: &mut ConstantPool,
+        encoder: E,
+    ) -> Result<Index<Self::Output>, EncodeError>;
+}
+
+macro_rules! impl_insertable {
+    ($($name:ident;)*) => {
+        $(
+            impl Insertable for $name {
+                type Output = $name;
+
+                fn insert<E: Encoder>(self, pool: &mut ConstantPool, encoder: E) -> Result<Index<Self::Output>, EncodeError> {
+                    pool.insert(self, encoder)
+                }
+            }
+        )*
+    }
+}
+
+impl_insertable! {
+    Class;
+    FieldRef;
+    MethodRef;
+    InterfaceMethodRef;
+    String;
+    Integer;
+    Long;
+    Float;
+    Double;
+    NameAndType;
+    Utf8;
+    MethodHandle;
+    MethodType;
+    Dynamic;
+    InvokeDynamic;
+    Module;
+    Package;
+}
+
+impl Insertable for MString {
+    type Output = Utf8;
+
+    fn insert<E: Encoder>(
+        self,
+        pool: &mut ConstantPool,
+        encoder: E,
+    ) -> Result<Index<Self::Output>, EncodeError> {
+        pool.insert(Utf8 { content: self }, encoder)
+    }
+}
+
+impl Insertable for i32 {
+    type Output = Integer;
+
+    fn insert<E: Encoder>(
+        self,
+        pool: &mut ConstantPool,
+        encoder: E,
+    ) -> Result<Index<Self::Output>, EncodeError> {
+        pool.insert(Integer { value: self }, encoder)
+    }
+}
+
+impl Insertable for i64 {
+    type Output = Long;
+
+    fn insert<E: Encoder>(
+        self,
+        pool: &mut ConstantPool,
+        encoder: E,
+    ) -> Result<Index<Self::Output>, EncodeError> {
+        pool.insert(Long { value: self }, encoder)
+    }
+}
+
+impl Insertable for f32 {
+    type Output = Float;
+
+    fn insert<E: Encoder>(
+        self,
+        pool: &mut ConstantPool,
+        encoder: E,
+    ) -> Result<Index<Self::Output>, EncodeError> {
+        pool.insert(Float { value: self }, encoder)
+    }
+}
+
+impl Insertable for f64 {
+    type Output = Double;
+
+    fn insert<E: Encoder>(
+        self,
+        pool: &mut ConstantPool,
+        encoder: E,
+    ) -> Result<Index<Self::Output>, EncodeError> {
+        pool.insert(Double { value: self }, encoder)
     }
 }
