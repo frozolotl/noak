@@ -1,6 +1,6 @@
 use crate::error::*;
 use crate::mutf8::{MStr, MString};
-use crate::writer::encoding::*;
+use crate::writer::{encoding::*, ClassWriter};
 use indexmap::IndexMap;
 use std::{
     convert::TryFrom,
@@ -406,10 +406,9 @@ impl_into_item! {
 }
 
 pub trait Insertable<O> {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<O>, EncodeError>;
 }
 
@@ -417,8 +416,8 @@ macro_rules! impl_insertable {
     ($($name:ident;)*) => {
         $(
             impl Insertable<$name> for $name {
-                fn insert<E: Encoder>(self, pool: &mut ConstantPool, encoder: E) -> Result<Index<$name>, EncodeError> {
-                    pool.insert(self, encoder)
+                fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<$name>, EncodeError> {
+                    class_writer.insert_constant(self)
                 }
             }
         )*
@@ -426,6 +425,7 @@ macro_rules! impl_insertable {
 }
 
 impl_insertable! {
+    Item;
     Class;
     FieldRef;
     MethodRef;
@@ -446,72 +446,65 @@ impl_insertable! {
 }
 
 impl Insertable<Utf8> for MString {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<Utf8>, EncodeError> {
-        pool.insert(Utf8 { content: self }, encoder)
+        class_writer.insert_constant(Utf8 { content: self })
     }
 }
 
 impl Insertable<Utf8> for &MStr {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<Utf8>, EncodeError> {
-        pool.insert(Utf8 { content: self.to_owned() }, encoder)
+        class_writer.insert_constant(Utf8 { content: self.to_owned() })
     }
 }
 
 impl<I: Insertable<Utf8>> Insertable<Class> for I {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<Class>, EncodeError> {
-        let name = self.insert(pool, &mut encoder)?;
-        pool.insert(Class { name }, encoder)
+        let name = self.insert(class_writer)?;
+        class_writer.insert_constant(Class { name })
     }
 }
 
 impl Insertable<Integer> for i32 {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<Integer>, EncodeError> {
-        pool.insert(Integer { value: self }, encoder)
+        class_writer.insert_constant(Integer { value: self })
     }
 }
 
 impl Insertable<Long> for i64 {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<Long>, EncodeError> {
-        pool.insert(Long { value: self }, encoder)
+        class_writer.insert_constant(Long { value: self })
     }
 }
 
 impl Insertable<Float> for f32 {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<Float>, EncodeError> {
-        pool.insert(Float { value: self }, encoder)
+        class_writer.insert_constant(Float { value: self })
     }
 }
 
 impl Insertable<Double> for f64 {
-    fn insert<E: Encoder>(
+    fn insert(
         self,
-        pool: &mut ConstantPool,
-        encoder: E,
+        class_writer: &mut ClassWriter,
     ) -> Result<Index<Double>, EncodeError> {
-        pool.insert(Double { value: self }, encoder)
+        class_writer.insert_constant(Double { value: self })
     }
 }
