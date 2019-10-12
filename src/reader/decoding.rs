@@ -1,5 +1,4 @@
 use crate::error::*;
-use num_traits::{Num, NumAssign, ToPrimitive};
 use std::fmt;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
@@ -247,17 +246,15 @@ impl<'a, T, R: 'a> DecodeCounted<'a, T, R> {
 impl<'a, T, R> Decode<'a> for DecodeCounted<'a, T, R>
 where
     T: Decode<'a>,
-    R: Decode<'a>,
-    R: Num + NumAssign + Copy,
+    R: Decode<'a> + Countdown,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let count: R = decoder.read()?;
         let old_decoder = decoder.clone();
 
         let mut remaining = count;
-        while !remaining.is_zero() {
+        while let CountState::Continue = remaining.decrement() {
             decoder.skip::<T>()?;
-            remaining -= R::one();
         }
 
         Ok(DecodeCounted {
@@ -286,32 +283,29 @@ where
 impl<'a, T, R> Iterator for DecodeCounted<'a, T, R>
 where
     T: Decode<'a>,
-    R: Decode<'a>,
-    R: Num + NumAssign + ToPrimitive,
+    R: Decode<'a> + Countdown,
 {
     type Item = Result<T, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.remaining.is_zero() {
-            None
-        } else {
-            self.remaining -= R::one();
-            Some(self.decoder.read())
+        match self.remaining.decrement() {
+            CountState::Continue => Some(self.decoder.read()),
+            CountState::Break => None,
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, self.remaining.to_usize())
+        (0, Some(self.remaining.into()))
     }
 }
 
 impl<'a, T: Decode<'a>> FusedIterator for DecodeCounted<'a, T> {}
 
-impl<'a, T, R: Clone> Clone for DecodeCounted<'a, T, R> {
+impl<'a, T, R: Countdown> Clone for DecodeCounted<'a, T, R> {
     fn clone(&self) -> Self {
         DecodeCounted {
             decoder: self.decoder.clone(),
-            remaining: self.remaining.clone(),
+            remaining: self.remaining,
             marker: PhantomData,
         }
     }
@@ -329,7 +323,7 @@ pub struct DecodeCountedCopy<'a, T, R = u16> {
     iter: DecodeCounted<'a, T, R>,
 }
 
-impl<'a, T, R: Clone> DecodeCountedCopy<'a, T, R> {
+impl<'a, T, R: Countdown> DecodeCountedCopy<'a, T, R> {
     pub fn iter(&self) -> DecodeCounted<'a, T, R> {
         self.iter.clone()
     }
@@ -338,8 +332,7 @@ impl<'a, T, R: Clone> DecodeCountedCopy<'a, T, R> {
 impl<'a, T, R> Decode<'a> for DecodeCountedCopy<'a, T, R>
 where
     T: Decode<'a>,
-    R: Decode<'a>,
-    R: Num + NumAssign + Copy,
+    R: Decode<'a> + Countdown,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(DecodeCountedCopy {
@@ -360,7 +353,7 @@ where
     }
 }
 
-impl<'a, T, R: Clone> Clone for DecodeCountedCopy<'a, T, R> {
+impl<'a, T, R: Countdown> Clone for DecodeCountedCopy<'a, T, R> {
     fn clone(&self) -> Self {
         DecodeCountedCopy {
             iter: self.iter.clone(),
@@ -371,5 +364,34 @@ impl<'a, T, R: Clone> Clone for DecodeCountedCopy<'a, T, R> {
 impl<'a, T, R> fmt::Debug for DecodeCountedCopy<'a, T, R> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("DecodeCountedCopy").finish()
+    }
+}
+
+pub trait Countdown: Copy + Into<usize> {
+    /// Decrements the counter and returns whether it can continue.
+    fn decrement(&mut self) -> CountState;
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum CountState {
+    Continue,
+    Break,
+}
+
+impl Countdown for u8 {
+    fn decrement(&mut self) -> CountState {
+        match self.checked_sub(1) {
+            Some(_) => CountState::Continue,
+            None => CountState::Break,
+        }
+    }
+}
+
+impl Countdown for u16 {
+    fn decrement(&mut self) -> CountState {
+        match self.checked_sub(1) {
+            Some(_) => CountState::Continue,
+            None => CountState::Break,
+        }
     }
 }
