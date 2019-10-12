@@ -8,10 +8,10 @@ pub struct InterfaceWriter<'a> {
 
 impl<'a> InterfaceWriter<'a> {
     /// Writes the index to an interface implemented by this class.
-    pub fn write_interface<I: cpool::Insertable<cpool::Class>>(
-        &mut self,
-        name: I,
-    ) -> Result<&mut Self, EncodeError> {
+    pub fn write_interface<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+    where
+        I: cpool::Insertable<cpool::Class>,
+    {
         if self.finished {
             Err(EncodeError::with_context(
                 EncodeErrorKind::CantChangeAnymore,

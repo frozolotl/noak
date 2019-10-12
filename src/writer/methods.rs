@@ -19,10 +19,10 @@ impl<'a> MethodWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_name<I: cpool::Insertable<cpool::Utf8>>(
-        &mut self,
-        name: I,
-    ) -> Result<&mut MethodWriter<'a>, EncodeError> {
+    pub fn write_name<I>(&mut self, name: I) -> Result<&mut MethodWriter<'a>, EncodeError>
+    where
+        I: cpool::Insertable<cpool::Utf8>,
+    {
         EncodeError::result_from_state(self.state, &WriteState::Name, Context::Methods)?;
 
         let index = name.insert(&mut self.class_writer)?;
@@ -31,10 +31,13 @@ impl<'a> MethodWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_descriptor<I: cpool::Insertable<cpool::Utf8>>(
+    pub fn write_descriptor<I>(
         &mut self,
         descriptor: I,
-    ) -> Result<&mut MethodWriter<'a>, EncodeError> {
+    ) -> Result<&mut MethodWriter<'a>, EncodeError>
+    where
+        I: cpool::Insertable<cpool::Utf8>,
+    {
         EncodeError::result_from_state(self.state, &WriteState::Descriptor, Context::Methods)?;
 
         let index = descriptor.insert(&mut self.class_writer)?;

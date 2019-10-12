@@ -89,10 +89,10 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_this_class<I: cpool::Insertable<cpool::Class>>(
-        &mut self,
-        name: I,
-    ) -> Result<&mut ClassWriter, EncodeError> {
+    pub fn write_this_class<I>(&mut self, name: I) -> Result<&mut ClassWriter, EncodeError>
+    where
+        I: cpool::Insertable<cpool::Class>,
+    {
         EncodeError::result_from_state(self.state, &WriteState::ThisClass, Context::ClassInfo)?;
         let index = name.insert(self)?;
         self.encoder.write(index)?;
@@ -113,7 +113,8 @@ impl ClassWriter {
 
     pub fn write_no_super_class(&mut self) -> Result<&mut ClassWriter, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::SuperClass, Context::ClassInfo)?;
-        self.encoder.write::<Option<cpool::Index<cpool::Class>>>(None)?;
+        self.encoder
+            .write::<Option<cpool::Index<cpool::Class>>>(None)?;
         self.state = WriteState::Interfaces;
         Ok(self)
     }
