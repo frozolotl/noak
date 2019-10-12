@@ -11,6 +11,7 @@ impl<'a> AttributeWriter<'a> {
         let file_name_index = file_name.insert(class_writer)?;
         writer.write(file_name_index)?;
         writer.finish()?;
+        self.finished = true;
 
         Ok(self)
     }
