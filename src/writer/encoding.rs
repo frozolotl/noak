@@ -164,6 +164,45 @@ impl<'a> Encoder for InsertingEncoder<'a> {
     }
 }
 
+/// An encoder writing the count of bytes to the front.
+pub struct LengthPrefixedEncoder<'a> {
+    class_writer: &'a mut ClassWriter,
+    /// The offset of the byte counter starting at the pool end.
+    length_offset: Offset,
+    /// The amount of bytes written yet.
+    length: u32,
+}
+
+impl<'a> LengthPrefixedEncoder<'a> {
+    pub fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+        let length_offset = class_writer.encoder.position().sub(class_writer.pool_end);
+        Ok(LengthPrefixedEncoder {
+            class_writer,
+            length_offset,
+            length: 0,
+        })
+    }
+}
+
+impl<'a> Encoder for LengthPrefixedEncoder<'a> {
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
+        match self.length.checked_add(bytes.len() as u32) {
+            Some(length) => {
+                self.class_writer.encoder.write_bytes(bytes)?;
+                self.length = length;
+                self.class_writer
+                    .encoder
+                    .replacing(self.length_offset.add(self.class_writer.pool_end))
+                    .write(self.length)?;
+                Ok(())
+            }
+            None => {
+                Err(EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))
+            }
+        }
+    }
+}
+
 impl<E: Encoder> Encoder for &mut E {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         (*self).write_bytes(bytes)
