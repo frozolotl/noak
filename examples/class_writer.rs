@@ -37,7 +37,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 writer
                     .write_access_flags(AccessFlags::PUBLIC)?
                     .write_name("<init>")?
-                    .write_descriptor("()V")?;
+                    .write_descriptor("()V")?
+                    .write_attributes(|writer| {
+                        writer.write(|writer| {
+                            writer.write_deprecated()?;
+                            Ok(())
+                        })?;
+                        Ok(())
+                    })?;
                 Ok(())
             })?;
             Ok(())
