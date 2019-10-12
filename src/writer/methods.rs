@@ -1,7 +1,6 @@
 use crate::error::*;
+use crate::writer::{cpool, encoding::*, attributes::AttributeWriter, ClassWriter};
 use crate::header::AccessFlags;
-use crate::mutf8::MString;
-use crate::writer::{cpool, encoding::*, ClassWriter};
 
 pub struct MethodWriter<'a> {
     class_writer: &'a mut ClassWriter,
@@ -9,13 +8,6 @@ pub struct MethodWriter<'a> {
 }
 
 impl<'a> MethodWriter<'a> {
-    pub(crate) fn new(class_writer: &'a mut ClassWriter) -> MethodWriter<'a> {
-        MethodWriter {
-            class_writer,
-            state: WriteState::AccessFlags,
-        }
-    }
-
     pub fn write_access_flags(
         &mut self,
         flags: AccessFlags,
@@ -27,77 +19,70 @@ impl<'a> MethodWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_name<I: Into<MString>>(
+    pub fn write_name<I: cpool::Insertable<cpool::Utf8>>(
         &mut self,
         name: I,
     ) -> Result<&mut MethodWriter<'a>, EncodeError> {
-        let utf8_index = self.class_writer.insert_constant(cpool::Utf8 {
-            content: name.into(),
-        })?;
-        self.write_name_index(utf8_index)
-    }
-
-    pub fn write_name_index(
-        &mut self,
-        name: cpool::Index<cpool::Utf8>,
-    ) -> Result<&mut MethodWriter<'a>, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::Name, Context::Methods)?;
 
-        self.class_writer.encoder.write(name)?;
+        let index = name.insert(&mut self.class_writer)?;
+        self.class_writer.encoder.write(index)?;
         self.state = WriteState::Descriptor;
         Ok(self)
     }
 
-    pub fn write_descriptor<I: Into<MString>>(
+    pub fn write_descriptor<I: cpool::Insertable<cpool::Utf8>>(
         &mut self,
         descriptor: I,
     ) -> Result<&mut MethodWriter<'a>, EncodeError> {
-        let utf8_index = self.class_writer.insert_constant(cpool::Utf8 {
-            content: descriptor.into(),
-        })?;
-        self.write_descriptor_index(utf8_index)
-    }
-
-    pub fn write_descriptor_index(
-        &mut self,
-        descriptor: cpool::Index<cpool::Utf8>,
-    ) -> Result<&mut MethodWriter<'a>, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::Descriptor, Context::Methods)?;
 
-        self.class_writer.encoder.write(descriptor)?;
+        let index = descriptor.insert(&mut self.class_writer)?;
+        self.class_writer.encoder.write(index)?;
         self.state = WriteState::Attributes;
-        self.write_empty_attributes()
+        Ok(self)
     }
 
-    fn write_empty_attributes(&mut self) -> Result<&mut MethodWriter<'a>, EncodeError> {
-        if self.state == WriteState::Attributes {
-            self.class_writer.encoder.write(0u16)?;
-            Ok(self)
-        } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::ValuesMissing,
-                Context::Methods,
-            ))
+    pub fn write_attributes<F, T>(&mut self, f: F) -> Result<(), EncodeError>
+    where
+        F: FnOnce(&mut CountedWriter<AttributeWriter>) -> Result<T, EncodeError>,
+    {
+        EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
+        let mut builder = CountedWriter::new(self.class_writer)?;
+        f(&mut builder)?;
+        self.state = WriteState::Finished;
+
+        Ok(())
+    }
+}
+
+impl<'a> WriteBuilder<'a> for MethodWriter<'a> {
+    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+        Ok(MethodWriter {
+            class_writer,
+            state: WriteState::AccessFlags,
+        })
+    }
+
+    fn finish(mut self) -> Result<&'a mut ClassWriter, EncodeError> {
+        // write attribute count 0 if no attribute was written
+        if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Attributes)? {
+            self.write_attributes(|_| Ok(()))?;
         }
-    }
 
-    pub fn finish(self) -> Result<(), EncodeError> {
-        if self.state == WriteState::Attributes {
-            Ok(())
+        if self.state == WriteState::Finished {
+            Ok(self.class_writer)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::ValuesMissing,
-                Context::Methods,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, Context::Attributes))
         }
     }
 }
 
-/// What's written next
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum WriteState {
     AccessFlags,
     Name,
     Descriptor,
     Attributes,
+    Finished,
 }

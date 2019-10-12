@@ -113,6 +113,7 @@ pub enum EncodeErrorKind {
     StringTooLong,
     ValuesMissing,
     CantChangeAnymore,
+    ErroredBefore,
 }
 
 impl fmt::Display for EncodeErrorKind {
@@ -124,6 +125,7 @@ impl fmt::Display for EncodeErrorKind {
             StringTooLong => write!(f, "string is too long"),
             ValuesMissing => write!(f, "some values are missing"),
             CantChangeAnymore => write!(f, "can't change some values anymore"),
+            ErroredBefore => write!(f, "some error occured in this data structure before"),
         }
     }
 }
@@ -155,6 +157,22 @@ impl EncodeError {
                 EncodeErrorKind::CantChangeAnymore,
                 context,
             )),
+        }
+    }
+
+    #[inline]
+    pub(crate) fn can_write<S: Ord>(
+        prev: S,
+        now: &S,
+        context: Context,
+    ) -> Result<bool, EncodeError> {
+        match prev.cmp(now) {
+            Ordering::Less => Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                context,
+            )),
+            Ordering::Equal => Ok(true),
+            Ordering::Greater => Ok(false),
         }
     }
 

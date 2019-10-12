@@ -1,19 +1,24 @@
 use crate::error::*;
-use crate::header::AccessFlags;
-use crate::mutf8::MString;
 use crate::writer::{cpool, encoding::*, ClassWriter};
 
-pub struct AnnotationWriter<'a> {
+pub struct AttributeWriter<'a> {
     class_writer: &'a mut ClassWriter,
-    counter: CountedEncoder,
+    finished: bool,
 }
 
-impl<'a> AnnotationWriter<'a> {
-    pub(crate) fn new(class_writer: &'a mut ClassWriter) -> Result<AnnotationWriter<'a>, EncodeError> {
-        let counter = CountedEncoder::new(&mut class_writer.encoder)?;
-        Ok(AnnotationWriter {
+impl<'a> WriteBuilder<'a> for AttributeWriter<'a> {
+    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+        Ok(AttributeWriter {
             class_writer,
-            counter,
+            finished: false,
         })
+    }
+
+    fn finish(self) -> Result<&'a mut ClassWriter, EncodeError> {
+        if self.finished {
+            Ok(self.class_writer)
+        } else {
+            Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, Context::Attributes))
+        }
     }
 }

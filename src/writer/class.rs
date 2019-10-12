@@ -2,9 +2,11 @@ use crate::error::*;
 use crate::header::{AccessFlags, Version};
 use crate::mutf8::MString;
 use crate::writer::{
+    attributes::AttributeWriter,
     cpool::{self, ConstantPool},
     encoding::*,
     fields::FieldWriter,
+    interfaces::InterfaceWriter,
     methods::MethodWriter,
 };
 
@@ -14,14 +16,11 @@ const EMPTY_POOL_END: Offset = POOL_START.offset(2);
 
 #[derive(Clone)]
 pub struct ClassWriter {
-    pub(in crate::writer) encoder: VecEncoder,
+    pub(crate) encoder: VecEncoder,
     state: WriteState,
 
     pool: ConstantPool,
-    pool_end: Offset,
-    interface_encoder: Option<CountedEncoder>,
-    field_encoder: Option<CountedEncoder>,
-    method_encoder: Option<CountedEncoder>,
+    pub(crate) pool_end: Offset,
 }
 
 impl ClassWriter {
@@ -35,9 +34,6 @@ impl ClassWriter {
             state: WriteState::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
-            interface_encoder: None,
-            field_encoder: None,
-            method_encoder: None,
         }
     }
 
@@ -75,22 +71,10 @@ impl ClassWriter {
 
         let mut encoder = self.encoder.inserting(self.pool_end);
 
-        let start_end = self.pool_end;
         let index = self.pool.insert(item, &mut encoder)?;
         self.pool_end = encoder.position();
 
         self.encoder.replacing(POOL_START).write(self.pool.len())?;
-
-        if let Some(interface_encoder) = &mut self.interface_encoder {
-            let offset = self.pool_end.sub(start_end);
-            interface_encoder.move_start_offset_by(offset);
-            if let Some(field_encoder) = &mut self.field_encoder {
-                field_encoder.move_start_offset_by(offset);
-                if let Some(method_encoder) = &mut self.method_encoder {
-                    method_encoder.move_start_offset_by(offset);
-                }
-            }
-        }
 
         Ok(index)
     }
@@ -148,131 +132,81 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_interface_name<I: Into<MString>>(
-        &mut self,
-        name: I,
-    ) -> Result<&mut ClassWriter, EncodeError> {
-        let utf8_index = self.insert_constant(cpool::Utf8 {
-            content: name.into(),
-        })?;
-        let class_index = self.insert_constant(cpool::Class { name: utf8_index })?;
-        self.write_interface_index(class_index)
-    }
-
-    pub fn write_interface_index(
-        &mut self,
-        index: cpool::Index<cpool::Class>,
-    ) -> Result<&mut ClassWriter, EncodeError> {
+    pub fn write_interfaces<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    where
+        F: for<'f> FnOnce(&mut CountedWriter<'f, InterfaceWriter<'f>>) -> Result<(), EncodeError>,
+    {
         EncodeError::result_from_state(self.state, &WriteState::Interfaces, Context::Interfaces)?;
-        let encoder = if let Some(encoder) = self.interface_encoder.as_mut() {
-            encoder
-        } else {
-            self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-            self.interface_encoder.as_mut().unwrap()
-        };
-
-        self.encoder.write(index)?;
-        encoder.increment_count(&mut self.encoder)?;
-
+        let mut builder = CountedWriter::new(self)?;
+        f(&mut builder)?;
+        self.state = WriteState::Fields;
         Ok(self)
     }
 
-    pub fn write_field<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    pub fn write_fields<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
     where
-        F: FnOnce(&mut FieldWriter) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(&mut CountedWriter<'f, FieldWriter<'f>>) -> Result<(), EncodeError>,
     {
-        self.write_empty_interfaces()?;
         EncodeError::result_from_state(self.state, &WriteState::Fields, Context::Fields)?;
-
-        if self.field_encoder.is_none() {
-            self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-        }
-
-        let mut writer = FieldWriter::new(self);
-        f(&mut writer)?;
-        writer.finish()?;
-
-        self.field_encoder
-            .as_mut()
-            .unwrap()
-            .increment_count(&mut self.encoder)?;
-
+        let mut builder = CountedWriter::new(self)?;
+        f(&mut builder)?;
+        self.state = WriteState::Methods;
         Ok(self)
     }
 
-    pub fn write_method<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    pub fn write_methods<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
     where
-        F: FnOnce(&mut MethodWriter) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(&mut CountedWriter<'f, MethodWriter<'f>>) -> Result<(), EncodeError>,
     {
-        self.write_empty_fields()?;
         EncodeError::result_from_state(self.state, &WriteState::Methods, Context::Methods)?;
-
-        if self.method_encoder.is_none() {
-            self.method_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-        }
-
-        let mut writer = MethodWriter::new(self);
-        f(&mut writer)?;
-        writer.finish()?;
-
-        self.method_encoder
-            .as_mut()
-            .unwrap()
-            .increment_count(&mut self.encoder)?;
-
+        let mut builder = CountedWriter::new(self)?;
+        f(&mut builder)?;
+        self.state = WriteState::Attributes;
         Ok(self)
     }
 
-    pub fn write_empty_interfaces(&mut self) -> Result<(), EncodeError> {
-        if self.state < WriteState::Interfaces {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::ValuesMissing,
-                Context::Interfaces,
-            ))
-        } else if self.interface_encoder.is_none() {
-            self.interface_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-            self.state = WriteState::Fields;
-            Ok(())
-        } else if self.state == WriteState::Interfaces {
-            self.state = WriteState::Fields;
-            Ok(())
-        } else {
-            Ok(())
-        }
+    pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
+    where
+        F: FnOnce(&mut CountedWriter<AttributeWriter>) -> Result<(), EncodeError>,
+    {
+        EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
+        let mut builder = CountedWriter::new(self)?;
+        f(&mut builder)?;
+        self.state = WriteState::Finished;
+
+        Ok(())
     }
 
-    pub fn write_empty_fields(&mut self) -> Result<(), EncodeError> {
-        self.write_empty_interfaces()?;
-        if self.field_encoder.is_none() {
-            self.field_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-            self.state = WriteState::Methods;
-        } else if self.state == WriteState::Fields {
-            self.state = WriteState::Methods;
+    pub fn write_zero_interfaces(&mut self) -> Result<(), EncodeError> {
+        if EncodeError::can_write(self.state, &WriteState::Interfaces, Context::Interfaces)? {
+            self.write_interfaces(|_| Ok(()))?;
         }
         Ok(())
     }
 
-    pub fn write_empty_methods(&mut self) -> Result<(), EncodeError> {
-        self.write_empty_fields()?;
-        if self.method_encoder.is_none() {
-            self.method_encoder = Some(CountedEncoder::new(&mut self.encoder)?);
-            self.state = WriteState::Attributes;
-        } else if self.state == WriteState::Methods {
-            self.state = WriteState::Attributes;
+    pub fn write_zero_fields(&mut self) -> Result<(), EncodeError> {
+        if EncodeError::can_write(self.state, &WriteState::Fields, Context::Fields)? {
+            self.write_fields(|_| Ok(()))?;
         }
         Ok(())
     }
 
-    pub fn write_empty_attributes(&mut self) -> Result<(), EncodeError> {
-        self.write_empty_methods()?;
-        if self.state == WriteState::Attributes {
-            self.encoder.write(0u16)?;
+    pub fn write_zero_methods(&mut self) -> Result<(), EncodeError> {
+        if EncodeError::can_write(self.state, &WriteState::Methods, Context::Methods)? {
+            self.write_methods(|_| Ok(()))?;
+        }
+        Ok(())
+    }
+
+    pub fn write_zero_attributes(&mut self) -> Result<(), EncodeError> {
+        if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Attributes)? {
+            self.write_attributes(|_| Ok(()))?;
         }
         Ok(())
     }
 
     pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
-        self.write_empty_attributes()?;
+        self.write_zero_attributes()?;
         Ok(self.encoder.into_inner())
     }
 }
@@ -290,4 +224,5 @@ enum WriteState {
     Fields,
     Methods,
     Attributes,
+    Finished,
 }

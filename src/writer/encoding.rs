@@ -1,5 +1,7 @@
 use crate::error::*;
+use crate::writer::ClassWriter;
 use num_traits::{Num, NumAssign, ToPrimitive};
+use std::marker::PhantomData;
 
 pub trait Encoder: Sized {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
@@ -165,34 +167,54 @@ impl<E: Encoder> Encoder for &mut E {
     }
 }
 
-#[derive(Clone)]
-pub struct CountedEncoder<R = u16> {
-    start_offset: Offset,
-    count: R,
+pub trait WriteBuilder<'a>: Sized {
+    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError>;
+    fn finish(self) -> Result<&'a mut ClassWriter, EncodeError>;
 }
 
-impl<R> CountedEncoder<R>
+pub struct CountedWriter<'a, W, R = u16> {
+    /// The offset of the counter starting at the pool end.
+    count_offset: Offset,
+    class_writer: Option<&'a mut ClassWriter>,
+    count: R,
+    marker: PhantomData<W>,
+}
+
+impl<'a, W, R> CountedWriter<'a, W, R>
 where
     R: Encode,
     R: Num + NumAssign + ToPrimitive,
+    W: WriteBuilder<'a>,
 {
-    pub fn new(encoder: &mut VecEncoder) -> Result<CountedEncoder<R>, EncodeError> {
-        let start_offset = encoder.position();
+    pub(crate) fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+        let count_offset = class_writer.encoder.position().sub(class_writer.pool_end);
         let count = R::zero();
-        encoder.write(&count)?;
-        Ok(CountedEncoder {
-            start_offset,
+        class_writer.encoder.write(&count)?;
+        Ok(CountedWriter {
+            class_writer: Some(class_writer),
+            count_offset,
             count,
+            marker: PhantomData,
         })
     }
 
-    pub fn move_start_offset_by(&mut self, offset: Offset) {
-        self.start_offset = self.start_offset.add(offset);
-    }
+    pub fn write<F>(&mut self, f: F) -> Result<(), EncodeError>
+    where
+        F: for<'f> FnOnce(&'f mut W) -> Result<(), EncodeError>,
+    {
+        let class_writer = self.class_writer.take().ok_or_else(|| {
+            EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
+        })?;
+        let mut builder = W::new(class_writer)?;
+        f(&mut builder)?;
+        let class_writer = builder.finish()?;
 
-    pub fn increment_count(&mut self, encoder: &mut VecEncoder) -> Result<(), EncodeError> {
         self.count += R::one();
-        encoder.replacing(self.start_offset).write(&self.count)?;
+        class_writer
+            .encoder
+            .replacing(self.count_offset.add(class_writer.pool_end))
+            .write(&self.count)?;
+        self.class_writer = Some(class_writer);
         Ok(())
     }
 }
