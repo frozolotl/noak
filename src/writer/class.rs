@@ -134,6 +134,7 @@ impl ClassWriter {
     where
         F: for<'f> FnOnce(&mut CountedWriter<'f, FieldWriter<'f>>) -> Result<(), EncodeError>,
     {
+        self.write_zero_interfaces()?;
         EncodeError::result_from_state(self.state, &WriteState::Fields, Context::Fields)?;
         let mut builder = CountedWriter::new(self)?;
         f(&mut builder)?;
@@ -145,6 +146,7 @@ impl ClassWriter {
     where
         F: for<'f> FnOnce(&mut CountedWriter<'f, MethodWriter<'f>>) -> Result<(), EncodeError>,
     {
+        self.write_zero_fields()?;
         EncodeError::result_from_state(self.state, &WriteState::Methods, Context::Methods)?;
         let mut builder = CountedWriter::new(self)?;
         f(&mut builder)?;
@@ -156,6 +158,7 @@ impl ClassWriter {
     where
         F: FnOnce(&mut CountedWriter<AttributeWriter>) -> Result<(), EncodeError>,
     {
+        self.write_zero_methods()?;
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
         let mut builder = CountedWriter::new(self)?;
         f(&mut builder)?;
