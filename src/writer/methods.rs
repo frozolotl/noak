@@ -1,6 +1,6 @@
 use crate::error::*;
-use crate::writer::{cpool, encoding::*, attributes::AttributeWriter, ClassWriter};
 use crate::header::AccessFlags;
+use crate::writer::{attributes::AttributeWriter, cpool, encoding::*, ClassWriter};
 
 pub struct MethodWriter<'a> {
     class_writer: &'a mut ClassWriter,
@@ -73,7 +73,10 @@ impl<'a> WriteBuilder<'a> for MethodWriter<'a> {
         if self.state == WriteState::Finished {
             Ok(self.class_writer)
         } else {
-            Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, Context::Attributes))
+            Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                Context::Attributes,
+            ))
         }
     }
 }

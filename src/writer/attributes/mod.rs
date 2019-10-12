@@ -18,7 +18,10 @@ impl<'a> WriteBuilder<'a> for AttributeWriter<'a> {
         if self.finished {
             Ok(self.class_writer)
         } else {
-            Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, Context::Attributes))
+            Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                Context::Attributes,
+            ))
         }
     }
 }

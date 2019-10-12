@@ -8,9 +8,15 @@ pub struct InterfaceWriter<'a> {
 
 impl<'a> InterfaceWriter<'a> {
     /// Writes the index to an interface implemented by this class.
-    pub fn write_interface<I: cpool::Insertable<cpool::Class>>(&mut self, name: I) -> Result<&mut Self, EncodeError> {
+    pub fn write_interface<I: cpool::Insertable<cpool::Class>>(
+        &mut self,
+        name: I,
+    ) -> Result<&mut Self, EncodeError> {
         if self.finished {
-            Err(EncodeError::with_context(EncodeErrorKind::CantChangeAnymore, Context::Interfaces))
+            Err(EncodeError::with_context(
+                EncodeErrorKind::CantChangeAnymore,
+                Context::Interfaces,
+            ))
         } else {
             let index = name.insert(&mut self.class_writer)?;
             self.class_writer.encoder.write(index)?;
@@ -32,7 +38,10 @@ impl<'a> WriteBuilder<'a> for InterfaceWriter<'a> {
         if self.finished {
             Ok(self.class_writer)
         } else {
-            Err(EncodeError::with_context(EncodeErrorKind::ValuesMissing, Context::Interfaces))
+            Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                Context::Interfaces,
+            ))
         }
     }
 }
