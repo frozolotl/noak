@@ -381,7 +381,10 @@ pub enum CountState {
 impl Countdown for u8 {
     fn decrement(&mut self) -> CountState {
         match self.checked_sub(1) {
-            Some(_) => CountState::Continue,
+            Some(i) => {
+                *self = i;
+                CountState::Continue
+            },
             None => CountState::Break,
         }
     }
@@ -390,7 +393,10 @@ impl Countdown for u8 {
 impl Countdown for u16 {
     fn decrement(&mut self) -> CountState {
         match self.checked_sub(1) {
-            Some(_) => CountState::Continue,
+            Some(i) => {
+                *self = i;
+                CountState::Continue
+            },
             None => CountState::Break,
         }
     }
