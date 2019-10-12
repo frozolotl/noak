@@ -1,6 +1,5 @@
 use crate::error::*;
-use crate::writer::{cpool, ClassWriter};
-use num_traits::{Num, NumAssign, ToPrimitive};
+use crate::writer::ClassWriter;
 use std::marker::PhantomData;
 
 pub trait Encoder: Sized {
@@ -182,8 +181,7 @@ pub struct CountedWriter<'a, W, R = u16> {
 
 impl<'a, W, R> CountedWriter<'a, W, R>
 where
-    R: Encode,
-    R: Num + NumAssign + ToPrimitive,
+    R: Encode + Counter,
     W: WriteBuilder<'a>,
 {
     pub(crate) fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
@@ -205,11 +203,13 @@ where
         let class_writer = self.class_writer.take().ok_or_else(|| {
             EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
         })?;
+        self.count.check()?;
+
         let mut builder = W::new(class_writer)?;
         f(&mut builder)?;
         let class_writer = builder.finish()?;
 
-        self.count += R::one();
+        self.count.increment()?;
         class_writer
             .encoder
             .replacing(self.count_offset.add(class_writer.pool_end))
@@ -218,3 +218,46 @@ where
         Ok(self)
     }
 }
+
+pub trait Counter: Copy {
+    fn zero() -> Self;
+    fn check(self) -> Result<(), EncodeError>;
+    fn increment(&mut self) -> Result<(), EncodeError>;
+}
+
+macro_rules! impl_counter {
+    ($v:ident) => {
+        impl Counter for $v {
+            fn zero() -> $v {
+                0
+            }
+
+            fn check(self) -> Result<(), EncodeError> {
+                if self == $v::max_value() {
+                    Err(EncodeError::with_context(
+                        EncodeErrorKind::TooManyItems,
+                        Context::None,
+                    ))
+                } else {
+                    Ok(())
+                }
+            }
+
+            fn increment(&mut self) -> Result<(), EncodeError> {
+                match self.checked_add(1) {
+                    Some(i) => {
+                        *self = i;
+                        Ok(())
+                    }
+                    None => Err(EncodeError::with_context(
+                        EncodeErrorKind::TooManyItems,
+                        Context::None,
+                    )),
+                }
+            }
+        }
+    }
+}
+
+impl_counter!(u8);
+impl_counter!(u16);
