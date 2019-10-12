@@ -110,6 +110,7 @@ impl fmt::Display for DecodeError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EncodeErrorKind {
     TooManyItems,
+    TooManyBytes,
     StringTooLong,
     ValuesMissing,
     CantChangeAnymore,
@@ -122,6 +123,7 @@ impl fmt::Display for EncodeErrorKind {
 
         match *self {
             TooManyItems => write!(f, "too many items"),
+            TooManyBytes => write!(f, "too many bytes"),
             StringTooLong => write!(f, "string is too long"),
             ValuesMissing => write!(f, "some values are missing"),
             CantChangeAnymore => write!(f, "can't change some values anymore"),

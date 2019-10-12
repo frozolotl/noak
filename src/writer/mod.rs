@@ -6,6 +6,7 @@ mod fields;
 mod interfaces;
 mod methods;
 
+pub use attributes::AttributeWriter;
 pub use class::*;
 pub use cpool::*;
 pub use encoding::CountedWriter;

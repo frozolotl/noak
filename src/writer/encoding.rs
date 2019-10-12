@@ -182,6 +182,18 @@ impl<'a> LengthPrefixedEncoder<'a> {
             length: 0,
         })
     }
+
+    pub fn class_writer(&mut self) -> &mut ClassWriter {
+        self.class_writer
+    }
+
+    pub fn finish(self) -> Result<&'a mut ClassWriter, EncodeError> {
+        self.class_writer
+            .encoder
+            .replacing(self.length_offset.add(self.class_writer.pool_end))
+            .write(self.length)?;
+        Ok(self.class_writer)
+    }
 }
 
 impl<'a> Encoder for LengthPrefixedEncoder<'a> {
@@ -190,10 +202,6 @@ impl<'a> Encoder for LengthPrefixedEncoder<'a> {
             Some(length) => {
                 self.class_writer.encoder.write_bytes(bytes)?;
                 self.length = length;
-                self.class_writer
-                    .encoder
-                    .replacing(self.length_offset.add(self.class_writer.pool_end))
-                    .write(self.length)?;
                 Ok(())
             }
             None => {
