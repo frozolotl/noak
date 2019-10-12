@@ -156,7 +156,7 @@ impl ClassWriter {
 
     pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
     where
-        F: FnOnce(&mut CountedWriter<AttributeWriter>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(&mut CountedWriter<'f, AttributeWriter<'f>>) -> Result<(), EncodeError>,
     {
         self.write_zero_methods()?;
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;

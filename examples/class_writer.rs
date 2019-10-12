@@ -41,6 +41,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(())
             })?;
             Ok(())
+        })?
+        .write_attributes(|writer| {
+            writer.write(|writer| {
+                writer.write_source_file("Test.java")?;
+                Ok(())
+            })?;
+            Ok(())
         })?;
 
     let bytes = class_writer.finish()?;
