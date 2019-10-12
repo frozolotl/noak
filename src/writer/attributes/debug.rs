@@ -7,8 +7,7 @@ impl<'a> AttributeWriter<'a> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         let mut writer = self.attribute_writer("SourceFile")?;
-        let class_writer = writer.class_writer();
-        let file_name_index = file_name.insert(class_writer)?;
+        let file_name_index = file_name.insert(writer.class_writer())?;
         writer.write(file_name_index)?;
         writer.finish()?;
         self.finished = true;

@@ -384,7 +384,7 @@ impl Countdown for u8 {
             Some(i) => {
                 *self = i;
                 CountState::Continue
-            },
+            }
             None => CountState::Break,
         }
     }
@@ -396,7 +396,7 @@ impl Countdown for u16 {
             Some(i) => {
                 *self = i;
                 CountState::Continue
-            },
+            }
             None => CountState::Break,
         }
     }

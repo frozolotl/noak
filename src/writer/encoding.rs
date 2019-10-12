@@ -205,9 +205,10 @@ impl<'a> Encoder for LengthPrefixedEncoder<'a> {
                 self.length = length;
                 Ok(())
             }
-            None => {
-                Err(EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))
-            }
+            None => Err(EncodeError::with_context(
+                EncodeErrorKind::TooManyBytes,
+                Context::None,
+            )),
         }
     }
 }
@@ -308,7 +309,7 @@ macro_rules! impl_counter {
                 }
             }
         }
-    }
+    };
 }
 
 impl_counter!(u8);

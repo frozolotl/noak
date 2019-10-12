@@ -14,9 +14,7 @@ impl<'a> AttributeWriter<'a> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = name.insert(self.class_writer)?;
-        self.class_writer
-            .encoder
-            .write(index)?;
+        self.class_writer.encoder.write(index)?;
 
         LengthPrefixedEncoder::new(self.class_writer)
     }
