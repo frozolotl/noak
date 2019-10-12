@@ -34,4 +34,10 @@ impl<'a> AttributeWriter<'a> {
         self.finished = true;
         Ok(self)
     }
+
+    pub fn write_deprecated(&mut self) -> Result<&mut Self, EncodeError> {
+        self.attribute_writer("Deprecated")?.finish()?;
+        self.finished = true;
+        Ok(self)
+    }
 }
