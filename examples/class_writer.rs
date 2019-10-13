@@ -39,10 +39,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .write_name("<init>")?
                     .write_descriptor("()V")?
                     .write_attributes(|writer| {
-                        writer.write(|writer| {
-                            writer.write_deprecated()?;
-                            Ok(())
-                        })?;
+                        writer
+                            .write(|writer| {
+                                writer.write_deprecated()?;
+                                Ok(())
+                            })?
+                            .write(|writer| {
+                                writer.write_exceptions(|writer| {
+                                    writer
+                                        .write(|writer| {
+                                            writer.write_exception("java/io/IOException")?;
+                                            Ok(())
+                                        })?
+                                        .write(|writer| {
+                                            writer.write_exception("java/lang/RuntimeException")?;
+                                            Ok(())
+                                        })?;
+                                    Ok(())
+                                })?;
+                                Ok(())
+                            })?;
                         Ok(())
                     })?;
                 Ok(())
