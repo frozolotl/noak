@@ -1,6 +1,7 @@
 use crate::error::*;
 use crate::writer::ClassWriter;
 use std::marker::PhantomData;
+use std::convert::TryFrom;
 
 pub trait Encoder: Sized {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
@@ -165,51 +166,32 @@ impl<'a> Encoder for InsertingEncoder<'a> {
 }
 
 /// An encoder writing the count of bytes to the front.
-pub struct LengthPrefixedEncoder<'a> {
-    class_writer: &'a mut ClassWriter,
+pub struct LengthWriter {
     /// The offset of the byte counter starting at the pool end.
     length_offset: Offset,
-    /// The amount of bytes written yet.
-    length: u32,
 }
 
-impl<'a> LengthPrefixedEncoder<'a> {
-    pub fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+impl LengthWriter {
+    pub fn new(class_writer: &mut ClassWriter) -> Result<Self, EncodeError> {
         let length_offset = class_writer.encoder.position().sub(class_writer.pool_end);
         class_writer.encoder.write(0u32)?;
-        Ok(LengthPrefixedEncoder {
-            class_writer,
-            length_offset,
-            length: 0,
-        })
+        Ok(LengthWriter { length_offset })
     }
 
-    pub fn class_writer(&mut self) -> &mut ClassWriter {
-        self.class_writer
-    }
-
-    pub fn finish(self) -> Result<&'a mut ClassWriter, EncodeError> {
-        self.class_writer
+    pub fn finish(self, class_writer: &mut ClassWriter) -> Result<(), EncodeError> {
+        let length = class_writer
             .encoder
-            .replacing(self.length_offset.add(self.class_writer.pool_end))
-            .write(self.length)?;
-        Ok(self.class_writer)
-    }
-}
-
-impl<'a> Encoder for LengthPrefixedEncoder<'a> {
-    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        match self.length.checked_add(bytes.len() as u32) {
-            Some(length) => {
-                self.class_writer.encoder.write_bytes(bytes)?;
-                self.length = length;
-                Ok(())
-            }
-            None => Err(EncodeError::with_context(
-                EncodeErrorKind::TooManyBytes,
-                Context::None,
-            )),
-        }
+            .position()
+            .sub(class_writer.pool_end)
+            .sub(self.length_offset)
+            .sub(Offset(4));
+        let length = u32::try_from(length.0)
+            .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))?;
+        class_writer
+            .encoder
+            .replacing(self.length_offset.add(class_writer.pool_end))
+            .write(length)?;
+        Ok(())
     }
 }
 

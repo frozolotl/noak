@@ -7,10 +7,10 @@ impl<'a> AttributeWriter<'a> {
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
-        let mut writer = self.attribute_writer("SourceFile")?;
-        let file_name_index = file_name.insert(writer.class_writer())?;
-        writer.write(file_name_index)?;
-        writer.finish()?;
+        let length_writer = self.attribute_writer("SourceFile")?;
+        let file_name_index = file_name.insert(self.class_writer)?;
+        self.class_writer.encoder.write(file_name_index)?;
+        length_writer.finish(self.class_writer)?;
         self.finished = true;
         Ok(self)
     }
@@ -22,21 +22,21 @@ impl<'a> AttributeWriter<'a> {
     where
         I: Into<MString>,
     {
-        let mut writer = self.attribute_writer("SourceDebugExtension")?;
-        writer.write(debug_extension.into().as_bytes())?;
-        writer.finish()?;
+        let length_writer = self.attribute_writer("SourceDebugExtension")?;
+        self.class_writer.encoder.write(debug_extension.into().as_bytes())?;
+        length_writer.finish(self.class_writer)?;
         self.finished = true;
         Ok(self)
     }
 
     pub fn write_synthetic(&mut self) -> Result<&mut Self, EncodeError> {
-        self.attribute_writer("Synthetic")?.finish()?;
+        self.attribute_writer("Synthetic")?.finish(self.class_writer)?;
         self.finished = true;
         Ok(self)
     }
 
     pub fn write_deprecated(&mut self) -> Result<&mut Self, EncodeError> {
-        self.attribute_writer("Deprecated")?.finish()?;
+        self.attribute_writer("Deprecated")?.finish(self.class_writer)?;
         self.finished = true;
         Ok(self)
     }
