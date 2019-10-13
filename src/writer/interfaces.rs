@@ -45,3 +45,17 @@ impl<'a> WriteBuilder<'a> for InterfaceWriter<'a> {
         }
     }
 }
+
+impl<'a, I> WriteSimple<'a, I> for InterfaceWriter<'a>
+where
+    I: cpool::Insertable<cpool::Class>,
+{
+    fn write_simple(
+        class_writer: &'a mut ClassWriter,
+        interface: I,
+    ) -> Result<&'a mut ClassWriter, EncodeError> {
+        let mut writer = InterfaceWriter::new(class_writer)?;
+        writer.write_interface(interface)?;
+        writer.finish()
+    }
+}

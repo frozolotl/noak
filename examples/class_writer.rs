@@ -14,10 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .write_this_class("Test")?
         .write_super_class("java/lang/Object")?
         .write_interfaces(|writer| {
-            writer.write(|writer| {
-                writer.write_interface("java/io/Serializable")?;
-                Ok(())
-            })?;
+            writer.write_simple("java/io/Serializable")?;
             Ok(())
         })?
         .write_fields(|writer| {
