@@ -264,7 +264,16 @@ where
         let class_writer = self.class_writer.take().ok_or_else(|| {
             EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
         })?;
-        self.class_writer = Some(W::write_simple(class_writer, item)?);
+
+        let class_writer = W::write_simple(class_writer, item)?;
+
+        self.count.increment()?;
+        class_writer
+            .encoder
+            .replacing(self.count_offset.add(class_writer.pool_end))
+            .write(&self.count)?;
+        self.class_writer = Some(class_writer);
+
         Ok(self)
     }
 }
