@@ -77,6 +77,15 @@ pub struct Index<I> {
     mark: PhantomData<I>,
 }
 
+impl<I> Index <I> {
+    pub fn as_item(self) -> Index<Item> {
+        Index {
+            index: self.index,
+            mark: PhantomData,
+        }
+    }
+}
+
 impl<I> Clone for Index<I> {
     fn clone(&self) -> Index<I> {
         Index {
@@ -425,7 +434,6 @@ macro_rules! impl_insertable {
 }
 
 impl_insertable! {
-    Item;
     Class;
     FieldRef;
     MethodRef;

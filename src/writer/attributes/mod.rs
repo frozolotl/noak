@@ -1,5 +1,10 @@
 mod debug;
+mod field;
 mod method;
+
+pub use debug::*;
+pub use field::*;
+pub use method::*;
 
 use crate::error::*;
 use crate::writer::{cpool, encoding::*, ClassWriter};

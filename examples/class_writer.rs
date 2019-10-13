@@ -24,7 +24,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         AccessFlags::PRIVATE | AccessFlags::STATIC | AccessFlags::FINAL,
                     )?
                     .write_name("ZERO")?
-                    .write_descriptor("I")?;
+                    .write_descriptor("Ljava/lang/String;")?
+                    .write_attributes(|writer| {
+                        writer.write(|writer| {
+                            writer.write_constant_value("Hello World")?;
+                            Ok(())
+                        })?;
+                        Ok(())
+                    })?;
                 Ok(())
             })?;
             Ok(())
