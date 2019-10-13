@@ -1,7 +1,7 @@
 use crate::error::*;
 use crate::writer::ClassWriter;
-use std::marker::PhantomData;
 use std::convert::TryFrom;
+use std::marker::PhantomData;
 
 pub trait Encoder: Sized {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
@@ -206,6 +206,10 @@ pub trait WriteBuilder<'a>: Sized {
     fn finish(self) -> Result<&'a mut ClassWriter, EncodeError>;
 }
 
+pub trait WriteSimple<'a, I>: WriteBuilder<'a> {
+    fn write_simple(class_writer: &'a mut ClassWriter, to_write: I) -> Result<&'a mut ClassWriter, EncodeError>;
+}
+
 pub struct CountedWriter<'a, W, R = u16> {
     /// The offset of the counter starting at the pool end.
     count_offset: Offset,
@@ -250,6 +254,17 @@ where
             .replacing(self.count_offset.add(class_writer.pool_end))
             .write(&self.count)?;
         self.class_writer = Some(class_writer);
+        Ok(self)
+    }
+
+    pub fn write_simple<I>(&mut self, item: I) -> Result<&mut Self, EncodeError>
+    where
+        W: WriteSimple<'a, I>,
+    {
+        let class_writer = self.class_writer.take().ok_or_else(|| {
+            EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
+        })?;
+        self.class_writer = Some(W::write_simple(class_writer, item)?);
         Ok(self)
     }
 }

@@ -47,14 +47,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .write(|writer| {
                                 writer.write_exceptions(|writer| {
                                     writer
-                                        .write(|writer| {
-                                            writer.write_exception("java/io/IOException")?;
-                                            Ok(())
-                                        })?
-                                        .write(|writer| {
-                                            writer.write_exception("java/lang/RuntimeException")?;
-                                            Ok(())
-                                        })?;
+                                        .write_simple("java/io/IOException")?
+                                        .write_simple("java/lang/RuntimeException")?;
                                     Ok(())
                                 })?;
                                 Ok(())

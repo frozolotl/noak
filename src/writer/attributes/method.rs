@@ -59,3 +59,17 @@ impl<'a> WriteBuilder<'a> for ExceptionWriter<'a> {
         }
     }
 }
+
+impl<'a, I> WriteSimple<'a, I> for ExceptionWriter<'a>
+where
+    I: cpool::Insertable<cpool::Class>,
+{
+    fn write_simple(
+        class_writer: &'a mut ClassWriter,
+        exception: I,
+    ) -> Result<&'a mut ClassWriter, EncodeError> {
+        let mut writer = ExceptionWriter::new(class_writer)?;
+        writer.write_exception(exception)?;
+        writer.finish()
+    }
+}
