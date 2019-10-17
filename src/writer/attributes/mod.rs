@@ -1,3 +1,4 @@
+pub mod code;
 mod debug;
 mod field;
 mod method;
