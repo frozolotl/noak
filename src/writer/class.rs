@@ -36,7 +36,7 @@ impl ClassWriter {
         }
     }
 
-    pub fn write_version(&mut self, version: Version) -> Result<&mut ClassWriter, EncodeError> {
+    pub fn write_version(&mut self, version: Version) -> Result<&mut Self, EncodeError> {
         if self.state == WriteState::Start {
             self.encoder.write(0xCAFEBABEu32)?;
             self.encoder.write(version.minor)?;
@@ -50,7 +50,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    fn write_empty_pool(&mut self) -> Result<&mut ClassWriter, EncodeError> {
+    fn write_empty_pool(&mut self) -> Result<&mut Self, EncodeError> {
         if self.state == WriteState::Start {
             self.write_version(Version::latest())?;
         }
@@ -81,7 +81,7 @@ impl ClassWriter {
     pub fn write_access_flags(
         &mut self,
         flags: AccessFlags,
-    ) -> Result<&mut ClassWriter, EncodeError> {
+    ) -> Result<&mut Self, EncodeError> {
         self.write_empty_pool()?;
         EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::ClassInfo)?;
         self.encoder.write(flags)?;
@@ -89,7 +89,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_this_class<I>(&mut self, name: I) -> Result<&mut ClassWriter, EncodeError>
+    pub fn write_this_class<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
@@ -100,7 +100,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_super_class<I>(&mut self, name: I) -> Result<&mut ClassWriter, EncodeError>
+    pub fn write_super_class<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
@@ -111,7 +111,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_no_super_class(&mut self) -> Result<&mut ClassWriter, EncodeError> {
+    pub fn write_no_super_class(&mut self) -> Result<&mut Self, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::SuperClass, Context::ClassInfo)?;
         self.encoder
             .write::<Option<cpool::Index<cpool::Class>>>(None)?;
@@ -119,7 +119,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_interfaces<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    pub fn write_interfaces<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(&mut CountedWriter<'f, InterfaceWriter<'f>>) -> Result<(), EncodeError>,
     {
@@ -130,7 +130,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_fields<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    pub fn write_fields<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(&mut CountedWriter<'f, FieldWriter<'f>>) -> Result<(), EncodeError>,
     {
@@ -142,7 +142,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_methods<F>(&mut self, f: F) -> Result<&mut ClassWriter, EncodeError>
+    pub fn write_methods<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(&mut CountedWriter<'f, MethodWriter<'f>>) -> Result<(), EncodeError>,
     {

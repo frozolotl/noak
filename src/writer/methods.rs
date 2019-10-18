@@ -11,7 +11,7 @@ impl<'a> MethodWriter<'a> {
     pub fn write_access_flags(
         &mut self,
         flags: AccessFlags,
-    ) -> Result<&mut MethodWriter<'a>, EncodeError> {
+    ) -> Result<&mut Self, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::Methods)?;
 
         self.class_writer.encoder.write(flags)?;
@@ -19,7 +19,7 @@ impl<'a> MethodWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_name<I>(&mut self, name: I) -> Result<&mut MethodWriter<'a>, EncodeError>
+    pub fn write_name<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
@@ -34,7 +34,7 @@ impl<'a> MethodWriter<'a> {
     pub fn write_descriptor<I>(
         &mut self,
         descriptor: I,
-    ) -> Result<&mut MethodWriter<'a>, EncodeError>
+    ) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
