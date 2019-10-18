@@ -49,7 +49,7 @@ pub enum RawInstruction<'a> {
     ALoad2,
     ALoad3,
     ANewArray {
-        index: cpool::Index<cpool::Item<'a>>,
+        index: cpool::Index<cpool::Class>,
     },
     AReturn,
     ArrayLength,
@@ -201,7 +201,7 @@ pub enum RawInstruction<'a> {
     IfICmpGe {
         offset: i16,
     },
-    IFICmpGt {
+    IfICmpGt {
         offset: i16,
     },
     IfICmpLe {
@@ -674,7 +674,7 @@ impl<'a> RawInstruction<'a> {
             0xa2 => IfICmpGe {
                 offset: decoder.read()?,
             },
-            0xa3 => IFICmpGt {
+            0xa3 => IfICmpGt {
                 offset: decoder.read()?,
             },
             0xa4 => IfICmpLe {
