@@ -115,6 +115,7 @@ pub enum EncodeErrorKind {
     ValuesMissing,
     CantChangeAnymore,
     ErroredBefore,
+    IndexNotFitting,
 }
 
 impl fmt::Display for EncodeErrorKind {
@@ -128,6 +129,7 @@ impl fmt::Display for EncodeErrorKind {
             ValuesMissing => write!(f, "some values are missing"),
             CantChangeAnymore => write!(f, "can't change some values anymore"),
             ErroredBefore => write!(f, "some error occured in this data structure before"),
+            IndexNotFitting => write!(f, "the index does not fit into this instruction"),
         }
     }
 }

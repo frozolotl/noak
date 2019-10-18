@@ -77,12 +77,16 @@ pub struct Index<I> {
     mark: PhantomData<I>,
 }
 
-impl<I> Index <I> {
+impl<I> Index<I> {
     pub fn as_item(self) -> Index<Item> {
         Index {
             index: self.index,
             mark: PhantomData,
         }
+    }
+
+    pub fn as_u16(self) -> u16 {
+        self.index.get()
     }
 }
 
