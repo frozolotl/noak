@@ -1,4 +1,6 @@
-pub mod raw;
+pub mod instructions;
+
+pub use instructions::InstructionWriter;
 
 use crate::error::*;
 use crate::writer::{cpool, encoding::*, AttributeWriter, ClassWriter};
@@ -43,14 +45,14 @@ impl<'a> CodeWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_raw_instructions<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+    pub fn write_instructions<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut raw::InstructionWriter<'f>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(&mut InstructionWriter<'f>) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Instructions, Context::Code)?;
 
         let length_writer = LengthWriter::new(self.class_writer)?;
-        let mut writer = raw::InstructionWriter::new(self.class_writer)?;
+        let mut writer = InstructionWriter::new(self.class_writer)?;
         f(&mut writer)?;
         writer.finish()?;
         length_writer.finish(self.class_writer)?;

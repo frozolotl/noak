@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     writer
                                         .write_max_stack(0)?
                                         .write_max_locals(0)?
-                                        .write_raw_instructions(|writer| {
+                                        .write_instructions(|writer| {
                                             writer.write_return()?;
 
                                             Ok(())
@@ -86,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 writer
                                     .write_max_stack(2)?
                                     .write_max_locals(1)?
-                                    .write_raw_instructions(|writer| {
+                                    .write_instructions(|writer| {
                                         writer
                                             .write_bipush(5)?
                                             .write_iload(0)?
