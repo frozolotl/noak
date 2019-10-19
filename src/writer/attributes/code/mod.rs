@@ -49,9 +49,11 @@ impl<'a> CodeWriter<'a> {
     {
         EncodeError::result_from_state(self.state, &WriteState::Instructions, Context::Code)?;
 
+        let length_writer = LengthWriter::new(self.class_writer)?;
         let mut writer = raw::InstructionWriter::new(self.class_writer)?;
         f(&mut writer)?;
         writer.finish()?;
+        length_writer.finish(self.class_writer)?;
 
         self.state = WriteState::Instructions;
 
