@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .write_max_locals(1)?
                                     .write_instructions(|writer| {
                                         let (label, label_ref) = writer.new_label()?;
-                                        writer.write_gotow(label_ref)?;
+                                        writer.write_goto(label_ref)?;
 
                                         writer.write_iconst1()?;
                                         writer.write_ireturn()?;

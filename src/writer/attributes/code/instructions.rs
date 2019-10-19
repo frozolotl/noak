@@ -47,26 +47,124 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                 .expect("decoder failed to read encoded instruction");
             let diff = prev_rem - decoder.bytes_remaining();
 
-            match instruction {
-                Goto { offset: goto_offset } => {
-                    let label_index = goto_offset as usize;
+            macro_rules! jmp_i16 {
+                ($jump_offset:expr) => {
+                    let label_index = $jump_offset as usize;
                     let label_position = self.code_writer.label_positions[label_index];
                     let label_offset = label_position as i64 - offset as i64;
 
                     if let Ok(i) = i16::try_from(label_offset) {
-                        let mut encoder = self.code_writer.class_writer.encoder.replacing(instruction_start.offset(1));
+                        let mut encoder = self
+                            .code_writer
+                            .class_writer
+                            .encoder
+                            .replacing(instruction_start.offset(1));
                         encoder.write(i)?;
                     } else {
                         unimplemented!("noak does not support changing jump offset sizes yet");
                     }
+                };
+            }
+
+            match instruction {
+                Goto {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
                 }
-                GotoW { offset: goto_offset } => {
-                    let label_index = goto_offset as usize;
+                GotoW {
+                    offset: jump_offset,
+                } => {
+                    let label_index = jump_offset as usize;
                     let label_position = self.code_writer.label_positions[label_index];
                     let label_offset = label_position as i64 - offset as i64;
 
-                    let mut encoder = self.code_writer.class_writer.encoder.replacing(instruction_start.offset(1));
+                    let mut encoder = self
+                        .code_writer
+                        .class_writer
+                        .encoder
+                        .replacing(instruction_start.offset(1));
                     encoder.write(label_offset as i32)?;
+                }
+                IfACmpEq {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfACmpNe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpEq {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpNe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpLt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpGe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpGt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpLe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfEq {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfNe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfLt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfGe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfGt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfLe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfNonNull {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfNull {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
                 }
                 _ => {}
             }
@@ -747,8 +845,261 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
         Ok(self)
     }
 
-    // TODO IfAcmpEq, IfACmpNe, IfICmpEq, IfICmpNe, IfICmpLt, IfICmpGe, IfICmpGt, IfICmpLe
-    // TODO IfEq, IfNe, IfLt, IfGe, IfGt, IfLe, IfNonNull, IfNull
+    pub fn write_ifacmpeq(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa5u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifacmpne(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa6u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ificmpeq(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0x9fu8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ificmpne(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa0u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ificmplt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa1u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ificmpge(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa2u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ificmpgt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa3u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ificmple(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa4u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifeq(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0x99u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifne(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0x9au8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_iflt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0x9bu8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifge(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0x9cu8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifgt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0x9du8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifle(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0x9eu8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifnonnull(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xc7u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
+
+    pub fn write_ifnull(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xc6u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ))
+        }
+    }
 
     pub fn write_iinc(&mut self, index: u8, value: i8) -> Result<&mut Self, EncodeError> {
         self.code_writer
