@@ -78,7 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             writer.write(|writer| {
                 writer
                     .write_access_flags(AccessFlags::PUBLIC)?
-                    .write_name("add5")?
+                    .write_name("calculate")?
                     .write_descriptor("(I)I")?
                     .write_attributes(|writer| {
                         writer.write(|writer| {
@@ -87,7 +87,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .write_max_stack(2)?
                                     .write_max_locals(1)?
                                     .write_instructions(|writer| {
+                                        let (label, label_ref) = writer.new_label()?;
+                                        writer.write_gotow(label_ref)?;
+
+                                        writer.write_iconst1()?;
+                                        writer.write_ireturn()?;
+
                                         writer
+                                            .write_label(label)?
                                             .write_bipush(5)?
                                             .write_iload(0)?
                                             .write_iadd()?

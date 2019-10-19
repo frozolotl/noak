@@ -4,6 +4,8 @@ pub use instructions::InstructionWriter;
 
 use crate::error::*;
 use crate::writer::{cpool, encoding::*, AttributeWriter, ClassWriter};
+use std::fmt;
+use std::convert::TryInto;
 
 impl<'a> AttributeWriter<'a> {
     pub fn write_code<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
@@ -22,6 +24,8 @@ impl<'a> AttributeWriter<'a> {
 
 pub struct CodeWriter<'a> {
     class_writer: &'a mut ClassWriter,
+    /// The positions of labels, where `u32::max_value()` means "no label inserted" (`Option<u32>` would be too inefficient)
+    label_positions: Vec<u32>,
     state: WriteState,
 }
 
@@ -47,19 +51,29 @@ impl<'a> CodeWriter<'a> {
 
     pub fn write_instructions<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut InstructionWriter<'f>) -> Result<(), EncodeError>,
+        F: for<'f, 'g> FnOnce(&mut InstructionWriter<'f, 'g>) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Instructions, Context::Code)?;
 
         let length_writer = LengthWriter::new(self.class_writer)?;
-        let mut writer = InstructionWriter::new(self.class_writer)?;
+        let mut writer = InstructionWriter::new(self)?;
         f(&mut writer)?;
         writer.finish()?;
         length_writer.finish(self.class_writer)?;
 
-        self.state = WriteState::Instructions;
+        self.class_writer.encoder.write(0u16)?;
+        self.state = WriteState::Attributes;
 
         Ok(self)
+    }
+
+    pub fn new_label(&mut self) -> Result<(Label, LabelRef), EncodeError> {
+        let index =
+            self.label_positions.len().try_into().map_err(|_| {
+                EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code)
+            })?;
+        self.label_positions.push(u32::max_value());
+        Ok((Label(index), LabelRef(index)))
     }
 
     pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
@@ -79,6 +93,7 @@ impl<'a> WriteBuilder<'a> for CodeWriter<'a> {
     fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
         Ok(CodeWriter {
             class_writer,
+            label_positions: Vec::new(),
             state: WriteState::MaxStack,
         })
     }
@@ -108,4 +123,21 @@ enum WriteState {
     ExceptionTable,
     Attributes,
     Finished,
+}
+
+pub struct Label(u32);
+
+impl fmt::Debug for Label {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Label").finish()
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct LabelRef(u32);
+
+impl fmt::Debug for LabelRef {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LabelRef").finish()
+    }
 }

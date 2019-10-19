@@ -72,6 +72,10 @@ impl Offset {
         Offset(position)
     }
 
+    pub const fn get(self) -> usize {
+        self.0
+    }
+
     pub const fn offset(self, by: usize) -> Offset {
         Offset(self.0 + by)
     }
@@ -103,6 +107,10 @@ impl VecEncoder {
 
     pub fn into_inner(self) -> Vec<u8> {
         self.buf
+    }
+
+    pub fn buf(&self) -> &[u8] {
+        &self.buf
     }
 
     pub fn inserting(&mut self, at: Offset) -> InsertingEncoder {

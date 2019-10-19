@@ -7,8 +7,8 @@ use std::fmt;
 /// An iterator over the instructions and their indices into the code table
 #[derive(Clone)]
 pub struct RawInstructions<'a> {
-    pub(in crate::reader::attributes::code) start_position: usize,
-    pub(in crate::reader::attributes::code) decoder: Decoder<'a>,
+    pub(crate) start_position: usize,
+    pub(crate) decoder: Decoder<'a>,
 }
 
 impl<'a> Iterator for RawInstructions<'a> {
@@ -522,7 +522,7 @@ impl fmt::Debug for TablePair {
 }
 
 impl<'a> RawInstruction<'a> {
-    fn decode(decoder: &mut Decoder<'a>, method_start: usize) -> Result<Self, DecodeError> {
+    pub(crate) fn decode(decoder: &mut Decoder<'a>, method_start: usize) -> Result<Self, DecodeError> {
         use RawInstruction::*;
         let opcode: u8 = decoder.read()?;
         let instruction = match opcode {

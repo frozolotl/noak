@@ -116,6 +116,8 @@ pub enum EncodeErrorKind {
     CantChangeAnymore,
     ErroredBefore,
     IndexNotFitting,
+    LabelNotFound,
+    LabelTooFar,
 }
 
 impl fmt::Display for EncodeErrorKind {
@@ -130,6 +132,8 @@ impl fmt::Display for EncodeErrorKind {
             CantChangeAnymore => write!(f, "can't change some values anymore"),
             ErroredBefore => write!(f, "some error occured in this data structure before"),
             IndexNotFitting => write!(f, "the index does not fit into this instruction"),
+            LabelNotFound => write!(f, "label was not found"),
+            LabelTooFar => write!(f, "label is not close enough to jump point or code start"),
         }
     }
 }
