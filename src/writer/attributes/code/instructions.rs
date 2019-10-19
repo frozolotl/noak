@@ -166,6 +166,25 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                 } => {
                     jmp_i16!(jump_offset);
                 }
+                JSr {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                JSrW {
+                    offset: jump_offset,
+                } => {
+                    let label_index = jump_offset as usize;
+                    let label_position = self.code_writer.label_positions[label_index];
+                    let label_offset = label_position as i64 - offset as i64;
+
+                    let mut encoder = self
+                        .code_writer
+                        .class_writer
+                        .encoder
+                        .replacing(instruction_start.offset(1));
+                    encoder.write(label_offset as i32)?;
+                }
                 _ => {}
             }
 
@@ -1336,7 +1355,28 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
         Ok(self)
     }
 
-    // TODO Jsr, JSrW
+    pub fn write_jsr(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        if let Ok(i) = u16::try_from(label.0) {
+            self.code_writer
+                .class_writer
+                .encoder
+                .write(0xa8u8)?
+                .write(i)?;
+            Ok(self)
+        } else {
+            self.write_jsrw(label)
+        }
+    }
+
+    pub fn write_jsrw(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        self.code_writer
+            .class_writer
+            .encoder
+            .write(0xc9u8)?
+            .write(label.0)?;
+        Ok(self)
+    }
+
 
     pub fn write_l2d(&mut self) -> Result<&mut Self, EncodeError> {
         self.code_writer.class_writer.encoder.write(0x8au8)?;
