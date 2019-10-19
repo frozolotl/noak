@@ -56,7 +56,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     Ok(())
                                 })?;
                                 Ok(())
+                            })?
+                            .write(|writer| {
+                                writer.write_code(|writer| {
+                                    writer
+                                        .write_max_stack(0)?
+                                        .write_max_locals(0)?
+                                        .write_raw_instructions(|writer| {
+                                            writer.write_return()?;
+
+                                            Ok(())
+                                        })?;
+                                    Ok(())
+                                })?;
+                                Ok(())
                             })?;
+                        Ok(())
+                    })?;
+                Ok(())
+            })?;
+            writer.write(|writer| {
+                writer
+                    .write_access_flags(AccessFlags::PUBLIC)?
+                    .write_name("add5")?
+                    .write_descriptor("(I)I")?
+                    .write_attributes(|writer| {
+                        writer.write(|writer| {
+                            writer.write_code(|writer| {
+                                writer
+                                    .write_max_stack(2)?
+                                    .write_max_locals(1)?
+                                    .write_raw_instructions(|writer| {
+                                        writer
+                                            .write_bipush(5)?
+                                            .write_iload(0)?
+                                            .write_iadd()?
+                                            .write_ireturn()?;
+
+                                        Ok(())
+                                    })?;
+                                Ok(())
+                            })?;
+                            Ok(())
+                        })?;
                         Ok(())
                     })?;
                 Ok(())
