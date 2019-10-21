@@ -4,8 +4,8 @@ pub use instructions::InstructionWriter;
 
 use crate::error::*;
 use crate::writer::{cpool, encoding::*, AttributeWriter, ClassWriter};
-use std::fmt;
 use std::convert::TryInto;
+use std::fmt;
 
 impl<'a> AttributeWriter<'a> {
     pub fn write_code<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>

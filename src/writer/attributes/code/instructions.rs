@@ -1377,7 +1377,6 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
         Ok(self)
     }
 
-
     pub fn write_l2d(&mut self) -> Result<&mut Self, EncodeError> {
         self.code_writer.class_writer.encoder.write(0x8au8)?;
         Ok(self)

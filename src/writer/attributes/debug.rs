@@ -23,20 +23,24 @@ impl<'a> AttributeWriter<'a> {
         I: Into<MString>,
     {
         let length_writer = self.attribute_writer("SourceDebugExtension")?;
-        self.class_writer.encoder.write(debug_extension.into().as_bytes())?;
+        self.class_writer
+            .encoder
+            .write(debug_extension.into().as_bytes())?;
         length_writer.finish(self.class_writer)?;
         self.finished = true;
         Ok(self)
     }
 
     pub fn write_synthetic(&mut self) -> Result<&mut Self, EncodeError> {
-        self.attribute_writer("Synthetic")?.finish(self.class_writer)?;
+        self.attribute_writer("Synthetic")?
+            .finish(self.class_writer)?;
         self.finished = true;
         Ok(self)
     }
 
     pub fn write_deprecated(&mut self) -> Result<&mut Self, EncodeError> {
-        self.attribute_writer("Deprecated")?.finish(self.class_writer)?;
+        self.attribute_writer("Deprecated")?
+            .finish(self.class_writer)?;
         self.finished = true;
         Ok(self)
     }

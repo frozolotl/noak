@@ -522,7 +522,10 @@ impl fmt::Debug for TablePair {
 }
 
 impl<'a> RawInstruction<'a> {
-    pub(crate) fn decode(decoder: &mut Decoder<'a>, method_start: usize) -> Result<Self, DecodeError> {
+    pub(crate) fn decode(
+        decoder: &mut Decoder<'a>,
+        method_start: usize,
+    ) -> Result<Self, DecodeError> {
         use RawInstruction::*;
         let opcode: u8 = decoder.read()?;
         let instruction = match opcode {

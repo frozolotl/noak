@@ -215,7 +215,10 @@ pub trait WriteBuilder<'a>: Sized {
 }
 
 pub trait WriteSimple<'a, I>: WriteBuilder<'a> {
-    fn write_simple(class_writer: &'a mut ClassWriter, to_write: I) -> Result<&'a mut ClassWriter, EncodeError>;
+    fn write_simple(
+        class_writer: &'a mut ClassWriter,
+        to_write: I,
+    ) -> Result<&'a mut ClassWriter, EncodeError>;
 }
 
 pub struct CountedWriter<'a, W, R = u16> {

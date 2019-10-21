@@ -8,10 +8,7 @@ pub struct FieldWriter<'a> {
 }
 
 impl<'a> FieldWriter<'a> {
-    pub fn write_access_flags(
-        &mut self,
-        flags: AccessFlags,
-    ) -> Result<&mut Self, EncodeError> {
+    pub fn write_access_flags(&mut self, flags: AccessFlags) -> Result<&mut Self, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::Fields)?;
 
         self.class_writer.encoder.write(flags)?;
@@ -31,10 +28,7 @@ impl<'a> FieldWriter<'a> {
         Ok(self)
     }
 
-    pub fn write_descriptor<I>(
-        &mut self,
-        descriptor: I,
-    ) -> Result<&mut Self, EncodeError>
+    pub fn write_descriptor<I>(&mut self, descriptor: I) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
