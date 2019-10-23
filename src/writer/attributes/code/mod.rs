@@ -67,7 +67,7 @@ impl<'a> CodeWriter<'a> {
         Ok(self)
     }
 
-    pub fn new_label(&mut self) -> Result<(Label, LabelRef), EncodeError> {
+    fn new_label(&mut self) -> Result<(Label, LabelRef), EncodeError> {
         let index =
             self.label_positions.len().try_into().map_err(|_| {
                 EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code)
