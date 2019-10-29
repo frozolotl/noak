@@ -29,7 +29,19 @@ impl ClassWriter {
 
     pub fn with_capacity(capacity: usize) -> ClassWriter {
         ClassWriter {
-            encoder: VecEncoder::with_capacity(capacity),
+            encoder: VecEncoder::new(Vec::with_capacity(capacity)),
+            state: WriteState::Start,
+            pool: ConstantPool::new(),
+            pool_end: EMPTY_POOL_END,
+        }
+    }
+
+    /// Creates a new class writer and uses an existing buffer.
+    /// The existing data on the buffer will be cleared.
+    pub fn with_buffer(mut buffer: Vec<u8>) -> ClassWriter {
+        buffer.clear();
+        ClassWriter {
+            encoder: VecEncoder::new(buffer),
             state: WriteState::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,

@@ -95,9 +95,9 @@ pub struct VecEncoder {
 }
 
 impl VecEncoder {
-    pub fn with_capacity(capacity: usize) -> VecEncoder {
+    pub fn new(buf: Vec<u8>) -> VecEncoder {
         VecEncoder {
-            buf: Vec::with_capacity(capacity),
+            buf,
         }
     }
 
