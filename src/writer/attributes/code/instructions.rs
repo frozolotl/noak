@@ -1744,3 +1744,48 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
 
     // TODO TableSwitch
 }
+
+pub struct TableSwitchWriter<'a> {
+    class_writer: &'a mut ClassWriter,
+    finished: bool,
+}
+
+impl<'a> TableSwitchWriter<'a> {
+    /// Writes the index to an exception able to be thrown by this method.
+    pub fn write_exception<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+    where
+        I: cpool::Insertable<cpool::Class>,
+    {
+        if self.finished {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::CantChangeAnymore,
+                Context::AttributeContent,
+            ))
+        } else {
+            let index = name.insert(&mut self.class_writer)?;
+            self.class_writer.encoder.write(index)?;
+            self.finished = true;
+            Ok(self)
+        }
+    }
+}
+
+impl<'a> WriteBuilder<'a> for TableSwitchWriter<'a> {
+    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+        Ok(TableSwitchWriter {
+            class_writer,
+            finished: false,
+        })
+    }
+
+    fn finish(self) -> Result<&'a mut ClassWriter, EncodeError> {
+        if self.finished {
+            Ok(self.class_writer)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::ValuesMissing,
+                Context::AttributeContent,
+            ))
+        }
+    }
+}

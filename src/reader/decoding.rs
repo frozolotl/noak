@@ -299,7 +299,12 @@ where
     }
 }
 
-impl<'a, T: Decode<'a>> FusedIterator for DecodeCounted<'a, T> {}
+impl<'a, T, R> FusedIterator for DecodeCounted<'a, T, R>
+where
+    T: Decode<'a>,
+    R: Decode<'a> + Countdown,
+{
+}
 
 impl<'a, T, R: Countdown> Clone for DecodeCounted<'a, T, R> {
     fn clone(&self) -> Self {
@@ -311,7 +316,11 @@ impl<'a, T, R: Countdown> Clone for DecodeCounted<'a, T, R> {
     }
 }
 
-impl<'a, T: Decode<'a>> fmt::Debug for DecodeCounted<'a, T> {
+impl<'a, T, R> fmt::Debug for DecodeCounted<'a, T, R>
+where
+    T: Decode<'a>,
+    R: fmt::Debug,
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("DecodeCounted")
             .field("remaining", &self.remaining)
