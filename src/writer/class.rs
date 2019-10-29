@@ -164,28 +164,28 @@ impl ClassWriter {
         Ok(())
     }
 
-    pub fn write_zero_interfaces(&mut self) -> Result<(), EncodeError> {
+    fn write_zero_interfaces(&mut self) -> Result<(), EncodeError> {
         if EncodeError::can_write(self.state, &WriteState::Interfaces, Context::Interfaces)? {
             self.write_interfaces(|_| Ok(()))?;
         }
         Ok(())
     }
 
-    pub fn write_zero_fields(&mut self) -> Result<(), EncodeError> {
+    fn write_zero_fields(&mut self) -> Result<(), EncodeError> {
         if EncodeError::can_write(self.state, &WriteState::Fields, Context::Fields)? {
             self.write_fields(|_| Ok(()))?;
         }
         Ok(())
     }
 
-    pub fn write_zero_methods(&mut self) -> Result<(), EncodeError> {
+    fn write_zero_methods(&mut self) -> Result<(), EncodeError> {
         if EncodeError::can_write(self.state, &WriteState::Methods, Context::Methods)? {
             self.write_methods(|_| Ok(()))?;
         }
         Ok(())
     }
 
-    pub fn write_zero_attributes(&mut self) -> Result<(), EncodeError> {
+    fn write_zero_attributes(&mut self) -> Result<(), EncodeError> {
         if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Attributes)? {
             self.write_attributes(|_| Ok(()))?;
         }
