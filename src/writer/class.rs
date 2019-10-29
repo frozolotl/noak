@@ -13,6 +13,27 @@ const CAFEBABE_END: Offset = Offset::new(4);
 const POOL_START: Offset = CAFEBABE_END.offset(2 + 2);
 const EMPTY_POOL_END: Offset = POOL_START.offset(2);
 
+/// A class writer can build a class.
+///
+/// # Examples
+/// ```
+/// use noak::writer::ClassWriter;
+/// use noak::AccessFlags;
+///
+/// let buf = ClassWriter::new()
+///     .write_access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
+///     .write_this_class("com/example/Example")?
+///     .write_super_class("java/lang/Object")?
+///     .write_attributes(|writer| {
+///         writer.write(|writer| {
+///             writer.write_source_file("Example.java")?;
+///             Ok(())
+///         })?;
+///         Ok(())
+///     })?
+///     .finish()?;
+/// # Ok::<(), noak::error::EncodeError>(())
+/// ```
 #[derive(Clone)]
 pub struct ClassWriter {
     pub(crate) encoder: VecEncoder,
@@ -23,10 +44,12 @@ pub struct ClassWriter {
 }
 
 impl ClassWriter {
+    /// Creates a new class writer with a sensitive initial capacity.
     pub fn new() -> ClassWriter {
         ClassWriter::with_capacity(2048)
     }
 
+    /// Creates a new class writer with a specific capacity.
     pub fn with_capacity(capacity: usize) -> ClassWriter {
         ClassWriter {
             encoder: VecEncoder::new(Vec::with_capacity(capacity)),
@@ -163,7 +186,7 @@ impl ClassWriter {
         Ok(self)
     }
 
-    pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
+    pub fn write_attributes<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(&mut CountedWriter<'f, AttributeWriter<'f>>) -> Result<(), EncodeError>,
     {
@@ -173,7 +196,7 @@ impl ClassWriter {
         f(&mut builder)?;
         self.state = WriteState::Finished;
 
-        Ok(())
+        Ok(self)
     }
 
     fn write_zero_interfaces(&mut self) -> Result<(), EncodeError> {
@@ -184,6 +207,7 @@ impl ClassWriter {
     }
 
     fn write_zero_fields(&mut self) -> Result<(), EncodeError> {
+        self.write_zero_interfaces()?;
         if EncodeError::can_write(self.state, &WriteState::Fields, Context::Fields)? {
             self.write_fields(|_| Ok(()))?;
         }
@@ -191,6 +215,7 @@ impl ClassWriter {
     }
 
     fn write_zero_methods(&mut self) -> Result<(), EncodeError> {
+        self.write_zero_fields()?;
         if EncodeError::can_write(self.state, &WriteState::Methods, Context::Methods)? {
             self.write_methods(|_| Ok(()))?;
         }
@@ -198,15 +223,20 @@ impl ClassWriter {
     }
 
     fn write_zero_attributes(&mut self) -> Result<(), EncodeError> {
+        self.write_zero_methods()?;
         if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Attributes)? {
             self.write_attributes(|_| Ok(()))?;
         }
         Ok(())
     }
 
-    pub fn finish(mut self) -> Result<Vec<u8>, EncodeError> {
+    pub fn finish(&mut self) -> Result<Vec<u8>, EncodeError> {
         self.write_zero_attributes()?;
-        Ok(self.encoder.into_inner())
+        // we can't move the encoder out of the ClassWriter, so we just replace it
+        // this should be fairly cheap or even optimized away by the compiler
+        // any code that wouldn't work after calling this method should throw an error
+        let encoder = std::mem::replace(&mut self.encoder, VecEncoder::new(Vec::new()));
+        Ok(encoder.into_inner())
     }
 }
 
