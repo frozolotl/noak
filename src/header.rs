@@ -29,6 +29,7 @@ bitflags! {
         const SUPER        = 1 << 5;
         const SYNCHRONIZED = 1 << 5;
         const BRIDGE       = 1 << 6;
+        const VOLATILE     = 1 << 6;
         const VARARGS      = 1 << 7;
         const TRANSIENT    = 1 << 7;
         const NATIVE       = 1 << 8;
