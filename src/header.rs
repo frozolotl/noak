@@ -30,6 +30,7 @@ bitflags! {
         const SYNCHRONIZED = 1 << 5;
         const BRIDGE       = 1 << 6;
         const VARARGS      = 1 << 7;
+        const TRANSIENT    = 1 << 7;
         const NATIVE       = 1 << 8;
         const INTERFACE    = 1 << 9;
         const ABSTRACT     = 1 << 10;
