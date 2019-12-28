@@ -524,7 +524,7 @@ impl fmt::Debug for TablePair {
 impl<'a> RawInstruction<'a> {
     pub(crate) fn decode(
         decoder: &mut Decoder<'a>,
-        method_start: usize,
+        instruction_start: usize,
     ) -> Result<Self, DecodeError> {
         use RawInstruction::*;
         let opcode: u8 = decoder.read()?;
@@ -805,7 +805,7 @@ impl<'a> RawInstruction<'a> {
             0x75 => LNeg,
             0xab => {
                 // skip padding
-                let offset = decoder.file_position() - method_start - 1;
+                let offset = decoder.file_position() - instruction_start - 1;
                 decoder.advance(3 - (offset & 3))?;
 
                 LookUpSwitch(self::LookUpSwitch {
@@ -861,7 +861,7 @@ impl<'a> RawInstruction<'a> {
             0x5f => Swap,
             0xaa => {
                 // skip padding
-                let offset = decoder.file_position() - method_start - 1;
+                let offset = decoder.file_position() - instruction_start - 1;
                 decoder.advance(3 - (offset & 3))?;
 
                 TableSwitch(self::TableSwitch {
