@@ -43,10 +43,10 @@ impl<'a> Decode<'a> for Method<'a> {
     }
 
     fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
-        let _access_flags = decoder.skip::<u16>()?;
-        let _name = decoder.skip::<u16>()?;
-        let _descriptor = decoder.skip::<u16>()?;
-        let _attributes = decoder.skip::<AttributeIter>()?;
+        decoder.skip::<u16>()?; // access flags
+        decoder.skip::<u16>()?; // name
+        decoder.skip::<u16>()?; // descriptor
+        decoder.skip::<AttributeIter>()?; // attributes
         Ok(())
     }
 }

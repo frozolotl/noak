@@ -141,8 +141,8 @@ impl<'a> Decode<'a> for BootstrapMethod<'a> {
     }
 
     fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
-        let _method_ref = decoder.skip::<u16>()?;
-        let _arguments = decoder.skip::<BootstrapArguments>()?;
+        decoder.skip::<u16>()?; // method reference
+        decoder.skip::<BootstrapArguments>()?;
         Ok(())
     }
 }

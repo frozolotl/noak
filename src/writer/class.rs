@@ -43,6 +43,12 @@ pub struct ClassWriter {
     pub(crate) pool_end: Offset,
 }
 
+impl Default for ClassWriter {
+    fn default() -> ClassWriter {
+        ClassWriter::new()
+    }
+}
+
 impl ClassWriter {
     /// Creates a new class writer with a sensitive initial capacity.
     pub fn new() -> ClassWriter {
@@ -73,7 +79,7 @@ impl ClassWriter {
 
     pub fn write_version(&mut self, version: Version) -> Result<&mut Self, EncodeError> {
         if self.state == WriteState::Start {
-            self.encoder.write(0xCAFEBABEu32)?;
+            self.encoder.write(0xCAFE_BABEu32)?;
             self.encoder.write(version.minor)?;
             self.encoder.write(version.major)?;
             self.state = WriteState::ConstantPool;

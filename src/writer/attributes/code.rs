@@ -3,7 +3,7 @@ pub mod instructions;
 pub use instructions::InstructionWriter;
 
 use crate::error::*;
-use crate::writer::{cpool, encoding::*, AttributeWriter, ClassWriter};
+use crate::writer::{encoding::*, AttributeWriter, ClassWriter};
 use std::convert::TryInto;
 use std::fmt;
 

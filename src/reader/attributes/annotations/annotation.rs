@@ -33,8 +33,8 @@ impl<'a> Decode<'a> for Annotation<'a> {
         let ev_decoder = decoder.clone();
 
         for _ in 0..pair_count {
-            let _name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
-            let _value = decoder.skip::<ElementValue>()?;
+            decoder.skip::<cpool::Index<cpool::Utf8>>()?; // name
+            decoder.skip::<ElementValue>()?;
         }
 
         Ok(Annotation {
@@ -44,8 +44,8 @@ impl<'a> Decode<'a> for Annotation<'a> {
     }
 
     fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
-        let _type = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
-        let _pairs = decoder.skip::<ElementValuePairIter>()?;
+        decoder.skip::<cpool::Index<cpool::Utf8>>()?; // type
+        decoder.skip::<ElementValuePairIter>()?;
         Ok(())
     }
 }
@@ -83,8 +83,8 @@ impl<'a> Decode<'a> for ElementValuePair<'a> {
     }
 
     fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
-        let _name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
-        let _value = decoder.skip::<ElementValue>()?;
+        decoder.skip::<cpool::Index<cpool::Utf8>>()?; // name
+        decoder.skip::<ElementValue>()?;
 
         Ok(())
     }
@@ -152,17 +152,17 @@ impl<'a> Decode<'a> for ElementValue<'a> {
         let tag = decoder.read()?;
         match tag {
             b'Z' | b'B' | b'S' | b'I' | b'J' | b'F' | b'D' | b'C' | b's' | b'c' => {
-                let _index = decoder.skip::<cpool::Index<cpool::Item>>()?;
+                decoder.skip::<cpool::Index<cpool::Item>>()?;
             }
             b'e' => {
-                let _type_name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
-                let _const_name = decoder.skip::<cpool::Index<cpool::Utf8>>()?;
+                decoder.skip::<cpool::Index<cpool::Utf8>>()?; // type name
+                decoder.skip::<cpool::Index<cpool::Utf8>>()?; // const name
             }
             b'@' => {
-                let _annotation = decoder.skip::<Annotation>()?;
+                decoder.skip::<Annotation>()?;
             }
             b'[' => {
-                let _array = decoder.skip::<ElementArray>()?;
+                decoder.skip::<ElementArray>()?;
             }
             _ => {
                 return Err(DecodeError::from_decoder(

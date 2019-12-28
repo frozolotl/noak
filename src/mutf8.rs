@@ -140,6 +140,7 @@ impl ops::Index<ops::RangeInclusive<usize>> for MStr {
         if *index.end() == usize::max_value() {
             panic!("cannot index mutf8 to maximum integer")
         } else {
+            #[allow(clippy::range_plus_one)]
             &self[*index.start()..*index.end() + 1]
         }
     }
@@ -166,6 +167,7 @@ impl ops::Index<ops::RangeToInclusive<usize>> for MStr {
         if index.end == usize::max_value() {
             panic!("cannot index mutf8 to maximum integer")
         } else {
+            #[allow(clippy::range_plus_one)]
             &self[..index.end + 1]
         }
     }

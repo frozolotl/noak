@@ -1,6 +1,6 @@
 use crate::error::*;
 use crate::reader::{attributes::RawInstruction, decoding::*};
-use crate::writer::{attributes::code::*, cpool, encoding::*, ClassWriter};
+use crate::writer::{attributes::code::*, cpool, encoding::*};
 use std::convert::{TryFrom, TryInto};
 
 pub struct InstructionWriter<'a, 'b> {

@@ -102,7 +102,7 @@ fn decode_stack_map_frame<'a>(
         let stack = decode_verification_type(decoder, current_offset)?;
         Ok((index, StackMapFrame::Same1 { stack }))
     } else if frame_type >= 248 && frame_type <= 250 {
-        let to_chop = (251 - frame_type).into();
+        let to_chop = 251 - frame_type;
         let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
         Ok((index, StackMapFrame::Chop { to_chop }))
     } else if frame_type >= 252 && frame_type <= 254 {
