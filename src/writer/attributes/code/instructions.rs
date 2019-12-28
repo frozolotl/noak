@@ -1742,50 +1742,93 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
         Ok(self)
     }
 
-    // TODO TableSwitch
-}
-
-pub struct TableSwitchWriter<'a> {
-    class_writer: &'a mut ClassWriter,
-    finished: bool,
-}
-
-impl<'a> TableSwitchWriter<'a> {
-    /// Writes the index to an exception able to be thrown by this method.
-    pub fn write_exception<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+    pub fn write_tableswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        I: cpool::Insertable<cpool::Class>,
+        F: for<'f> FnOnce(&mut TableSwitchWriter<'a, 'f>) -> Result<(), EncodeError>,
     {
-        if self.finished {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::CantChangeAnymore,
-                Context::AttributeContent,
-            ))
-        } else {
-            let index = name.insert(&mut self.class_writer)?;
-            self.class_writer.encoder.write(index)?;
-            self.finished = true;
-            Ok(self)
-        }
+        let mut builder = TableSwitchWriter::new(self.code_writer)?;
+        f(&mut builder)?;
+        builder.finish()?;
+
+        Ok(self)
     }
 }
 
-impl<'a> WriteBuilder<'a> for TableSwitchWriter<'a> {
-    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+pub struct TableSwitchWriter<'a, 'b> {
+    code_writer: &'b mut CodeWriter<'a>,
+    state: WriteSwitchState,
+    remaining: u32,
+}
+
+impl<'a, 'b> TableSwitchWriter<'a, 'b> {
+    fn new(code_writer: &'b mut CodeWriter<'a>) -> Result<Self, EncodeError> {
         Ok(TableSwitchWriter {
-            class_writer,
-            finished: false,
+            code_writer,
+            state: WriteSwitchState::Default,
+            remaining: 0,
         })
     }
 
-    fn finish(self) -> Result<&'a mut ClassWriter, EncodeError> {
-        if self.finished {
-            Ok(self.class_writer)
-        } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::ValuesMissing,
-                Context::AttributeContent,
-            ))
-        }
+    fn finish(self) -> Result<&'b mut CodeWriter<'a>, EncodeError> {
+        EncodeError::result_from_state(self.state, &WriteSwitchState::Finished, Context::Code)?;
+        Ok(self.code_writer)
     }
+
+    pub fn write_default(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        EncodeError::result_from_state(self.state, &WriteSwitchState::Default, Context::Code)?;
+
+        self.code_writer.class_writer.encoder.write(label.0)?;
+        self.state = WriteSwitchState::Low;
+        Ok(self)
+    }
+
+    pub fn write_low(&mut self, low: i32) -> Result<&mut Self, EncodeError> {
+        EncodeError::result_from_state(self.state, &WriteSwitchState::Low, Context::Code)?;
+
+        self.code_writer.class_writer.encoder.write(low)?;
+        self.remaining = low as u32;
+
+        self.state = WriteSwitchState::High;
+        Ok(self)
+    }
+
+    pub fn write_high(&mut self, high: i32) -> Result<&mut Self, EncodeError> {
+        EncodeError::result_from_state(self.state, &WriteSwitchState::High, Context::Code)?;
+
+        self.code_writer.class_writer.encoder.write(high)?;
+
+        let low = self.remaining as i32;
+        if low > high {
+            return Err(EncodeError::with_context(EncodeErrorKind::IncorrectBounds, Context::Code));
+        }
+
+        self.remaining = (high - low + 1) as u32;
+
+        self.state = WriteSwitchState::Jumps;
+        Ok(self)
+    }
+
+    pub fn write_jump(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
+        EncodeError::result_from_state(self.state, &WriteSwitchState::Jumps, Context::Code)?;
+        self.code_writer.class_writer.encoder.write(label.0)?;
+        if self.remaining == 1 {
+            self.state = WriteSwitchState::Finished;
+        } else if self.remaining == 0 {
+            return Err(EncodeError::with_context(EncodeErrorKind::CantChangeAnymore, Context::Code));
+        }
+
+        self.remaining -= 1;
+
+        Ok(self)
+    }
+}
+
+/// What's written next
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum WriteSwitchState {
+    Default,
+    Low,
+    High,
+    Jumps,
+    Finished,
 }

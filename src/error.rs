@@ -118,6 +118,7 @@ pub enum EncodeErrorKind {
     IndexNotFitting,
     LabelNotFound,
     LabelTooFar,
+    IncorrectBounds,
 }
 
 impl fmt::Display for EncodeErrorKind {
@@ -134,6 +135,7 @@ impl fmt::Display for EncodeErrorKind {
             IndexNotFitting => write!(f, "the index does not fit into this instruction"),
             LabelNotFound => write!(f, "label was not found"),
             LabelTooFar => write!(f, "label is not close enough to jump point or code start"),
+            IncorrectBounds => write!(f, "incorrect bounds (low > high)"),
         }
     }
 }
