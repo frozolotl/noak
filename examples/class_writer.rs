@@ -10,6 +10,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut class_writer = ClassWriter::new();
 
     class_writer
+        .write_version(noak::Version {
+            minor: 0,
+            major: 52,
+        })?
         .write_access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
         .write_this_class("Test")?
         .write_super_class("java/lang/Object")?
@@ -78,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             writer.write(|writer| {
                 writer
                     .write_access_flags(AccessFlags::PUBLIC)?
-                    .write_name("calculate")?
+                    .write_name("addOne")?
                     .write_descriptor("(I)I")?
                     .write_attributes(|writer| {
                         writer.write(|writer| {
@@ -87,16 +91,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .write_max_stack(2)?
                                     .write_max_locals(1)?
                                     .write_instructions(|writer| {
-                                        let (label, label_ref) = writer.new_label()?;
-                                        writer.write_goto(label_ref)?;
+                                        let (def, def_ref) = writer.new_label()?;
+                                        let (zero, zero_ref) = writer.new_label()?;
+                                        let (one, one_ref) = writer.new_label()?;
+                                        let (two, two_ref) = writer.new_label()?;
 
-                                        writer.write_iconst1()?;
-                                        writer.write_ireturn()?;
+                                        writer.write_iload1()?.write_tableswitch(|writer| {
+                                            writer
+                                                .write_default(def_ref)?
+                                                .write_low(0)?
+                                                .write_high(2)?
+                                                .write_jump(zero_ref)?
+                                                .write_jump(one_ref)?
+                                                .write_jump(two_ref)?;
+                                            Ok(())
+                                        })?;
 
                                         writer
-                                            .write_label(label)?
-                                            .write_bipush(5)?
-                                            .write_iload(0)?
+                                            .write_label(zero)?
+                                            .write_iconst1()?
+                                            .write_ireturn()?;
+
+                                        writer
+                                            .write_label(one)?
+                                            .write_iconst2()?
+                                            .write_ireturn()?;
+
+                                        writer
+                                            .write_label(two)?
+                                            .write_iconst3()?
+                                            .write_ireturn()?;
+
+                                        writer
+                                            .write_label(def)?
+                                            .write_bipush(1)?
+                                            .write_iload1()?
                                             .write_iadd()?
                                             .write_ireturn()?;
 
