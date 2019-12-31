@@ -498,7 +498,10 @@ impl<'a> Iterator for TablePairs<'a> {
         if self.key > self.high {
             return None;
         }
-        let offset = self.decoder.read().expect("the integer is guaranteed to be valid by now");
+        let offset = self
+            .decoder
+            .read()
+            .expect("the integer is guaranteed to be valid by now");
         let key = self.key;
         self.key += 1;
         Some(TablePair { key, offset })
@@ -817,7 +820,7 @@ impl<'a> RawInstruction<'a> {
             0x75 => LNeg,
             0xab => {
                 // skip padding
-                let offset = decoder.file_position() - instruction_start - 1;
+                let offset = decoder.file_position() - instruction_start;
                 decoder.advance(3 - (offset & 3))?;
 
                 LookUpSwitch(self::LookUpSwitch {
@@ -873,7 +876,7 @@ impl<'a> RawInstruction<'a> {
             0x5f => Swap,
             0xaa => {
                 // skip padding
-                let offset = decoder.file_position() - instruction_start - 1;
+                let offset = decoder.file_position() - instruction_start;
                 decoder.advance(3 - (offset & 3))?;
 
                 TableSwitch(self::TableSwitch {

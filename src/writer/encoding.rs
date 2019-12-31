@@ -96,9 +96,7 @@ pub struct VecEncoder {
 
 impl VecEncoder {
     pub fn new(buf: Vec<u8>) -> VecEncoder {
-        VecEncoder {
-            buf,
-        }
+        VecEncoder { buf }
     }
 
     pub fn position(&self) -> Offset {
