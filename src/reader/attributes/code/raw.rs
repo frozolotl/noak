@@ -465,6 +465,14 @@ impl<'a> TableSwitch<'a> {
         self.default_offset
     }
 
+    pub fn low(&self) -> i32 {
+        self.pairs.key
+    }
+
+    pub fn high(&self) -> i32 {
+        self.pairs.high
+    }
+
     pub fn pairs(&self) -> TablePairs<'a> {
         self.pairs.clone()
     }
@@ -480,16 +488,23 @@ impl<'a> fmt::Debug for TableSwitch<'a> {
 pub struct TablePairs<'a> {
     decoder: Decoder<'a>,
     key: i32,
+    high: i32,
 }
 
 impl<'a> Iterator for TablePairs<'a> {
-    type Item = TablePair;
+    type Item = Result<TablePair, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let offset = self.decoder.read().ok()?;
+        if self.key > self.high {
+            return None;
+        }
+        let offset = match self.decoder.read() {
+            Ok(offset) => offset,
+            Err(err) => return Some(Err(err)),
+        };
         let key = self.key;
         self.key += 1;
-        Some(TablePair { key, offset })
+        Some(Ok(TablePair { key, offset }))
     }
 }
 
@@ -968,6 +983,7 @@ impl<'a> Decode<'a> for TablePairs<'a> {
         Ok(TablePairs {
             decoder: pair_decoder,
             key: low,
+            high,
         })
     }
 }
