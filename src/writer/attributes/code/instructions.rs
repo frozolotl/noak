@@ -23,21 +23,10 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
 
     pub(crate) fn finish(self) -> Result<(), EncodeError> {
         let pool_end = self.code_writer.class_writer.pool_end;
+        let len = self.current_offset().get();
         let mut offset = 0;
-        loop {
+        while offset < len {
             use RawInstruction::*;
-
-            let len = self
-                .code_writer
-                .class_writer
-                .encoder
-                .position()
-                .sub(self.start_offset)
-                .sub(pool_end)
-                .get();
-            if offset >= len {
-                break;
-            }
 
             let instruction_start = self.start_offset.add(pool_end).offset(offset);
             let bytes = &self.code_writer.class_writer.encoder.buf()[instruction_start.get()..];
@@ -48,7 +37,7 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
             let diff = prev_rem - decoder.bytes_remaining();
 
             macro_rules! jmp_i16 {
-                ($jump_offset:expr) => {
+                ($jump_offset:expr) => {{
                     let label_index = $jump_offset as usize;
                     let label_position = self.code_writer.label_positions[label_index];
                     let label_offset = label_position as i64 - offset as i64;
@@ -63,7 +52,25 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                     } else {
                         unimplemented!("noak does not support changing jump offset sizes yet");
                     }
-                };
+                }};
+            }
+
+            macro_rules! jmp_i32 {
+                ($read_offset:expr) => {{
+                    let bytes = &self.code_writer.class_writer.encoder.buf()[$read_offset.get()..];
+                    let mut decoder = Decoder::new(bytes, Context::Code);
+                    let label_index = decoder.read::<i32>().unwrap() as usize;
+
+                    let mut encoder = self
+                        .code_writer
+                        .class_writer
+                        .encoder
+                        .replacing($read_offset);
+
+                    let label_position = self.code_writer.label_positions[label_index];
+                    let label_offset = label_position as i64 - offset as i64;
+                    encoder.write(label_offset as i32)?;
+                }};
             }
 
             match instruction {
@@ -72,19 +79,8 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                 } => {
                     jmp_i16!(jump_offset);
                 }
-                GotoW {
-                    offset: jump_offset,
-                } => {
-                    let label_index = jump_offset as usize;
-                    let label_position = self.code_writer.label_positions[label_index];
-                    let label_offset = label_position as i64 - offset as i64;
-
-                    let mut encoder = self
-                        .code_writer
-                        .class_writer
-                        .encoder
-                        .replacing(instruction_start.offset(1));
-                    encoder.write(label_offset as i32)?;
+                GotoW { .. } => {
+                    jmp_i32!(instruction_start.offset(1));
                 }
                 IfACmpEq {
                     offset: jump_offset,
@@ -171,19 +167,24 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                 } => {
                     jmp_i16!(jump_offset);
                 }
-                JSrW {
-                    offset: jump_offset,
-                } => {
-                    let label_index = jump_offset as usize;
-                    let label_position = self.code_writer.label_positions[label_index];
-                    let label_offset = label_position as i64 - offset as i64;
+                JSrW { .. } => {
+                    jmp_i32!(instruction_start.offset(1));
+                }
+                TableSwitch(tableswitch) => {
+                    let low = tableswitch.low();
+                    let high = tableswitch.high();
 
-                    let mut encoder = self
-                        .code_writer
-                        .class_writer
-                        .encoder
-                        .replacing(instruction_start.offset(1));
-                    encoder.write(label_offset as i32)?;
+                    // skip opcode and padding
+                    let offset_default = instruction_start.offset(1 + 3 - (offset & 3));
+
+                    // write correct default offset
+                    jmp_i32!(offset_default);
+
+                    // skip default, low and high
+                    let offset_pair_start = offset_default.offset(4 + 4 + 4);
+                    for i in low..=high {
+                        jmp_i32!(offset_pair_start.offset(i as usize * 4));
+                    }
                 }
                 _ => {}
             }
@@ -1746,7 +1747,7 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
     where
         F: for<'f> FnOnce(&mut TableSwitchWriter<'a, 'f>) -> Result<(), EncodeError>,
     {
-        let mut builder = TableSwitchWriter::new(self.code_writer)?;
+        let mut builder = TableSwitchWriter::new(self.code_writer, self.current_offset())?;
         f(&mut builder)?;
         builder.finish()?;
 
@@ -1761,7 +1762,12 @@ pub struct TableSwitchWriter<'a, 'b> {
 }
 
 impl<'a, 'b> TableSwitchWriter<'a, 'b> {
-    fn new(code_writer: &'b mut CodeWriter<'a>) -> Result<Self, EncodeError> {
+    fn new(code_writer: &'b mut CodeWriter<'a>, offset: Offset) -> Result<Self, EncodeError> {
+        code_writer.class_writer.encoder.write(0xaau8)?;
+        for _ in 0..3 - (offset.get() & 3) {
+            code_writer.class_writer.encoder.write(0u8)?;
+        }
+
         Ok(TableSwitchWriter {
             code_writer,
             state: WriteSwitchState::Default,
@@ -1799,7 +1805,10 @@ impl<'a, 'b> TableSwitchWriter<'a, 'b> {
 
         let low = self.remaining as i32;
         if low > high {
-            return Err(EncodeError::with_context(EncodeErrorKind::IncorrectBounds, Context::Code));
+            return Err(EncodeError::with_context(
+                EncodeErrorKind::IncorrectBounds,
+                Context::Code,
+            ));
         }
 
         self.remaining = (high - low + 1) as u32;
@@ -1814,7 +1823,10 @@ impl<'a, 'b> TableSwitchWriter<'a, 'b> {
         if self.remaining == 1 {
             self.state = WriteSwitchState::Finished;
         } else if self.remaining == 0 {
-            return Err(EncodeError::with_context(EncodeErrorKind::CantChangeAnymore, Context::Code));
+            return Err(EncodeError::with_context(
+                EncodeErrorKind::CantChangeAnymore,
+                Context::Code,
+            ));
         }
 
         self.remaining -= 1;
