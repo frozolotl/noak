@@ -1,7 +1,7 @@
 use crate::error::*;
 use crate::reader::{attributes::RawInstruction, decoding::*};
 use crate::writer::{attributes::code::*, cpool, encoding::*};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 
 pub struct InstructionWriter<'a, 'b> {
     code_writer: &'b mut CodeWriter<'a>,
@@ -38,8 +38,9 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
 
             macro_rules! jmp_i16 {
                 ($jump_offset:expr) => {{
-                    let label_index = $jump_offset as usize;
-                    let label_position = self.code_writer.label_positions[label_index];
+                    let label_position = self
+                        .code_writer
+                        .get_label_position(LabelRef($jump_offset as u16 as u32))?;
                     let label_offset = label_position as i64 - offset as i64;
 
                     if let Ok(i) = i16::try_from(label_offset) {
@@ -59,7 +60,9 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                 ($read_offset:expr) => {{
                     let bytes = &self.code_writer.class_writer.encoder.buf()[$read_offset.get()..];
                     let mut decoder = Decoder::new(bytes, Context::Code);
-                    let label_index = decoder.read::<i32>().unwrap() as usize;
+                    let label_index = LabelRef(decoder.read::<u32>().unwrap());
+                    let label_position = self.code_writer.get_label_position(label_index)?;
+                    let label_offset = label_position as i64 - offset as i64;
 
                     let mut encoder = self
                         .code_writer
@@ -67,8 +70,6 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                         .encoder
                         .replacing($read_offset);
 
-                    let label_position = self.code_writer.label_positions[label_index];
-                    let label_offset = label_position as i64 - offset as i64;
                     encoder.write(label_offset as i32)?;
                 }};
             }
@@ -209,10 +210,12 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
     }
 
     pub fn write_label(&mut self, label: Label) -> Result<&mut Self, EncodeError> {
-        self.code_writer.label_positions[label.0 as usize] =
-            self.current_offset().get().try_into().map_err(|_| {
-                EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::Code)
-            })?;
+        let offset = self.current_offset().get().checked_add(1).ok_or_else(|| {
+            EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::Code)
+        })?;
+        let offset = u32::try_from(offset)
+            .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::Code))?;
+        self.code_writer.label_positions[label.0 as usize] = NonZeroU32::new(offset);
         Ok(self)
     }
 

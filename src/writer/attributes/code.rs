@@ -4,8 +4,8 @@ pub use instructions::InstructionWriter;
 
 use crate::error::*;
 use crate::writer::{encoding::*, AttributeWriter, ClassWriter};
-use std::convert::TryInto;
 use std::fmt;
+use std::{convert::TryFrom, num::NonZeroU32};
 
 impl<'a> AttributeWriter<'a> {
     pub fn write_code<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
@@ -24,8 +24,7 @@ impl<'a> AttributeWriter<'a> {
 
 pub struct CodeWriter<'a> {
     class_writer: &'a mut ClassWriter,
-    /// The positions of labels, where `u32::max_value()` means "no label inserted" (`Option<u32>` would be too inefficient)
-    label_positions: Vec<u32>,
+    label_positions: Vec<Option<NonZeroU32>>,
     state: WriteState,
 }
 
@@ -68,12 +67,21 @@ impl<'a> CodeWriter<'a> {
     }
 
     fn new_label(&mut self) -> Result<(Label, LabelRef), EncodeError> {
-        let index =
-            self.label_positions.len().try_into().map_err(|_| {
-                EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code)
-            })?;
-        self.label_positions.push(u32::max_value());
+        let index = u32::try_from(self.label_positions.len())
+            .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code))?;
+        self.label_positions.push(None);
         Ok((Label(index), LabelRef(index)))
+    }
+
+    fn get_label_position(&self, label: LabelRef) -> Result<u32, EncodeError> {
+        if let Some(pos) = self.label_positions[label.0 as usize] {
+            Ok(pos.get() - 1)
+        } else {
+            Err(EncodeError::with_context(
+                EncodeErrorKind::LabelNotFound,
+                Context::Code,
+            ))
+        }
     }
 
     pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
