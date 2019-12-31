@@ -492,19 +492,16 @@ pub struct TablePairs<'a> {
 }
 
 impl<'a> Iterator for TablePairs<'a> {
-    type Item = Result<TablePair, DecodeError>;
+    type Item = TablePair;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.key > self.high {
             return None;
         }
-        let offset = match self.decoder.read() {
-            Ok(offset) => offset,
-            Err(err) => return Some(Err(err)),
-        };
+        let offset = self.decoder.read().expect("the integer is guaranteed to be valid by now");
         let key = self.key;
         self.key += 1;
-        Some(Ok(TablePair { key, offset }))
+        Some(TablePair { key, offset })
     }
 }
 
