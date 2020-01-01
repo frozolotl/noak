@@ -35,7 +35,6 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
 
             let instruction_start = self.start_offset.add(pool_end).offset(offset);
             let bytes = &self.code_writer.class_writer.encoder.buf()[instruction_start.get()..];
-            eprintln!("{:x?}", bytes);
             let mut decoder = Decoder::new(bytes, Context::Code);
             let prev_rem = decoder.bytes_remaining();
             let instruction = RawInstruction::decode(&mut decoder, 0)
