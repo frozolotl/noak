@@ -326,7 +326,7 @@ pub enum RawInstruction<'a> {
     LLoad3,
     LMul,
     LNeg,
-    LookUpSwitch(LookUpSwitch<'a>),
+    LookupSwitch(LookupSwitch<'a>),
     LOr,
     LRem,
     LReturn,
@@ -395,56 +395,68 @@ pub enum ArrayType {
 }
 
 #[derive(Clone)]
-pub struct LookUpSwitch<'a> {
+pub struct LookupSwitch<'a> {
     default_offset: i32,
-    pairs: LookUpPairs<'a>,
+    pairs: LookupPairs<'a>,
 }
 
-impl<'a> LookUpSwitch<'a> {
+impl<'a> LookupSwitch<'a> {
     pub fn default_offset(&self) -> i32 {
         self.default_offset
     }
 
-    pub fn pairs(&self) -> LookUpPairs<'a> {
+    pub fn pairs(&self) -> LookupPairs<'a> {
         self.pairs.clone()
     }
 }
 
-impl<'a> fmt::Debug for LookUpSwitch<'a> {
+impl<'a> fmt::Debug for LookupSwitch<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("LookUpSwitch").finish()
+        f.debug_struct("LookupSwitch").finish()
     }
 }
 
 #[derive(Clone)]
-pub struct LookUpPairs<'a> {
+pub struct LookupPairs<'a> {
     decoder: Decoder<'a>,
+    remaining: u32,
 }
 
-impl<'a> Iterator for LookUpPairs<'a> {
-    type Item = LookUpPair;
+impl<'a> Iterator for LookupPairs<'a> {
+    type Item = LookupPair;
 
     fn next(&mut self) -> Option<Self::Item> {
-        Some(LookUpPair {
+        let pair = LookupPair {
             key: self.decoder.read().ok()?,
             offset: self.decoder.read().ok()?,
-        })
+        };
+        self.remaining -= 1;
+        Some(pair)
+    }
+
+    fn count(self) -> usize {
+        self.remaining as usize
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.remaining as usize;
+        (remaining, Some(remaining))
     }
 }
 
-impl<'a> fmt::Debug for LookUpPairs<'a> {
+impl<'a> fmt::Debug for LookupPairs<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("LookUpPairs").finish()
+        f.debug_struct("LookupPairs").finish()
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct LookUpPair {
+pub struct LookupPair {
     key: i32,
     offset: i32,
 }
 
-impl LookUpPair {
+impl LookupPair {
     pub fn key(&self) -> i32 {
         self.key
     }
@@ -823,7 +835,7 @@ impl<'a> RawInstruction<'a> {
                 let offset = decoder.file_position() - instruction_start;
                 decoder.advance(3 - (offset & 3))?;
 
-                LookUpSwitch(self::LookUpSwitch {
+                LookupSwitch(self::LookupSwitch {
                     default_offset: decoder.read()?,
                     pairs: decoder.read()?,
                 })
@@ -988,7 +1000,7 @@ impl<'a> Decode<'a> for TablePairs<'a> {
     }
 }
 
-impl<'a> Decode<'a> for LookUpPairs<'a> {
+impl<'a> Decode<'a> for LookupPairs<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let count = decoder.read::<i32>()?;
         if count < 0 {
@@ -997,12 +1009,13 @@ impl<'a> Decode<'a> for LookUpPairs<'a> {
                 decoder,
             ));
         }
-        let count = count as usize * 8;
-        let pair_decoder = decoder.limit(count, Context::Code)?;
-        decoder.advance(count)?;
+        let byte_count = count as usize * 8;
+        let pair_decoder = decoder.limit(byte_count, Context::Code)?;
+        decoder.advance(byte_count)?;
 
-        Ok(LookUpPairs {
+        Ok(LookupPairs {
             decoder: pair_decoder,
+            remaining: count as u32,
         })
     }
 }

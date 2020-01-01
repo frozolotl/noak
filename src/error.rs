@@ -119,6 +119,7 @@ pub enum EncodeErrorKind {
     LabelNotFound,
     LabelTooFar,
     IncorrectBounds,
+    InvalidKeyOrder,
 }
 
 impl fmt::Display for EncodeErrorKind {
@@ -136,6 +137,10 @@ impl fmt::Display for EncodeErrorKind {
             LabelNotFound => write!(f, "label was not found"),
             LabelTooFar => write!(f, "label is not close enough to jump point or code start"),
             IncorrectBounds => write!(f, "incorrect bounds (low > high)"),
+            InvalidKeyOrder => write!(
+                f,
+                "the keys in the lookupswitch instruction must be in an increasing numerical order"
+            ),
         }
     }
 }

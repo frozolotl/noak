@@ -96,14 +96,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         let (one, one_ref) = writer.new_label()?;
                                         let (two, two_ref) = writer.new_label()?;
 
-                                        writer.write_iload1()?.write_tableswitch(|writer| {
+                                        writer.write_iload1()?.write_lookupswitch(|writer| {
                                             writer
                                                 .write_default(def_ref)?
-                                                .write_low(0)?
-                                                .write_high(2)?
-                                                .write_jump(zero_ref)?
-                                                .write_jump(one_ref)?
-                                                .write_jump(two_ref)?;
+                                                .write_pair(0, zero_ref)?
+                                                .write_pair(2, one_ref)?
+                                                .write_pair(4, two_ref)?;
                                             Ok(())
                                         })?;
 

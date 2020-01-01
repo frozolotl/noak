@@ -1,5 +1,7 @@
+mod lookupswitch;
 mod tableswitch;
 
+pub use lookupswitch::*;
 pub use tableswitch::*;
 
 use crate::error::*;
@@ -33,6 +35,7 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
 
             let instruction_start = self.start_offset.add(pool_end).offset(offset);
             let bytes = &self.code_writer.class_writer.encoder.buf()[instruction_start.get()..];
+            eprintln!("{:x?}", bytes);
             let mut decoder = Decoder::new(bytes, Context::Code);
             let prev_rem = decoder.bytes_remaining();
             let instruction = RawInstruction::decode(&mut decoder, 0)
@@ -173,6 +176,20 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
                 }
                 JSrW { .. } => {
                     jmp_i32!(instruction_start.offset(1));
+                }
+                LookupSwitch(lookupswitch) => {
+                    let count = lookupswitch.pairs().count();
+                    // skip opcode and padding
+                    let offset_default = instruction_start.offset(1 + 3 - (offset & 3));
+
+                    // write correct default offset
+                    jmp_i32!(offset_default);
+
+                    // skip default and count
+                    let offset_pair_start = offset_default.offset(4 + 4);
+                    for i in 0..count {
+                        jmp_i32!(offset_pair_start.offset((i as usize * 2 + 1) * 4));
+                    }
                 }
                 TableSwitch(tableswitch) => {
                     let low = tableswitch.low();
@@ -1530,7 +1547,16 @@ impl<'a, 'b> InstructionWriter<'a, 'b> {
         Ok(self)
     }
 
-    // TODO LookUpSwitch
+    pub fn write_lookupswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+    where
+        F: for<'f> FnOnce(&mut LookupSwitchWriter<'a, 'f>) -> Result<(), EncodeError>,
+    {
+        let mut builder = LookupSwitchWriter::new(self.code_writer, self.current_offset())?;
+        f(&mut builder)?;
+        builder.finish()?;
+
+        Ok(self)
+    }
 
     pub fn write_lor(&mut self) -> Result<&mut Self, EncodeError> {
         self.code_writer.class_writer.encoder.write(0x81u8)?;
