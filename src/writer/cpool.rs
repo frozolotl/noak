@@ -433,6 +433,12 @@ macro_rules! impl_insertable {
                     class_writer.insert_constant(self)
                 }
             }
+
+            impl Insertable<$name> for Index<$name> {
+                fn insert(self, _: &mut ClassWriter) -> Result<Index<$name>, EncodeError> {
+                    Ok(self)
+                }
+            }
         )*
     }
 }
@@ -455,6 +461,12 @@ impl_insertable! {
     InvokeDynamic;
     Module;
     Package;
+}
+
+impl Insertable<Item> for Index<Item> {
+    fn insert(self, _: &mut ClassWriter) -> Result<Index<Item>, EncodeError> {
+        Ok(self)
+    }
 }
 
 impl<I: Into<MString>> Insertable<Utf8> for I {
