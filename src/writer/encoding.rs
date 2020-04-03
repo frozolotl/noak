@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::writer::ClassWriter;
+use crate::writer::class::ClassWriter;
 use std::convert::TryFrom;
 use std::marker::PhantomData;
 
@@ -172,30 +172,39 @@ impl<'a> Encoder for InsertingEncoder<'a> {
 }
 
 /// An encoder writing the count of bytes to the front.
-pub struct LengthWriter {
+pub struct LengthWriter<Ctx> {
     /// The offset of the byte counter starting at the pool end.
     length_offset: Offset,
+    marker: PhantomData<Ctx>,
 }
 
-impl LengthWriter {
-    pub fn new(class_writer: &mut ClassWriter) -> Result<Self, EncodeError> {
-        let length_offset = class_writer.encoder.position().sub(class_writer.pool_end);
-        class_writer.encoder.write(0u32)?;
-        Ok(LengthWriter { length_offset })
+impl<Ctx: EncoderContext> LengthWriter<Ctx> {
+    pub fn new(context: &mut Ctx) -> Result<Self, EncodeError> {
+        let pool_end = context.class_writer().pool_end;
+        let encoder = &mut context.class_writer_mut().encoder;
+        let length_offset = encoder.position().sub(pool_end);
+        encoder.write(0u32)?;
+        Ok(LengthWriter {
+            length_offset,
+            marker: PhantomData,
+        })
     }
 
-    pub fn finish(self, class_writer: &mut ClassWriter) -> Result<(), EncodeError> {
-        let length = class_writer
+    pub fn finish(self, context: &mut Ctx) -> Result<(), EncodeError> {
+        let length = context
+            .class_writer_mut()
             .encoder
             .position()
-            .sub(class_writer.pool_end)
+            .sub(context.class_writer().pool_end)
             .sub(self.length_offset)
             .sub(Offset(4));
         let length = u32::try_from(length.0)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))?;
-        class_writer
+        let position = self.length_offset.add(context.class_writer().pool_end);
+        context
+            .class_writer_mut()
             .encoder
-            .replacing(self.length_offset.add(class_writer.pool_end))
+            .replacing(position)
             .write(length)?;
         Ok(())
     }
@@ -207,81 +216,122 @@ impl<E: Encoder> Encoder for &mut E {
     }
 }
 
+pub trait EncoderContext {
+    fn class_writer(&self) -> &ClassWriter;
+    fn class_writer_mut(&mut self) -> &mut ClassWriter;
+}
+
+impl<'a, Ctx: EncoderContext> EncoderContext for &'a mut Ctx {
+    fn class_writer(&self) -> &ClassWriter {
+        Ctx::class_writer(self)
+    }
+
+    fn class_writer_mut(&mut self) -> &mut ClassWriter {
+        Ctx::class_writer_mut(self)
+    }
+}
+
 pub trait WriteBuilder<'a>: Sized {
-    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError>;
-    fn finish(self) -> Result<&'a mut ClassWriter, EncodeError>;
+    type Context: EncoderContext;
+
+    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError>;
+    fn finish(self) -> Result<&'a mut Self::Context, EncodeError>;
 }
 
 pub trait WriteSimple<'a, I>: WriteBuilder<'a> {
     fn write_simple(
-        class_writer: &'a mut ClassWriter,
+        context: &'a mut Self::Context,
         to_write: I,
-    ) -> Result<&'a mut ClassWriter, EncodeError>;
+    ) -> Result<&'a mut Self::Context, EncodeError>;
 }
 
-pub struct CountedWriter<'a, W, R = u16> {
+pub struct CountedWriter<'a, W, Ctx, Count> {
     /// The offset of the counter starting at the pool end.
     count_offset: Offset,
-    class_writer: Option<&'a mut ClassWriter>,
-    count: R,
+    context: Option<&'a mut Ctx>,
+    count: Count,
     marker: PhantomData<W>,
 }
 
-impl<'a, W, R> CountedWriter<'a, W, R>
+impl<'a, W, Ctx, Count> WriteBuilder<'a> for CountedWriter<'a, W, Ctx, Count>
 where
-    R: Encode + Counter,
     W: WriteBuilder<'a>,
+    Ctx: EncoderContext,
+    Count: Encode + Counter,
 {
-    pub(crate) fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
-        let count_offset = class_writer.encoder.position().sub(class_writer.pool_end);
-        let count = R::zero();
-        class_writer.encoder.write(&count)?;
+    type Context = Ctx;
+
+    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
+        let count_offset = context
+            .class_writer_mut()
+            .encoder
+            .position()
+            .sub(context.class_writer().pool_end);
+        let count = Count::zero();
+        context.class_writer_mut().encoder.write(&count)?;
         Ok(CountedWriter {
-            class_writer: Some(class_writer),
+            context: Some(context),
             count_offset,
             count,
             marker: PhantomData,
         })
     }
 
+    fn finish(mut self) -> Result<&'a mut Self::Context, EncodeError> {
+        self.context
+            .take()
+            .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None))
+    }
+}
+
+impl<'a, W, Ctx, Count> CountedWriter<'a, W, Ctx, Count>
+where
+    W: WriteBuilder<'a, Context = Ctx>,
+    Ctx: EncoderContext,
+    Count: Encode + Counter,
+{
     pub fn write<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(&'f mut W) -> Result<(), EncodeError>,
     {
-        let class_writer = self.class_writer.take().ok_or_else(|| {
+        let context = self.context.take().ok_or_else(|| {
             EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
         })?;
         self.count.check()?;
 
-        let mut builder = W::new(class_writer)?;
+        let mut builder = W::new(context)?;
         f(&mut builder)?;
-        let class_writer = builder.finish()?;
+        let context = builder.finish()?;
 
         self.count.increment()?;
-        class_writer
+        let position = self.count_offset.add(context.class_writer().pool_end);
+        context
+            .class_writer_mut()
             .encoder
-            .replacing(self.count_offset.add(class_writer.pool_end))
+            .replacing(position)
             .write(&self.count)?;
-        self.class_writer = Some(class_writer);
+        self.context = Some(context);
         Ok(self)
     }
 
     pub fn write_simple<I>(&mut self, item: I) -> Result<&mut Self, EncodeError>
     where
-        W: WriteSimple<'a, I>,
+        W: WriteSimple<'a, I, Context = Ctx>,
     {
-        let class_writer = self.class_writer.take().ok_or_else(|| {
+        let context = self.context.take().ok_or_else(|| {
             EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
         })?;
 
-        let class_writer = W::write_simple(class_writer, item)?;
+        let context = W::write_simple(context, item)?;
 
         self.count.increment()?;
-        class_writer
+        let position = self.count_offset.add(context.class_writer().pool_end);
+        context
+            .class_writer_mut()
             .encoder
-            .replacing(self.count_offset.add(class_writer.pool_end))
+            .replacing(position)
             .write(&self.count)?;
-        self.class_writer = Some(class_writer);
+        self.context = Some(context);
 
         Ok(self)
     }

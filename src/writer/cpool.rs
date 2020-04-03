@@ -1,6 +1,6 @@
 use crate::error::*;
 use crate::mutf8::MString;
-use crate::writer::{encoding::*, ClassWriter};
+use crate::writer::encoding::*;
 use indexmap::IndexMap;
 use std::{
     convert::TryFrom,
@@ -422,20 +422,20 @@ impl_into_item! {
 }
 
 pub trait Insertable<O> {
-    fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<O>, EncodeError>;
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<O>, EncodeError>;
 }
 
 macro_rules! impl_insertable {
     ($($name:ident;)*) => {
         $(
             impl Insertable<$name> for $name {
-                fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<$name>, EncodeError> {
-                    class_writer.insert_constant(self)
+                fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<$name>, EncodeError> {
+                    context.class_writer_mut().insert_constant(self)
                 }
             }
 
             impl Insertable<$name> for Index<$name> {
-                fn insert(self, _: &mut ClassWriter) -> Result<Index<$name>, EncodeError> {
+                fn insert<Ctx: EncoderContext>(self, _: &mut Ctx) -> Result<Index<$name>, EncodeError> {
                     Ok(self)
                 }
             }
@@ -464,46 +464,54 @@ impl_insertable! {
 }
 
 impl Insertable<Item> for Index<Item> {
-    fn insert(self, _: &mut ClassWriter) -> Result<Index<Item>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(self, _: &mut Ctx) -> Result<Index<Item>, EncodeError> {
         Ok(self)
     }
 }
 
 impl<I: Into<MString>> Insertable<Utf8> for I {
-    fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<Utf8>, EncodeError> {
-        class_writer.insert_constant(Utf8 {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Utf8>, EncodeError> {
+        context.class_writer_mut().insert_constant(Utf8 {
             content: self.into(),
         })
     }
 }
 
 impl<I: Insertable<Utf8>> Insertable<Class> for I {
-    fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<Class>, EncodeError> {
-        let name = self.insert(class_writer)?;
-        class_writer.insert_constant(Class { name })
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Class>, EncodeError> {
+        let name = self.insert(context)?;
+        context.class_writer_mut().insert_constant(Class { name })
     }
 }
 
 impl Insertable<Integer> for i32 {
-    fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<Integer>, EncodeError> {
-        class_writer.insert_constant(Integer { value: self })
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Integer>, EncodeError> {
+        context
+            .class_writer_mut()
+            .insert_constant(Integer { value: self })
     }
 }
 
 impl Insertable<Long> for i64 {
-    fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<Long>, EncodeError> {
-        class_writer.insert_constant(Long { value: self })
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Long>, EncodeError> {
+        context
+            .class_writer_mut()
+            .insert_constant(Long { value: self })
     }
 }
 
 impl Insertable<Float> for f32 {
-    fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<Float>, EncodeError> {
-        class_writer.insert_constant(Float { value: self })
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Float>, EncodeError> {
+        context
+            .class_writer_mut()
+            .insert_constant(Float { value: self })
     }
 }
 
 impl Insertable<Double> for f64 {
-    fn insert(self, class_writer: &mut ClassWriter) -> Result<Index<Double>, EncodeError> {
-        class_writer.insert_constant(Double { value: self })
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Double>, EncodeError> {
+        context
+            .class_writer_mut()
+            .insert_constant(Double { value: self })
     }
 }

@@ -7,32 +7,35 @@ use crate::writer::{encoding::*, AttributeWriter, ClassWriter};
 use std::fmt;
 use std::{convert::TryFrom, num::NonZeroU32};
 
-impl<'a> AttributeWriter<'a> {
+impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
     pub fn write_code<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut CodeWriter<'f>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(&mut CodeWriter<'f, Ctx>) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("Code")?;
-        let mut writer = CodeWriter::new(self.class_writer)?;
+        let mut writer = CodeWriter::new(self.context)?;
         f(&mut writer)?;
         writer.finish()?;
-        length_writer.finish(self.class_writer)?;
+        length_writer.finish(self.context)?;
         self.finished = true;
         Ok(self)
     }
 }
 
-pub struct CodeWriter<'a> {
-    class_writer: &'a mut ClassWriter,
+pub struct CodeWriter<'a, Ctx> {
+    context: &'a mut Ctx,
     label_positions: Vec<Option<NonZeroU32>>,
     state: WriteState,
 }
 
-impl<'a> CodeWriter<'a> {
-    pub fn write_max_stack(&mut self, max_stack: u16) -> Result<&mut CodeWriter<'a>, EncodeError> {
+impl<'a, Ctx: EncoderContext> CodeWriter<'a, Ctx> {
+    pub fn write_max_stack(
+        &mut self,
+        max_stack: u16,
+    ) -> Result<&mut CodeWriter<'a, Ctx>, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::MaxStack, Context::Code)?;
 
-        self.class_writer.encoder.write(max_stack)?;
+        self.context.class_writer_mut().encoder.write(max_stack)?;
         self.state = WriteState::MaxLocals;
         Ok(self)
     }
@@ -40,27 +43,27 @@ impl<'a> CodeWriter<'a> {
     pub fn write_max_locals(
         &mut self,
         max_locals: u16,
-    ) -> Result<&mut CodeWriter<'a>, EncodeError> {
+    ) -> Result<&mut CodeWriter<'a, Ctx>, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::MaxLocals, Context::Code)?;
 
-        self.class_writer.encoder.write(max_locals)?;
+        self.context.class_writer_mut().encoder.write(max_locals)?;
         self.state = WriteState::Instructions;
         Ok(self)
     }
 
     pub fn write_instructions<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f, 'g> FnOnce(&mut InstructionWriter<'f, 'g>) -> Result<(), EncodeError>,
+        F: for<'f, 'g> FnOnce(&mut InstructionWriter<'f, 'g, Ctx>) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Instructions, Context::Code)?;
 
-        let length_writer = LengthWriter::new(self.class_writer)?;
+        let length_writer = LengthWriter::new(self.context)?;
         let mut writer = InstructionWriter::new(self)?;
         f(&mut writer)?;
         writer.finish()?;
-        length_writer.finish(self.class_writer)?;
+        length_writer.finish(self.context)?;
 
-        self.class_writer.encoder.write(0u16)?;
+        self.context.class_writer_mut().encoder.write(0u16)?;
         self.state = WriteState::Attributes;
 
         Ok(self)
@@ -86,10 +89,12 @@ impl<'a> CodeWriter<'a> {
 
     pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
     where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, AttributeWriter<'f>>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(
+            &mut CountedWriter<'f, AttributeWriter<'f, Ctx>, Ctx, u16>,
+        ) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Code)?;
-        let mut builder = CountedWriter::new(self.class_writer)?;
+        let mut builder = CountedWriter::new(self.context)?;
         f(&mut builder)?;
         self.state = WriteState::Finished;
 
@@ -97,23 +102,35 @@ impl<'a> CodeWriter<'a> {
     }
 }
 
-impl<'a> WriteBuilder<'a> for CodeWriter<'a> {
-    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+impl<'a, Ctx: EncoderContext> EncoderContext for CodeWriter<'a, Ctx> {
+    fn class_writer(&self) -> &ClassWriter {
+        self.context.class_writer()
+    }
+
+    fn class_writer_mut(&mut self) -> &mut ClassWriter {
+        self.context.class_writer_mut()
+    }
+}
+
+impl<'a, Ctx: EncoderContext> WriteBuilder<'a> for CodeWriter<'a, Ctx> {
+    type Context = Ctx;
+
+    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
         Ok(CodeWriter {
-            class_writer,
+            context,
             label_positions: Vec::new(),
             state: WriteState::MaxStack,
         })
     }
 
-    fn finish(mut self) -> Result<&'a mut ClassWriter, EncodeError> {
+    fn finish(mut self) -> Result<&'a mut Self::Context, EncodeError> {
         // write attribute count 0 if no attribute was written
         if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Code)? {
             self.write_attributes(|_| Ok(()))?;
         }
 
         if self.state == WriteState::Finished {
-            Ok(self.class_writer)
+            Ok(self.context)
         } else {
             Err(EncodeError::with_context(
                 EncodeErrorKind::ValuesMissing,

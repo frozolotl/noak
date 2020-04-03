@@ -1,26 +1,28 @@
 use crate::error::*;
-use crate::writer::{cpool, encoding::*, AttributeWriter, ClassWriter};
+use crate::writer::{cpool, encoding::*, AttributeWriter};
 
-impl<'a> AttributeWriter<'a> {
+impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
     pub fn write_exceptions<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, ExceptionWriter<'f>>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(
+            &mut CountedWriter<'f, ExceptionWriter<'f, Ctx>, Ctx, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("Exceptions")?;
-        let mut builder = CountedWriter::new(self.class_writer)?;
+        let mut builder = CountedWriter::new(self.context)?;
         f(&mut builder)?;
-        length_writer.finish(self.class_writer)?;
+        length_writer.finish(self.context)?;
         self.finished = true;
         Ok(self)
     }
 }
 
-pub struct ExceptionWriter<'a> {
-    class_writer: &'a mut ClassWriter,
+pub struct ExceptionWriter<'a, Ctx> {
+    context: &'a mut Ctx,
     finished: bool,
 }
 
-impl<'a> ExceptionWriter<'a> {
+impl<'a, Ctx: EncoderContext> ExceptionWriter<'a, Ctx> {
     /// Writes the index to an exception able to be thrown by this method.
     pub fn write_exception<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
     where
@@ -32,25 +34,27 @@ impl<'a> ExceptionWriter<'a> {
                 Context::AttributeContent,
             ))
         } else {
-            let index = name.insert(&mut self.class_writer)?;
-            self.class_writer.encoder.write(index)?;
+            let index = name.insert(self.context)?;
+            self.context.class_writer_mut().encoder.write(index)?;
             self.finished = true;
             Ok(self)
         }
     }
 }
 
-impl<'a> WriteBuilder<'a> for ExceptionWriter<'a> {
-    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+impl<'a, Ctx: EncoderContext> WriteBuilder<'a> for ExceptionWriter<'a, Ctx> {
+    type Context = Ctx;
+
+    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
         Ok(ExceptionWriter {
-            class_writer,
+            context,
             finished: false,
         })
     }
 
-    fn finish(self) -> Result<&'a mut ClassWriter, EncodeError> {
+    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
         if self.finished {
-            Ok(self.class_writer)
+            Ok(self.context)
         } else {
             Err(EncodeError::with_context(
                 EncodeErrorKind::ValuesMissing,
@@ -60,14 +64,15 @@ impl<'a> WriteBuilder<'a> for ExceptionWriter<'a> {
     }
 }
 
-impl<'a, I> WriteSimple<'a, I> for ExceptionWriter<'a>
+impl<'a, I, Ctx> WriteSimple<'a, I> for ExceptionWriter<'a, Ctx>
 where
     I: cpool::Insertable<cpool::Class>,
+    Ctx: EncoderContext,
 {
     fn write_simple(
-        class_writer: &'a mut ClassWriter,
+        class_writer: &'a mut Self::Context,
         exception: I,
-    ) -> Result<&'a mut ClassWriter, EncodeError> {
+    ) -> Result<&'a mut Self::Context, EncodeError> {
         let mut writer = ExceptionWriter::new(class_writer)?;
         writer.write_exception(exception)?;
         writer.finish()

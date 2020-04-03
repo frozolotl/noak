@@ -27,14 +27,16 @@ impl<'a> InterfaceWriter<'a> {
 }
 
 impl<'a> WriteBuilder<'a> for InterfaceWriter<'a> {
-    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+    type Context = ClassWriter;
+
+    fn new(class_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
         Ok(InterfaceWriter {
             class_writer,
             finished: false,
         })
     }
 
-    fn finish(self) -> Result<&'a mut ClassWriter, EncodeError> {
+    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
         if self.finished {
             Ok(self.class_writer)
         } else {

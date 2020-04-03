@@ -3,18 +3,18 @@ use crate::mutf8::MString;
 use crate::writer::{
     cpool::{self, Insertable},
     encoding::*,
-    AttributeWriter, ClassWriter,
+    AttributeWriter,
 };
 
-impl<'a> AttributeWriter<'a> {
+impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
     pub fn write_constant_value<I: Into<ConstantValue>>(
         &mut self,
         value: I,
     ) -> Result<&mut Self, EncodeError> {
         let length_writer = self.attribute_writer("ConstantValue")?;
-        let value_index = value.into().insert(self.class_writer)?;
-        self.class_writer.encoder.write(value_index)?;
-        length_writer.finish(self.class_writer)?;
+        let value_index = value.into().insert(self.context)?;
+        self.context.class_writer_mut().encoder.write(value_index)?;
+        length_writer.finish(self.context)?;
         self.finished = true;
         Ok(self)
     }
@@ -67,26 +67,30 @@ impl From<cpool::Index<cpool::Item>> for ConstantValue {
 }
 
 impl Insertable<cpool::Item> for ConstantValue {
-    fn insert(
+    fn insert<Ctx: EncoderContext>(
         self,
-        class_writer: &mut ClassWriter,
+        context: &mut Ctx,
     ) -> Result<cpool::Index<cpool::Item>, EncodeError> {
         match self {
-            ConstantValue::Integer(value) => {
-                class_writer.insert_constant(cpool::Item::Integer(cpool::Integer { value }))
-            }
-            ConstantValue::Long(value) => {
-                class_writer.insert_constant(cpool::Item::Long(cpool::Long { value }))
-            }
-            ConstantValue::Float(value) => {
-                class_writer.insert_constant(cpool::Item::Float(cpool::Float { value }))
-            }
-            ConstantValue::Double(value) => {
-                class_writer.insert_constant(cpool::Item::Double(cpool::Double { value }))
-            }
+            ConstantValue::Integer(value) => context
+                .class_writer_mut()
+                .insert_constant(cpool::Item::Integer(cpool::Integer { value })),
+            ConstantValue::Long(value) => context
+                .class_writer_mut()
+                .insert_constant(cpool::Item::Long(cpool::Long { value })),
+            ConstantValue::Float(value) => context
+                .class_writer_mut()
+                .insert_constant(cpool::Item::Float(cpool::Float { value })),
+            ConstantValue::Double(value) => context
+                .class_writer_mut()
+                .insert_constant(cpool::Item::Double(cpool::Double { value })),
             ConstantValue::String(content) => {
-                let string = class_writer.insert_constant(cpool::Utf8 { content })?;
-                class_writer.insert_constant(cpool::Item::String(cpool::String { string }))
+                let string = context
+                    .class_writer_mut()
+                    .insert_constant(cpool::Utf8 { content })?;
+                context
+                    .class_writer_mut()
+                    .insert_constant(cpool::Item::String(cpool::String { string }))
             }
             ConstantValue::Index(index) => Ok(index),
         }

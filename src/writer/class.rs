@@ -159,7 +159,9 @@ impl ClassWriter {
 
     pub fn write_interfaces<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, InterfaceWriter<'f>>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(
+            &mut CountedWriter<'f, InterfaceWriter<'f>, ClassWriter, u16>,
+        ) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Interfaces, Context::Interfaces)?;
         let mut builder = CountedWriter::new(self)?;
@@ -170,7 +172,9 @@ impl ClassWriter {
 
     pub fn write_fields<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, FieldWriter<'f>>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(
+            &mut CountedWriter<'f, FieldWriter<'f>, ClassWriter, u16>,
+        ) -> Result<(), EncodeError>,
     {
         self.write_zero_interfaces()?;
         EncodeError::result_from_state(self.state, &WriteState::Fields, Context::Fields)?;
@@ -182,7 +186,9 @@ impl ClassWriter {
 
     pub fn write_methods<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, MethodWriter<'f>>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(
+            &mut CountedWriter<'f, MethodWriter<'f>, ClassWriter, u16>,
+        ) -> Result<(), EncodeError>,
     {
         self.write_zero_fields()?;
         EncodeError::result_from_state(self.state, &WriteState::Methods, Context::Methods)?;
@@ -194,7 +200,9 @@ impl ClassWriter {
 
     pub fn write_attributes<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, AttributeWriter<'f>>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(
+            &mut CountedWriter<'f, AttributeWriter<'f, ClassWriter>, ClassWriter, u16>,
+        ) -> Result<(), EncodeError>,
     {
         self.write_zero_methods()?;
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
@@ -243,6 +251,16 @@ impl ClassWriter {
         // any code that wouldn't work after calling this method should throw an error
         let encoder = std::mem::replace(&mut self.encoder, VecEncoder::new(Vec::new()));
         Ok(encoder.into_inner())
+    }
+}
+
+impl EncoderContext for ClassWriter {
+    fn class_writer(&self) -> &ClassWriter {
+        self
+    }
+
+    fn class_writer_mut(&mut self) -> &mut ClassWriter {
+        self
     }
 }
 

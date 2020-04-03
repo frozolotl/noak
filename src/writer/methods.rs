@@ -42,7 +42,9 @@ impl<'a> MethodWriter<'a> {
 
     pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
     where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, AttributeWriter<'f>>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(
+            &mut CountedWriter<'f, AttributeWriter<'f, ClassWriter>, ClassWriter, u16>,
+        ) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
         let mut builder = CountedWriter::new(self.class_writer)?;
@@ -54,14 +56,16 @@ impl<'a> MethodWriter<'a> {
 }
 
 impl<'a> WriteBuilder<'a> for MethodWriter<'a> {
-    fn new(class_writer: &'a mut ClassWriter) -> Result<Self, EncodeError> {
+    type Context = ClassWriter;
+
+    fn new(class_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
         Ok(MethodWriter {
             class_writer,
             state: WriteState::AccessFlags,
         })
     }
 
-    fn finish(mut self) -> Result<&'a mut ClassWriter, EncodeError> {
+    fn finish(mut self) -> Result<&'a mut Self::Context, EncodeError> {
         // write attribute count 0 if no attribute was written
         if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Attributes)? {
             self.write_attributes(|_| Ok(()))?;
