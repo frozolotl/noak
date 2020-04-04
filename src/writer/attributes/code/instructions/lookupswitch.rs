@@ -32,10 +32,7 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, 'c, Ctx> {
             EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code)
         })?;
         if self.count == 1 {
-            self.context
-                .class_writer_mut()
-                .encoder
-                .write(self.count)?;
+            self.context.class_writer_mut().encoder.write(self.count)?;
         } else {
             let count_offset = self
                 .count_offset
@@ -64,6 +61,7 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> WriteBuilder<'a> for LookupSwitchWriter<'a
 
     fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
         let offset = context.current_offset();
+
         context.class_writer_mut().encoder.write(0xabu8)?;
         for _ in 0..3 - (offset.get() & 3) {
             context.class_writer_mut().encoder.write(0u8)?;

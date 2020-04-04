@@ -1,11 +1,11 @@
+mod instructions;
 mod lines;
 mod locals;
-mod instructions;
 mod stack_map;
 
+pub use instructions::*;
 pub use lines::*;
 pub use locals::*;
-pub use instructions::*;
 pub use stack_map::*;
 
 use crate::error::*;
