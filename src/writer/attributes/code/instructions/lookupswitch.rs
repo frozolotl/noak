@@ -1,49 +1,19 @@
 use crate::error::*;
 use crate::writer::{attributes::code::*, encoding::*};
 
-pub struct LookupSwitchWriter<'a, 'b, Ctx> {
-    code_writer: &'b mut CodeWriter<'a, Ctx>,
+pub struct LookupSwitchWriter<'a, 'b, 'c, Ctx> {
+    context: &'a mut InstructionWriter<'b, 'c, Ctx>,
     state: WriteState,
     count_offset: Offset,
     count: u32,
     last_key: Option<i32>,
 }
 
-impl<'a, 'b, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, Ctx> {
-    pub(super) fn new(
-        code_writer: &'b mut CodeWriter<'a, Ctx>,
-        offset: Offset,
-    ) -> Result<Self, EncodeError> {
-        code_writer.class_writer_mut().encoder.write(0xabu8)?;
-        for _ in 0..3 - (offset.get() & 3) {
-            code_writer.class_writer_mut().encoder.write(0u8)?;
-        }
-
-        let count_offset = code_writer
-            .class_writer_mut()
-            .encoder
-            .position()
-            .sub(code_writer.class_writer_mut().pool_end)
-            .offset(4);
-
-        Ok(LookupSwitchWriter {
-            code_writer,
-            state: WriteState::Default,
-            count_offset,
-            count: 0,
-            last_key: None,
-        })
-    }
-
-    pub(super) fn finish(self) -> Result<&'b mut CodeWriter<'a, Ctx>, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::Jumps, Context::Code)?;
-        Ok(self.code_writer)
-    }
-
+impl<'a, 'b, 'c, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, 'c, Ctx> {
     pub fn write_default(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         EncodeError::result_from_state(self.state, &WriteState::Default, Context::Code)?;
 
-        self.code_writer.class_writer_mut().encoder.write(label.0)?;
+        self.context.class_writer_mut().encoder.write(label.0)?;
         self.state = WriteState::Jumps;
         Ok(self)
     }
@@ -62,22 +32,22 @@ impl<'a, 'b, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, Ctx> {
             EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code)
         })?;
         if self.count == 1 {
-            self.code_writer
+            self.context
                 .class_writer_mut()
                 .encoder
                 .write(self.count)?;
         } else {
             let count_offset = self
                 .count_offset
-                .add(self.code_writer.class_writer_mut().pool_end);
-            self.code_writer
+                .add(self.context.class_writer_mut().pool_end);
+            self.context
                 .class_writer_mut()
                 .encoder
                 .replacing(count_offset)
                 .write(self.count)?;
         }
 
-        self.code_writer
+        self.context
             .class_writer_mut()
             .encoder
             .write(key)?
@@ -86,6 +56,38 @@ impl<'a, 'b, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, Ctx> {
         self.last_key = Some(key);
 
         Ok(self)
+    }
+}
+
+impl<'a, 'b, 'c, Ctx: EncoderContext> WriteBuilder<'a> for LookupSwitchWriter<'a, 'b, 'c, Ctx> {
+    type Context = InstructionWriter<'b, 'c, Ctx>;
+
+    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
+        let offset = context.current_offset();
+        context.class_writer_mut().encoder.write(0xabu8)?;
+        for _ in 0..3 - (offset.get() & 3) {
+            context.class_writer_mut().encoder.write(0u8)?;
+        }
+
+        let count_offset = context
+            .class_writer_mut()
+            .encoder
+            .position()
+            .sub(context.class_writer_mut().pool_end)
+            .offset(4);
+
+        Ok(LookupSwitchWriter {
+            context,
+            state: WriteState::Default,
+            count_offset,
+            count: 0,
+            last_key: None,
+        })
+    }
+
+    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+        EncodeError::result_from_state(self.state, &WriteState::Jumps, Context::Code)?;
+        Ok(self.context)
     }
 }
 

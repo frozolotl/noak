@@ -9,215 +9,13 @@ use crate::reader::{attributes::RawInstruction, decoding::*};
 use crate::writer::{attributes::code::*, cpool, encoding::*};
 
 pub struct InstructionWriter<'a, 'b, Ctx> {
-    code_writer: &'b mut CodeWriter<'a, Ctx>,
+    code_writer: &'a mut CodeWriter<'b, Ctx>,
     start_offset: Offset,
 }
 
 impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
-    pub(crate) fn new(code_writer: &'b mut CodeWriter<'a, Ctx>) -> Result<Self, EncodeError> {
-        let start_offset = code_writer
-            .class_writer_mut()
-            .encoder
-            .position()
-            .sub(code_writer.class_writer_mut().pool_end);
-        Ok(InstructionWriter {
-            code_writer,
-            start_offset,
-        })
-    }
-
-    pub(crate) fn finish(self) -> Result<(), EncodeError> {
-        let pool_end = self.code_writer.class_writer_mut().pool_end;
-        let len = self.current_offset().get();
-        let mut offset = 0;
-        while offset < len {
-            use RawInstruction::*;
-
-            let instruction_start = self.start_offset.add(pool_end).offset(offset);
-            let bytes =
-                &self.code_writer.class_writer_mut().encoder.buf()[instruction_start.get()..];
-            let mut decoder = Decoder::new(bytes, Context::Code);
-            let prev_rem = decoder.bytes_remaining();
-            let instruction = RawInstruction::decode(&mut decoder, 0)
-                .expect("decoder failed to read encoded instruction");
-            let diff = prev_rem - decoder.bytes_remaining();
-
-            macro_rules! jmp_i16 {
-                ($jump_offset:expr) => {{
-                    let label_position = self
-                        .code_writer
-                        .get_label_position(LabelRef($jump_offset as u16 as u32))?;
-                    let label_offset = label_position as i64 - offset as i64;
-
-                    if let Ok(i) = i16::try_from(label_offset) {
-                        let mut encoder = self
-                            .code_writer
-                            .class_writer_mut()
-                            .encoder
-                            .replacing(instruction_start.offset(1));
-                        encoder.write(i)?;
-                    } else {
-                        unimplemented!("noak does not support changing jump offset sizes yet");
-                    }
-                }};
-            }
-
-            macro_rules! jmp_i32 {
-                ($read_offset:expr) => {{
-                    let bytes =
-                        &self.code_writer.class_writer_mut().encoder.buf()[$read_offset.get()..];
-                    let mut decoder = Decoder::new(bytes, Context::Code);
-                    let label_index = LabelRef(decoder.read::<u32>().unwrap());
-                    let label_position = self.code_writer.get_label_position(label_index)?;
-                    let label_offset = label_position as i64 - offset as i64;
-
-                    let mut encoder = self
-                        .code_writer
-                        .class_writer_mut()
-                        .encoder
-                        .replacing($read_offset);
-
-                    encoder.write(label_offset as i32)?;
-                }};
-            }
-
-            match instruction {
-                Goto {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                GotoW { .. } => {
-                    jmp_i32!(instruction_start.offset(1));
-                }
-                IfACmpEq {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfACmpNe {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfICmpEq {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfICmpNe {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfICmpLt {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfICmpGe {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfICmpGt {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfICmpLe {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfEq {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfNe {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfLt {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfGe {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfGt {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfLe {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfNonNull {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                IfNull {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                JSr {
-                    offset: jump_offset,
-                } => {
-                    jmp_i16!(jump_offset);
-                }
-                JSrW { .. } => {
-                    jmp_i32!(instruction_start.offset(1));
-                }
-                LookupSwitch(lookupswitch) => {
-                    let count = lookupswitch.pairs().count();
-                    // skip opcode and padding
-                    let offset_default = instruction_start.offset(1 + 3 - (offset & 3));
-
-                    // write correct default offset
-                    jmp_i32!(offset_default);
-
-                    // skip default and count
-                    let offset_pair_start = offset_default.offset(4 + 4);
-                    for i in 0..count {
-                        jmp_i32!(offset_pair_start.offset((i as usize * 2 + 1) * 4));
-                    }
-                }
-                TableSwitch(tableswitch) => {
-                    let low = tableswitch.low();
-                    let high = tableswitch.high();
-
-                    // skip opcode and padding
-                    let offset_default = instruction_start.offset(1 + 3 - (offset & 3));
-
-                    // write correct default offset
-                    jmp_i32!(offset_default);
-
-                    // skip default, low and high
-                    let offset_pair_start = offset_default.offset(4 + 4 + 4);
-                    for i in low..=high {
-                        jmp_i32!(offset_pair_start.offset(i as usize * 4));
-                    }
-                }
-                _ => {}
-            }
-
-            offset += diff;
-        }
-        Ok(())
-    }
-
     /// The current offset starting from the code table start.
-    fn current_offset(&self) -> Offset {
+    pub(crate) fn current_offset(&self) -> Offset {
         self.code_writer
             .class_writer()
             .encoder
@@ -1552,9 +1350,9 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_lookupswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut LookupSwitchWriter<'a, 'f, Ctx>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(&mut LookupSwitchWriter<'f, 'a, 'b, Ctx>) -> Result<(), EncodeError>,
     {
-        let mut builder = LookupSwitchWriter::new(self.code_writer, self.current_offset())?;
+        let mut builder = LookupSwitchWriter::new(self)?;
         f(&mut builder)?;
         builder.finish()?;
 
@@ -1780,12 +1578,228 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_tableswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut TableSwitchWriter<'a, 'f, Ctx>) -> Result<(), EncodeError>,
+        F: for<'f> FnOnce(&mut TableSwitchWriter<'f, 'a, 'b, Ctx>) -> Result<(), EncodeError>,
     {
-        let mut builder = TableSwitchWriter::new(self.code_writer, self.current_offset())?;
+        let mut builder = TableSwitchWriter::new(self)?;
         f(&mut builder)?;
         builder.finish()?;
 
         Ok(self)
+    }
+}
+
+impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b, Ctx> {
+    type Context = CodeWriter<'b, Ctx>;
+
+    fn new(code_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
+        let start_offset = code_writer
+            .class_writer_mut()
+            .encoder
+            .position()
+            .sub(code_writer.class_writer_mut().pool_end);
+        Ok(InstructionWriter {
+            code_writer,
+            start_offset,
+        })
+    }
+
+    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+        let pool_end = self.code_writer.class_writer_mut().pool_end;
+        let len = self.current_offset().get();
+        let mut offset = 0;
+        while offset < len {
+            use RawInstruction::*;
+
+            let instruction_start = self.start_offset.add(pool_end).offset(offset);
+            let bytes =
+                &self.code_writer.class_writer_mut().encoder.buf()[instruction_start.get()..];
+            let mut decoder = Decoder::new(bytes, Context::Code);
+            let prev_rem = decoder.bytes_remaining();
+            let instruction = RawInstruction::decode(&mut decoder, 0)
+                .expect("decoder failed to read encoded instruction");
+            let diff = prev_rem - decoder.bytes_remaining();
+
+            macro_rules! jmp_i16 {
+                ($jump_offset:expr) => {{
+                    let label_position = self
+                        .code_writer
+                        .get_label_position(LabelRef($jump_offset as u16 as u32))?;
+                    let label_offset = label_position as i64 - offset as i64;
+
+                    if let Ok(i) = i16::try_from(label_offset) {
+                        let mut encoder = self
+                            .code_writer
+                            .class_writer_mut()
+                            .encoder
+                            .replacing(instruction_start.offset(1));
+                        encoder.write(i)?;
+                    } else {
+                        unimplemented!("noak does not support changing jump offset sizes yet");
+                    }
+                }};
+            }
+
+            macro_rules! jmp_i32 {
+                ($read_offset:expr) => {{
+                    let bytes =
+                        &self.code_writer.class_writer_mut().encoder.buf()[$read_offset.get()..];
+                    let mut decoder = Decoder::new(bytes, Context::Code);
+                    let label_index = LabelRef(decoder.read::<u32>().unwrap());
+                    let label_position = self.code_writer.get_label_position(label_index)?;
+                    let label_offset = label_position as i64 - offset as i64;
+
+                    let mut encoder = self
+                        .code_writer
+                        .class_writer_mut()
+                        .encoder
+                        .replacing($read_offset);
+
+                    encoder.write(label_offset as i32)?;
+                }};
+            }
+
+            match instruction {
+                Goto {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                GotoW { .. } => {
+                    jmp_i32!(instruction_start.offset(1));
+                }
+                IfACmpEq {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfACmpNe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpEq {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpNe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpLt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpGe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpGt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfICmpLe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfEq {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfNe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfLt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfGe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfGt {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfLe {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfNonNull {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                IfNull {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                JSr {
+                    offset: jump_offset,
+                } => {
+                    jmp_i16!(jump_offset);
+                }
+                JSrW { .. } => {
+                    jmp_i32!(instruction_start.offset(1));
+                }
+                LookupSwitch(lookupswitch) => {
+                    let count = lookupswitch.pairs().count();
+                    // skip opcode and padding
+                    let offset_default = instruction_start.offset(1 + 3 - (offset & 3));
+
+                    // write correct default offset
+                    jmp_i32!(offset_default);
+
+                    // skip default and count
+                    let offset_pair_start = offset_default.offset(4 + 4);
+                    for i in 0..count {
+                        jmp_i32!(offset_pair_start.offset((i as usize * 2 + 1) * 4));
+                    }
+                }
+                TableSwitch(tableswitch) => {
+                    let low = tableswitch.low();
+                    let high = tableswitch.high();
+
+                    // skip opcode and padding
+                    let offset_default = instruction_start.offset(1 + 3 - (offset & 3));
+
+                    // write correct default offset
+                    jmp_i32!(offset_default);
+
+                    // skip default, low and high
+                    let offset_pair_start = offset_default.offset(4 + 4 + 4);
+                    for i in low..=high {
+                        jmp_i32!(offset_pair_start.offset(i as usize * 4));
+                    }
+                }
+                _ => {}
+            }
+
+            offset += diff;
+        }
+        Ok(self.code_writer)
+    }
+}
+
+impl<'a, 'b, Ctx: EncoderContext> EncoderContext for InstructionWriter<'a, 'b, Ctx> {
+    fn class_writer(&self) -> &ClassWriter {
+        self.code_writer.class_writer()
+    }
+
+    fn class_writer_mut(&mut self) -> &mut ClassWriter {
+        self.code_writer.class_writer_mut()
     }
 }
