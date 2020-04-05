@@ -3,7 +3,7 @@ use crate::reader::attributes::code;
 use crate::reader::decoding::*;
 use std::fmt;
 
-pub type LineNumberTable<'a> = DecodeCountedCopy<'a, Line>;
+pub type LineNumberTable<'a> = DecodeCountedCopy<'a, Line, u16>;
 pub type LineNumberIter<'a> = DecodeCounted<'a, Line, u16>;
 
 #[derive(Clone)]

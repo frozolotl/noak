@@ -328,7 +328,7 @@ where
     }
 }
 
-pub struct DecodeCountedCopy<'a, T, Count = u16> {
+pub struct DecodeCountedCopy<'a, T, Count> {
     iter: DecodeCounted<'a, T, Count>,
 }
 

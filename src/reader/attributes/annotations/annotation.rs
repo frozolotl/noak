@@ -3,7 +3,7 @@ use crate::reader::cpool;
 use crate::reader::decoding::*;
 use std::fmt;
 
-pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>>;
+pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>, u16>;
 pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>, u16>;
 
 pub type ParameterAnnotations<'a> = DecodeCountedCopy<'a, Annotations<'a>, u8>;
@@ -176,5 +176,5 @@ impl<'a> Decode<'a> for ElementValue<'a> {
     }
 }
 
-pub type ElementArray<'a> = DecodeCountedCopy<'a, ElementValue<'a>>;
+pub type ElementArray<'a> = DecodeCountedCopy<'a, ElementValue<'a>, u16>;
 pub type ElementArrayIter<'a> = DecodeCounted<'a, ElementValue<'a>, u16>;

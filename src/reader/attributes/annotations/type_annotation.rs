@@ -5,7 +5,7 @@ use crate::reader::{attributes::code, cpool};
 use std::fmt;
 use std::ops::Range;
 
-pub type TypeAnnotations<'a> = DecodeCountedCopy<'a, TypeAnnotation<'a>>;
+pub type TypeAnnotations<'a> = DecodeCountedCopy<'a, TypeAnnotation<'a>, u16>;
 pub type TypeAnnotationIter<'a> = DecodeCounted<'a, TypeAnnotation<'a>, u16>;
 
 #[derive(Clone)]
@@ -210,7 +210,7 @@ impl<'a> Decode<'a> for SuperTypeIndex {
     }
 }
 
-pub type LocalVariableTargetTable<'a> = DecodeCountedCopy<'a, LocalVariable>;
+pub type LocalVariableTargetTable<'a> = DecodeCountedCopy<'a, LocalVariable, u16>;
 pub type LocalVariableTargetIter<'a> = DecodeCounted<'a, LocalVariable, u16>;
 
 #[derive(Clone)]

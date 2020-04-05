@@ -59,10 +59,10 @@ impl fmt::Debug for NestHost {
     }
 }
 
-pub type NestMembers<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Class>>;
+pub type NestMembers<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Class>, u16>;
 pub type NestMemberIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
 
-pub type InnerClasses<'a> = DecodeCountedCopy<'a, InnerClass>;
+pub type InnerClasses<'a> = DecodeCountedCopy<'a, InnerClass, u16>;
 pub type InnerClassIter<'a> = DecodeCounted<'a, InnerClass, u16>;
 
 #[derive(Clone)]
@@ -113,7 +113,7 @@ impl fmt::Debug for InnerClass {
     }
 }
 
-pub type BootstrapMethods<'a> = DecodeCountedCopy<'a, BootstrapMethod<'a>>;
+pub type BootstrapMethods<'a> = DecodeCountedCopy<'a, BootstrapMethod<'a>, u16>;
 pub type BootstrapMethodIter<'a> = DecodeCounted<'a, BootstrapMethod<'a>, u16>;
 
 #[derive(Clone)]
@@ -153,5 +153,5 @@ impl<'a> fmt::Debug for BootstrapMethod<'a> {
     }
 }
 
-pub type BootstrapArguments<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::MethodHandle>>;
+pub type BootstrapArguments<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::MethodHandle>, u16>;
 pub type BootstrapArgumentIter<'a> = DecodeCounted<'a, cpool::Index<cpool::MethodHandle>, u16>;
