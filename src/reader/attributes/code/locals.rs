@@ -6,7 +6,7 @@ use std::fmt;
 use std::ops::Range;
 
 pub type LocalVariableTable<'a> = DecodeCountedCopy<'a, LocalVariable>;
-pub type LocalVariableIter<'a> = DecodeCounted<'a, LocalVariable>;
+pub type LocalVariableIter<'a> = DecodeCounted<'a, LocalVariable, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariable {
@@ -63,7 +63,7 @@ impl fmt::Debug for LocalVariable {
 }
 
 pub type LocalVariableTypeTable<'a> = DecodeCountedCopy<'a, LocalVariableType>;
-pub type LocalVariableTypeIter<'a> = DecodeCounted<'a, LocalVariableType>;
+pub type LocalVariableTypeIter<'a> = DecodeCounted<'a, LocalVariableType, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariableType {

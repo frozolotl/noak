@@ -5,7 +5,7 @@ use crate::reader::decoding::*;
 use std::fmt;
 use std::iter::FusedIterator;
 
-pub type InterfaceIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
+pub type InterfaceIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
 
 /// An iterator over the interface names in a class.
 #[derive(Clone)]

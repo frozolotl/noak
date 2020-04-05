@@ -4,7 +4,7 @@ use crate::reader::decoding::*;
 use crate::reader::{cpool, AttributeIter};
 use std::fmt;
 
-pub type FieldIter<'a> = DecodeCounted<'a, Field<'a>>;
+pub type FieldIter<'a> = DecodeCounted<'a, Field<'a>, u16>;
 
 #[derive(Clone)]
 pub struct Field<'a> {

@@ -4,7 +4,7 @@ use crate::reader::decoding::*;
 use std::fmt;
 
 pub type LineNumberTable<'a> = DecodeCountedCopy<'a, Line>;
-pub type LineNumberIter<'a> = DecodeCounted<'a, Line>;
+pub type LineNumberIter<'a> = DecodeCounted<'a, Line, u16>;
 
 #[derive(Clone)]
 pub struct Line {

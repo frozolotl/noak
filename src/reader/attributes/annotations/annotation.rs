@@ -4,7 +4,7 @@ use crate::reader::decoding::*;
 use std::fmt;
 
 pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>>;
-pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>>;
+pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>, u16>;
 
 pub type ParameterAnnotations<'a> = DecodeCountedCopy<'a, Annotations<'a>, u8>;
 pub type ParameterAnnotationIter<'a> = DecodeCounted<'a, Annotations<'a>, u8>;
@@ -56,7 +56,7 @@ impl<'a> fmt::Debug for Annotation<'a> {
     }
 }
 
-pub type ElementValuePairIter<'a> = DecodeCounted<'a, ElementValuePair<'a>>;
+pub type ElementValuePairIter<'a> = DecodeCounted<'a, ElementValuePair<'a>, u16>;
 
 #[derive(Clone)]
 pub struct ElementValuePair<'a> {
@@ -177,4 +177,4 @@ impl<'a> Decode<'a> for ElementValue<'a> {
 }
 
 pub type ElementArray<'a> = DecodeCountedCopy<'a, ElementValue<'a>>;
-pub type ElementArrayIter<'a> = DecodeCounted<'a, ElementValue<'a>>;
+pub type ElementArrayIter<'a> = DecodeCounted<'a, ElementValue<'a>, u16>;

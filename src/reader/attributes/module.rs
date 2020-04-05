@@ -5,7 +5,7 @@ use crate::reader::decoding::*;
 use std::fmt;
 
 pub type ModulePackages<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Package>>;
-pub type ModulePackageIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Package>>;
+pub type ModulePackageIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Package>, u16>;
 
 #[derive(Clone)]
 pub struct ModuleMainClass {
@@ -94,7 +94,7 @@ impl<'a> fmt::Debug for Module<'a> {
 }
 
 pub type Requires<'a> = DecodeCountedCopy<'a, Require>;
-pub type RequireIter<'a> = DecodeCounted<'a, Require>;
+pub type RequireIter<'a> = DecodeCounted<'a, Require, u16>;
 
 #[derive(Clone)]
 pub struct Require {
@@ -134,9 +134,9 @@ impl fmt::Debug for Require {
 }
 
 pub type Exports<'a> = DecodeCountedCopy<'a, Export<'a>>;
-pub type ExportIter<'a> = DecodeCounted<'a, Export<'a>>;
+pub type ExportIter<'a> = DecodeCounted<'a, Export<'a>, u16>;
 
-pub type ExportsToIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Module>>;
+pub type ExportsToIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Module>, u16>;
 
 #[derive(Clone)]
 pub struct Export<'a> {
@@ -176,9 +176,9 @@ impl<'a> fmt::Debug for Export<'a> {
 }
 
 pub type Opens<'a> = DecodeCountedCopy<'a, Open<'a>>;
-pub type OpenIter<'a> = DecodeCounted<'a, Open<'a>>;
+pub type OpenIter<'a> = DecodeCounted<'a, Open<'a>, u16>;
 
-pub type OpensToIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Module>>;
+pub type OpensToIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Module>, u16>;
 
 #[derive(Clone)]
 pub struct Open<'a> {
@@ -218,12 +218,12 @@ impl<'a> fmt::Debug for Open<'a> {
 }
 
 pub type Uses<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Class>>;
-pub type UseIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
+pub type UseIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
 
 pub type Provides<'a> = DecodeCountedCopy<'a, Provide<'a>>;
-pub type ProvideIter<'a> = DecodeCounted<'a, Provide<'a>>;
+pub type ProvideIter<'a> = DecodeCounted<'a, Provide<'a>, u16>;
 
-pub type ProvidesWithIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
+pub type ProvidesWithIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
 
 #[derive(Clone)]
 pub struct Provide<'a> {

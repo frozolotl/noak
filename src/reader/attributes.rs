@@ -19,7 +19,7 @@ use crate::mutf8::MStr;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
 
-pub type AttributeIter<'a> = DecodeCounted<'a, Attribute<'a>>;
+pub type AttributeIter<'a> = DecodeCounted<'a, Attribute<'a>, u16>;
 
 #[derive(Clone)]
 pub struct Attribute<'a> {

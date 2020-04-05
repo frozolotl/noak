@@ -6,7 +6,7 @@ use std::fmt;
 use std::ops::Range;
 
 pub type TypeAnnotations<'a> = DecodeCountedCopy<'a, TypeAnnotation<'a>>;
-pub type TypeAnnotationIter<'a> = DecodeCounted<'a, TypeAnnotation<'a>>;
+pub type TypeAnnotationIter<'a> = DecodeCounted<'a, TypeAnnotation<'a>, u16>;
 
 #[derive(Clone)]
 pub struct TypeAnnotation<'a> {
@@ -211,7 +211,7 @@ impl<'a> Decode<'a> for SuperTypeIndex {
 }
 
 pub type LocalVariableTargetTable<'a> = DecodeCountedCopy<'a, LocalVariable>;
-pub type LocalVariableTargetIter<'a> = DecodeCounted<'a, LocalVariable>;
+pub type LocalVariableTargetIter<'a> = DecodeCounted<'a, LocalVariable, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariable {

@@ -227,7 +227,7 @@ impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
     }
 }
 
-pub struct DecodeCounted<'a, T, R = u16> {
+pub struct DecodeCounted<'a, T, R> {
     decoder: Decoder<'a>,
     remaining: R,
     marker: PhantomData<T>,

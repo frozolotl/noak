@@ -29,7 +29,7 @@ impl<'a> fmt::Debug for Exceptions<'a> {
     }
 }
 
-pub type ExceptionIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>>;
+pub type ExceptionIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
 
 pub type MethodParameters<'a> = DecodeCountedCopy<'a, MethodParameter, u8>;
 pub type MethodParameterIter<'a> = DecodeCounted<'a, MethodParameter, u8>;
