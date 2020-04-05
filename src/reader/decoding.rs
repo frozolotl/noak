@@ -227,14 +227,14 @@ impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
     }
 }
 
-pub struct DecodeCounted<'a, T, R> {
+pub struct DecodeCounted<'a, T, Count> {
     decoder: Decoder<'a>,
-    remaining: R,
+    remaining: Count,
     marker: PhantomData<T>,
 }
 
-impl<'a, T, R: 'a> DecodeCounted<'a, T, R> {
-    pub fn new(decoder: Decoder<'a>, count: R) -> DecodeCounted<'a, T, R> {
+impl<'a, T, Count: 'a> DecodeCounted<'a, T, Count> {
+    pub fn new(decoder: Decoder<'a>, count: Count) -> DecodeCounted<'a, T, Count> {
         DecodeCounted {
             decoder,
             remaining: count,
@@ -243,13 +243,13 @@ impl<'a, T, R: 'a> DecodeCounted<'a, T, R> {
     }
 }
 
-impl<'a, T, R> Decode<'a> for DecodeCounted<'a, T, R>
+impl<'a, T, Count> Decode<'a> for DecodeCounted<'a, T, Count>
 where
     T: Decode<'a>,
-    R: Decode<'a> + Countdown,
+    Count: Decode<'a> + Countdown,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let count: R = decoder.read()?;
+        let count: Count = decoder.read()?;
         let old_decoder = decoder.clone();
 
         let mut remaining = count;
@@ -265,10 +265,10 @@ where
     }
 }
 
-impl<'a, T, R> DecodeInto<'a> for DecodeCounted<'a, T, R>
+impl<'a, T, Count> DecodeInto<'a> for DecodeCounted<'a, T, Count>
 where
     T: Decode<'a>,
-    R: Decode<'a>,
+    Count: Decode<'a>,
 {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         let remaining = decoder.read()?;
@@ -280,10 +280,10 @@ where
     }
 }
 
-impl<'a, T, R> Iterator for DecodeCounted<'a, T, R>
+impl<'a, T, Count> Iterator for DecodeCounted<'a, T, Count>
 where
     T: Decode<'a>,
-    R: Decode<'a> + Countdown,
+    Count: Decode<'a> + Countdown,
 {
     type Item = Result<T, DecodeError>;
 
@@ -299,14 +299,14 @@ where
     }
 }
 
-impl<'a, T, R> FusedIterator for DecodeCounted<'a, T, R>
+impl<'a, T, Count> FusedIterator for DecodeCounted<'a, T, Count>
 where
     T: Decode<'a>,
-    R: Decode<'a> + Countdown,
+    Count: Decode<'a> + Countdown,
 {
 }
 
-impl<'a, T, R: Countdown> Clone for DecodeCounted<'a, T, R> {
+impl<'a, T, Count: Countdown> Clone for DecodeCounted<'a, T, Count> {
     fn clone(&self) -> Self {
         DecodeCounted {
             decoder: self.decoder.clone(),
@@ -316,10 +316,10 @@ impl<'a, T, R: Countdown> Clone for DecodeCounted<'a, T, R> {
     }
 }
 
-impl<'a, T, R> fmt::Debug for DecodeCounted<'a, T, R>
+impl<'a, T, Count> fmt::Debug for DecodeCounted<'a, T, Count>
 where
     T: Decode<'a>,
-    R: fmt::Debug,
+    Count: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("DecodeCounted")
@@ -328,20 +328,20 @@ where
     }
 }
 
-pub struct DecodeCountedCopy<'a, T, R = u16> {
-    iter: DecodeCounted<'a, T, R>,
+pub struct DecodeCountedCopy<'a, T, Count = u16> {
+    iter: DecodeCounted<'a, T, Count>,
 }
 
-impl<'a, T, R: Countdown> DecodeCountedCopy<'a, T, R> {
-    pub fn iter(&self) -> DecodeCounted<'a, T, R> {
+impl<'a, T, Count: Countdown> DecodeCountedCopy<'a, T, Count> {
+    pub fn iter(&self) -> DecodeCounted<'a, T, Count> {
         self.iter.clone()
     }
 }
 
-impl<'a, T, R> Decode<'a> for DecodeCountedCopy<'a, T, R>
+impl<'a, T, Count> Decode<'a> for DecodeCountedCopy<'a, T, Count>
 where
     T: Decode<'a>,
-    R: Decode<'a> + Countdown,
+    Count: Decode<'a> + Countdown,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(DecodeCountedCopy {
@@ -350,10 +350,10 @@ where
     }
 }
 
-impl<'a, T, R> DecodeInto<'a> for DecodeCountedCopy<'a, T, R>
+impl<'a, T, Count> DecodeInto<'a> for DecodeCountedCopy<'a, T, Count>
 where
     T: Decode<'a>,
-    R: Decode<'a>,
+    Count: Decode<'a>,
 {
     fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(DecodeCountedCopy {
@@ -362,7 +362,7 @@ where
     }
 }
 
-impl<'a, T, R: Countdown> Clone for DecodeCountedCopy<'a, T, R> {
+impl<'a, T, Count: Countdown> Clone for DecodeCountedCopy<'a, T, Count> {
     fn clone(&self) -> Self {
         DecodeCountedCopy {
             iter: self.iter.clone(),
@@ -370,7 +370,7 @@ impl<'a, T, R: Countdown> Clone for DecodeCountedCopy<'a, T, R> {
     }
 }
 
-impl<'a, T, R> fmt::Debug for DecodeCountedCopy<'a, T, R> {
+impl<'a, T, Count> fmt::Debug for DecodeCountedCopy<'a, T, Count> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("DecodeCountedCopy").finish()
     }
