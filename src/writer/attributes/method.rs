@@ -5,7 +5,7 @@ impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
     pub fn write_exceptions<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(
-            &mut CountedWriter<'f, ExceptionWriter<'f, Ctx>, Ctx, u16>,
+            &mut CountedWriter<'f, ExceptionWriter<'f, Ctx>, u16>,
         ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("Exceptions")?;

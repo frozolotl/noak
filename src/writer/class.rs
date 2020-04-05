@@ -160,7 +160,7 @@ impl ClassWriter {
     pub fn write_interfaces<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(
-            &mut CountedWriter<'f, InterfaceWriter<'f>, ClassWriter, u16>,
+            &mut CountedWriter<'f, InterfaceWriter<'f>, u16>,
         ) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Interfaces, Context::Interfaces)?;
@@ -173,7 +173,7 @@ impl ClassWriter {
     pub fn write_fields<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(
-            &mut CountedWriter<'f, FieldWriter<'f>, ClassWriter, u16>,
+            &mut CountedWriter<'f, FieldWriter<'f>, u16>,
         ) -> Result<(), EncodeError>,
     {
         self.write_zero_interfaces()?;
@@ -187,7 +187,7 @@ impl ClassWriter {
     pub fn write_methods<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(
-            &mut CountedWriter<'f, MethodWriter<'f>, ClassWriter, u16>,
+            &mut CountedWriter<'f, MethodWriter<'f>, u16>,
         ) -> Result<(), EncodeError>,
     {
         self.write_zero_fields()?;
@@ -201,7 +201,7 @@ impl ClassWriter {
     pub fn write_attributes<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
         F: for<'f> FnOnce(
-            &mut CountedWriter<'f, AttributeWriter<'f, ClassWriter>, ClassWriter, u16>,
+            &mut CountedWriter<'f, AttributeWriter<'f, ClassWriter>, u16>,
         ) -> Result<(), EncodeError>,
     {
         self.write_zero_methods()?;

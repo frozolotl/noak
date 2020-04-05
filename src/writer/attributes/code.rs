@@ -90,7 +90,7 @@ impl<'a, Ctx: EncoderContext> CodeWriter<'a, Ctx> {
     pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
     where
         F: for<'f> FnOnce(
-            &mut CountedWriter<'f, AttributeWriter<'f, Ctx>, Ctx, u16>,
+            &mut CountedWriter<'f, AttributeWriter<'f, Ctx>, u16>,
         ) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Code)?;

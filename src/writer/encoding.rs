@@ -245,21 +245,20 @@ pub trait WriteSimple<'a, I>: WriteBuilder<'a> {
     ) -> Result<&'a mut Self::Context, EncodeError>;
 }
 
-pub struct CountedWriter<'a, W, Ctx, Count> {
+pub struct CountedWriter<'a, W: WriteBuilder<'a>, Count> {
     /// The offset of the counter starting at the pool end.
     count_offset: Offset,
-    context: Option<&'a mut Ctx>,
+    context: Option<&'a mut W::Context>,
     count: Count,
     marker: PhantomData<W>,
 }
 
-impl<'a, W, Ctx, Count> WriteBuilder<'a> for CountedWriter<'a, W, Ctx, Count>
+impl<'a, W, Count> WriteBuilder<'a> for CountedWriter<'a, W, Count>
 where
-    W: WriteBuilder<'a>,
-    Ctx: EncoderContext,
+    W: WriteBuilder<'a> + 'a,
     Count: Encode + Counter,
 {
-    type Context = Ctx;
+    type Context = W::Context;
 
     fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
         let count_offset = context
@@ -284,10 +283,9 @@ where
     }
 }
 
-impl<'a, W, Ctx, Count> CountedWriter<'a, W, Ctx, Count>
+impl<'a, W, Count> CountedWriter<'a, W, Count>
 where
-    W: WriteBuilder<'a, Context = Ctx>,
-    Ctx: EncoderContext,
+    W: WriteBuilder<'a> + 'a,
     Count: Encode + Counter,
 {
     pub fn write<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
@@ -316,7 +314,7 @@ where
 
     pub fn write_simple<I>(&mut self, item: I) -> Result<&mut Self, EncodeError>
     where
-        W: WriteSimple<'a, I, Context = Ctx>,
+        W: WriteSimple<'a, I>,
     {
         let context = self.context.take().ok_or_else(|| {
             EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)

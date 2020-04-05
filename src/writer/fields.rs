@@ -43,7 +43,7 @@ impl<'a> FieldWriter<'a> {
     pub fn write_attributes<F>(&mut self, f: F) -> Result<(), EncodeError>
     where
         F: for<'f> FnOnce(
-            &mut CountedWriter<'f, AttributeWriter<'f, ClassWriter>, ClassWriter, u16>,
+            &mut CountedWriter<'f, AttributeWriter<'f, ClassWriter>, u16>,
         ) -> Result<(), EncodeError>,
     {
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
