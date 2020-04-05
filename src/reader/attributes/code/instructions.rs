@@ -832,7 +832,7 @@ impl<'a> RawInstruction<'a> {
             0x75 => LNeg,
             0xab => {
                 // skip padding
-                let offset = decoder.file_position() - instruction_start;
+                let offset = decoder.file_position() - instruction_start - 1;
                 decoder.advance(3 - (offset & 3))?;
 
                 LookupSwitch(self::LookupSwitch {
@@ -888,7 +888,7 @@ impl<'a> RawInstruction<'a> {
             0x5f => Swap,
             0xaa => {
                 // skip padding
-                let offset = decoder.file_position() - instruction_start;
+                let offset = decoder.file_position() - instruction_start - 1;
                 decoder.advance(3 - (offset & 3))?;
 
                 TableSwitch(self::TableSwitch {
