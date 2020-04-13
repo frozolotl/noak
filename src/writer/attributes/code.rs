@@ -106,6 +106,11 @@ impl<'a, Ctx: EncoderContext> CodeWriter<'a, Ctx> {
             &mut CountedWriter<'f, AttributeWriter<'f, Ctx>, u16>,
         ) -> Result<(), EncodeError>,
     {
+        // write exception count 0 if no exception was written
+        if EncodeError::can_write(self.state, &WriteState::ExceptionTable, Context::Code)? {
+            self.write_exceptions(|_| Ok(()))?;
+        }
+
         EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Code)?;
         let mut builder = CountedWriter::new(self.context)?;
         f(&mut builder)?;
