@@ -1,5 +1,7 @@
+mod exception_table;
 pub mod instructions;
 
+pub use exception_table::ExceptionWriter;
 pub use instructions::InstructionWriter;
 
 use crate::error::*;
@@ -62,10 +64,21 @@ impl<'a, Ctx: EncoderContext> CodeWriter<'a, Ctx> {
         f(&mut writer)?;
         writer.finish()?;
         length_writer.finish(self.context)?;
+        self.state = WriteState::ExceptionTable;
 
-        self.context.class_writer_mut().encoder.write(0u16)?;
+        Ok(self)
+    }
+
+    pub fn write_exceptions<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+    where
+        F: for<'f, 'g> FnOnce(
+            &mut CountedWriter<'f, ExceptionWriter<'f, 'g, Ctx>, u16>,
+        ) -> Result<(), EncodeError>,
+    {
+        EncodeError::result_from_state(self.state, &WriteState::ExceptionTable, Context::Fields)?;
+        let mut builder = CountedWriter::new(self)?;
+        f(&mut builder)?;
         self.state = WriteState::Attributes;
-
         Ok(self)
     }
 
@@ -124,6 +137,11 @@ impl<'a, Ctx: EncoderContext> WriteBuilder<'a> for CodeWriter<'a, Ctx> {
     }
 
     fn finish(mut self) -> Result<&'a mut Self::Context, EncodeError> {
+        // write exception count 0 if no exception was written
+        if EncodeError::can_write(self.state, &WriteState::ExceptionTable, Context::Code)? {
+            self.write_exceptions(|_| Ok(()))?;
+        }
+
         // write attribute count 0 if no attribute was written
         if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Code)? {
             self.write_attributes(|_| Ok(()))?;
