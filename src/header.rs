@@ -10,12 +10,74 @@ pub struct Version {
 }
 
 impl Version {
+    pub const V1_0_2: Version = Version {
+        major: 45,
+        minor: 3,
+    };
+    pub const V1_1: Version = Version {
+        major: 45,
+        minor: 3,
+    };
+    pub const V1_2: Version = Version {
+        major: 46,
+        minor: 0,
+    };
+    pub const V1_3: Version = Version {
+        major: 47,
+        minor: 0,
+    };
+    pub const V1_4: Version = Version {
+        major: 48,
+        minor: 0,
+    };
+    pub const V5_0: Version = Version {
+        major: 49,
+        minor: 0,
+    };
+    pub const V6: Version = Version {
+        major: 50,
+        minor: 0,
+    };
+    pub const V7: Version = Version {
+        major: 51,
+        minor: 0,
+    };
+    pub const V8: Version = Version {
+        major: 52,
+        minor: 0,
+    };
+    pub const V9: Version = Version {
+        major: 53,
+        minor: 0,
+    };
+    pub const V10: Version = Version {
+        major: 54,
+        minor: 0,
+    };
+    pub const V11: Version = Version {
+        major: 55,
+        minor: 0,
+    };
+    pub const V12: Version = Version {
+        major: 56,
+        minor: 0,
+    };
+    pub const V13: Version = Version {
+        major: 57,
+        minor: 0,
+    };
+    pub const V14: Version = Version {
+        major: 58,
+        minor: 0,
+    };
+
     /// The latest version which is guaranteed to work with this library.
     pub fn latest() -> Version {
-        Version {
-            major: 56,
-            minor: 0,
-        }
+        Version::V14
+    }
+
+    pub fn is_preview(self) -> bool {
+        self.major >= Version::V12.major && self.minor == 65535
     }
 }
 
