@@ -14,10 +14,16 @@ impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx> {
         // end has to fit into an u16 and thus the last valid index for end is 65535
         // but start has to be less than end and thus the last valid index for start is 65534
         if position >= u16::max_value() as u32 {
-            return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
+            return Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ));
         }
 
-        self.code_writer.class_writer_mut().encoder.write(position as u16)?;
+        self.code_writer
+            .class_writer_mut()
+            .encoder
+            .write(position as u16)?;
         self.state = WriteState::End;
         Ok(self)
     }
@@ -27,10 +33,16 @@ impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx> {
 
         let position = self.code_writer.get_label_position(label)?;
         if position > u16::max_value() as u32 {
-            return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
+            return Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ));
         }
 
-        self.code_writer.class_writer_mut().encoder.write(position as u16)?;
+        self.code_writer
+            .class_writer_mut()
+            .encoder
+            .write(position as u16)?;
         self.state = WriteState::Handler;
         Ok(self)
     }
@@ -40,10 +52,16 @@ impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx> {
 
         let position = self.code_writer.get_label_position(label)?;
         if position > u16::max_value() as u32 {
-            return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
+            return Err(EncodeError::with_context(
+                EncodeErrorKind::LabelTooFar,
+                Context::Code,
+            ));
         }
 
-        self.code_writer.class_writer_mut().encoder.write(position as u16)?;
+        self.code_writer
+            .class_writer_mut()
+            .encoder
+            .write(position as u16)?;
         self.state = WriteState::CatchType;
         Ok(self)
     }
