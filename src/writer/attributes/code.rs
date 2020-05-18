@@ -1,8 +1,10 @@
 mod exception_table;
 pub mod instructions;
+mod stack_map;
 
 pub use exception_table::ExceptionWriter;
 pub use instructions::InstructionWriter;
+pub use stack_map::StackMapTableWriter;
 
 use crate::error::*;
 use crate::writer::{encoding::*, AttributeWriter, ClassWriter};

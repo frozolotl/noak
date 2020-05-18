@@ -118,6 +118,7 @@ pub enum EncodeErrorKind {
     IndexNotFitting,
     LabelNotFound,
     LabelTooFar,
+    NegativeOffset,
     IncorrectBounds,
     InvalidKeyOrder,
 }
@@ -135,7 +136,8 @@ impl fmt::Display for EncodeErrorKind {
             ErroredBefore => write!(f, "some error occured in this data structure before"),
             IndexNotFitting => write!(f, "the index does not fit into this instruction"),
             LabelNotFound => write!(f, "label was not found"),
-            LabelTooFar => write!(f, "label is not close enough to jump point or code start"),
+            LabelTooFar => write!(f, "label is not close enough to jump point, code start or -- in the case of the stack map table -- the previous label"),
+            NegativeOffset => write!(f, "the previous label points to a greater offset than the current label"),
             IncorrectBounds => write!(f, "incorrect bounds (low > high)"),
             InvalidKeyOrder => write!(
                 f,
