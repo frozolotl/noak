@@ -68,7 +68,7 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> WriteBuilder<'a> for LookupSwitchWriter<'a
         }
 
         let count_offset = context
-            .class_writer_mut()
+            .class_writer()
             .encoder
             .position()
             .sub(context.class_writer_mut().pool_end)
