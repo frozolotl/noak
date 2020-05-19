@@ -20,6 +20,10 @@ impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
+        if self.finished {
+            return Err(EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::AttributeContent));
+        }
+
         let index = name.insert(self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;
 
