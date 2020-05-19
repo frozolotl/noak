@@ -21,7 +21,7 @@ impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         if self.finished {
-            return Err(EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::AttributeContent));
+            return Err(EncodeError::with_context(EncodeErrorKind::CantChangeAnymore, Context::AttributeContent));
         }
 
         let index = name.insert(self.context)?;
