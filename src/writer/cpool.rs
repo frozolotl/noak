@@ -241,9 +241,7 @@ pub struct Class {
 
 impl Class {
     pub fn named<I>(name: I) -> ClassInserter<I> {
-        ClassInserter {
-            name
-        }
+        ClassInserter { name }
     }
 }
 
