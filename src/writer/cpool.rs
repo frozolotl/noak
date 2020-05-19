@@ -316,7 +316,7 @@ pub struct String {
 impl String {
     pub fn by<I>(content: I) -> StringInserter<I>
     where
-        I: Insertable<String>
+        I: Insertable<String>,
     {
         StringInserter { string: content }
     }
@@ -384,7 +384,7 @@ pub struct Utf8 {
 impl Utf8 {
     pub fn by<I>(content: I) -> Utf8Inserter<I>
     where
-        I: Insertable<Utf8>
+        I: Insertable<Utf8>,
     {
         Utf8Inserter { content }
     }
@@ -399,7 +399,7 @@ pub struct MethodHandle {
 impl MethodHandle {
     pub fn by<I>(kind: MethodKind, reference: I) -> MethodHandleInserter<I>
     where
-        I: Insertable<Item>
+        I: Insertable<Item>,
     {
         MethodHandleInserter { kind, reference }
     }
@@ -413,7 +413,7 @@ pub struct MethodType {
 impl MethodType {
     pub fn by<I>(descriptor: I) -> MethodTypeInserter<I>
     where
-        I: Insertable<Utf8>
+        I: Insertable<Utf8>,
     {
         MethodTypeInserter { descriptor }
     }
@@ -429,9 +429,12 @@ pub struct Dynamic {
 impl Dynamic {
     pub fn by<I>(bootstrap_method_attr: u16, name_and_type: I) -> DynamicInserter<I>
     where
-        I: Insertable<NameAndType>
+        I: Insertable<NameAndType>,
     {
-        DynamicInserter { bootstrap_method_attr, name_and_type }
+        DynamicInserter {
+            bootstrap_method_attr,
+            name_and_type,
+        }
     }
 }
 
@@ -445,9 +448,12 @@ pub struct InvokeDynamic {
 impl InvokeDynamic {
     pub fn by<I>(bootstrap_method_attr: u16, name_and_type: I) -> InvokeDynamicInserter<I>
     where
-        I: Insertable<NameAndType>
+        I: Insertable<NameAndType>,
     {
-        InvokeDynamicInserter { bootstrap_method_attr, name_and_type }
+        InvokeDynamicInserter {
+            bootstrap_method_attr,
+            name_and_type,
+        }
     }
 }
 
@@ -459,7 +465,7 @@ pub struct Module {
 impl Module {
     pub fn by<I>(name: I) -> ModuleInserter<I>
     where
-        I: Insertable<Utf8>
+        I: Insertable<Utf8>,
     {
         ModuleInserter { name }
     }
@@ -473,7 +479,7 @@ pub struct Package {
 impl Package {
     pub fn by<I>(name: I) -> PackageInserter<I>
     where
-        I: Insertable<Utf8>
+        I: Insertable<Utf8>,
     {
         PackageInserter { name }
     }
@@ -694,7 +700,10 @@ pub struct MethodHandleInserter<I> {
 }
 
 impl<I: Insertable<Item>> Insertable<MethodHandle> for MethodHandleInserter<I> {
-    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<MethodHandle>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(
+        self,
+        context: &mut Ctx,
+    ) -> Result<Index<MethodHandle>, EncodeError> {
         let reference = self.reference.insert(context)?;
         context.class_writer_mut().insert_constant(MethodHandle {
             kind: self.kind,
@@ -714,11 +723,14 @@ pub struct MethodTypeInserter<I> {
 }
 
 impl<I: Insertable<Utf8>> Insertable<MethodType> for MethodTypeInserter<I> {
-    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<MethodType>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(
+        self,
+        context: &mut Ctx,
+    ) -> Result<Index<MethodType>, EncodeError> {
         let descriptor = self.descriptor.insert(context)?;
-        context.class_writer_mut().insert_constant(MethodType {
-            descriptor,
-        })
+        context
+            .class_writer_mut()
+            .insert_constant(MethodType { descriptor })
     }
 }
 
@@ -755,7 +767,10 @@ pub struct InvokeDynamicInserter<I> {
 }
 
 impl<I: Insertable<NameAndType>> Insertable<InvokeDynamic> for InvokeDynamicInserter<I> {
-    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<InvokeDynamic>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(
+        self,
+        context: &mut Ctx,
+    ) -> Result<Index<InvokeDynamic>, EncodeError> {
         let name_and_type = self.name_and_type.insert(context)?;
         context.class_writer_mut().insert_constant(InvokeDynamic {
             bootstrap_method_attr: self.bootstrap_method_attr,
@@ -777,9 +792,7 @@ pub struct ModuleInserter<I> {
 impl<I: Insertable<Utf8>> Insertable<Module> for ModuleInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Module>, EncodeError> {
         let name = self.name.insert(context)?;
-        context.class_writer_mut().insert_constant(Module {
-            name,
-        })
+        context.class_writer_mut().insert_constant(Module { name })
     }
 }
 
@@ -796,9 +809,7 @@ pub struct PackageInserter<I> {
 impl<I: Insertable<Utf8>> Insertable<Package> for PackageInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Package>, EncodeError> {
         let name = self.name.insert(context)?;
-        context.class_writer_mut().insert_constant(Package {
-            name,
-        })
+        context.class_writer_mut().insert_constant(Package { name })
     }
 }
 
