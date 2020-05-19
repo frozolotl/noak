@@ -1,3 +1,4 @@
+mod class;
 pub mod code;
 mod debug;
 mod field;
