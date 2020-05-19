@@ -1254,12 +1254,12 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
     where
         I: cpool::Insertable<cpool::Item>,
     {
-        let index = u8::try_from(
-            constant
-                .insert(self.code_writer.class_writer_mut())?
-                .as_u16(),
-        )
-        .map_err(|_| EncodeError::with_context(EncodeErrorKind::IndexNotFitting, Context::Code))?;
+        let index = constant
+            .insert(self.code_writer.class_writer_mut())?
+            .as_u16();
+        let index = u8::try_from(index).map_err(|_| {
+            EncodeError::with_context(EncodeErrorKind::IndexNotFitting, Context::Code)
+        })?;
         self.code_writer
             .class_writer_mut()
             .encoder
@@ -1615,9 +1615,11 @@ impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b,
             let instruction_start = start_offset.offset(offset);
 
             // we need to create a new decoder in each iteration as the bytes are modified later on in this block
-            let mut decoder = Decoder::new(self.code_writer.class_writer().encoder.buf(), Context::Code);
+            let mut decoder =
+                Decoder::new(self.code_writer.class_writer().encoder.buf(), Context::Code);
             // slicing does not work here because the decoder uses the current offset to compute table- and lookupswitch paddings
-            decoder.advance(instruction_start.get())
+            decoder
+                .advance(instruction_start.get())
                 .expect("decoder failed to read encoded instruction");
             let prev_rem = decoder.bytes_remaining();
             let instruction = RawInstruction::decode(&mut decoder, start_offset.get())

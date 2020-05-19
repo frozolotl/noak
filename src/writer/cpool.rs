@@ -239,6 +239,14 @@ pub struct Class {
     pub name: Index<Utf8>,
 }
 
+impl Class {
+    pub fn named<I>(name: I) -> ClassInserter<I> {
+        ClassInserter {
+            name
+        }
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FieldRef {
     pub class: Index<Class>,
@@ -477,6 +485,12 @@ impl<I: Into<MString>> Insertable<Utf8> for I {
     }
 }
 
+impl<I: Insertable<Utf8>> Insertable<Item> for I {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
+        Ok(<I as Insertable<Utf8>>::insert(self, context)?.as_item())
+    }
+}
+
 impl<I: Insertable<Utf8>> Insertable<Class> for I {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Class>, EncodeError> {
         let name = self.insert(context)?;
@@ -492,11 +506,23 @@ impl Insertable<Integer> for i32 {
     }
 }
 
+impl Insertable<Item> for i32 {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
+        Ok(<i32 as Insertable<Integer>>::insert(self, context)?.as_item())
+    }
+}
+
 impl Insertable<Long> for i64 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Long>, EncodeError> {
         context
             .class_writer_mut()
             .insert_constant(Long { value: self })
+    }
+}
+
+impl Insertable<Item> for i64 {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
+        Ok(<i64 as Insertable<Long>>::insert(self, context)?.as_item())
     }
 }
 
@@ -508,10 +534,38 @@ impl Insertable<Float> for f32 {
     }
 }
 
+impl Insertable<Item> for f32 {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
+        Ok(<f32 as Insertable<Float>>::insert(self, context)?.as_item())
+    }
+}
+
 impl Insertable<Double> for f64 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Double>, EncodeError> {
         context
             .class_writer_mut()
             .insert_constant(Double { value: self })
+    }
+}
+
+impl Insertable<Item> for f64 {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
+        Ok(<f64 as Insertable<Double>>::insert(self, context)?.as_item())
+    }
+}
+
+pub struct ClassInserter<I> {
+    name: I,
+}
+
+impl<I: Insertable<Class>> Insertable<Class> for ClassInserter<I> {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Class>, EncodeError> {
+        self.name.insert(context)
+    }
+}
+
+impl<I: Insertable<Class>> Insertable<Item> for ClassInserter<I> {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
+        Ok(self.name.insert(context)?.as_item())
     }
 }
