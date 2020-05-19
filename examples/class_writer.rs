@@ -10,10 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut class_writer = ClassWriter::new();
 
     class_writer
-        .write_version(noak::Version {
-            minor: 0,
-            major: 52,
-        })?
+        .write_version(noak::Version::V8)?
         .write_access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
         .write_this_class("Test")?
         .write_super_class("java/lang/Object")?
