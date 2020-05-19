@@ -72,7 +72,8 @@ impl Version {
     };
 
     /// The latest version which is guaranteed to work with this library.
-    pub fn latest() -> Version {
+    /// Changes of this value are not considered breaking changes.
+    pub const fn latest() -> Version {
         Version::V14
     }
 
