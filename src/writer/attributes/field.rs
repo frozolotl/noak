@@ -1,5 +1,4 @@
 use crate::error::*;
-use crate::mutf8::MString;
 use crate::writer::{
     cpool::{self, Insertable},
     encoding::*,
