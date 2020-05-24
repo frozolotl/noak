@@ -46,4 +46,19 @@ impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
         self.finished = true;
         Ok(self)
     }
+
+    pub fn write_signature<I>(&mut self, signature: I) -> Result<&mut Self, EncodeError>
+    where
+        I: cpool::Insertable<cpool::Utf8>,
+    {
+        let length_writer = self.attribute_writer("Signature")?;
+        let signature_index = signature.insert(self.context)?;
+        self.context
+            .class_writer_mut()
+            .encoder
+            .write(signature_index)?;
+        length_writer.finish(self.context)?;
+        self.finished = true;
+        Ok(self)
+    }
 }
