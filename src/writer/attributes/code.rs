@@ -1,9 +1,11 @@
 mod exception_table;
 pub mod instructions;
+mod line_number_table;
 mod stack_map;
 
 pub use exception_table::ExceptionWriter;
 pub use instructions::InstructionWriter;
+pub use line_number_table::LineNumberWriter;
 pub use stack_map::StackMapTableWriter;
 
 use crate::error::*;
