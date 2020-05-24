@@ -1,12 +1,13 @@
-mod inner_classes;
 pub mod code;
 mod debug;
+mod enclosing_method;
 mod field;
+mod inner_classes;
 mod method;
 
-pub use inner_classes::*;
 pub use debug::*;
 pub use field::*;
+pub use inner_classes::*;
 pub use method::*;
 
 use crate::error::*;
