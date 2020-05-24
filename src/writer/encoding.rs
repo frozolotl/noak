@@ -64,7 +64,7 @@ impl Encode for f64 {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Offset(usize);
 
 impl Offset {
