@@ -56,7 +56,10 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx> {
         let offset = self.context.get_label_position(label)?;
 
         if offset < start {
-            return Err(EncodeError::with_context(EncodeErrorKind::NegativeOffset, Context::AttributeContent));
+            return Err(EncodeError::with_context(
+                EncodeErrorKind::NegativeOffset,
+                Context::AttributeContent,
+            ));
         }
 
         let length = u16::try_from(offset - start).map_err(|_| {
@@ -85,7 +88,11 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx> {
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
-        EncodeError::result_from_state(self.state, &WriteState::Descriptor, Context::AttributeContent)?;
+        EncodeError::result_from_state(
+            self.state,
+            &WriteState::Descriptor,
+            Context::AttributeContent,
+        )?;
 
         let index = descriptor.insert(self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;

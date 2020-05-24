@@ -4,7 +4,9 @@ use crate::writer::{attributes::code::*, encoding::*};
 impl<'a, 'b, Ctx: EncoderContext> AttributeWriter<'a, CodeWriter<'b, Ctx>> {
     pub fn write_line_number_table<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f, 'g> FnOnce(&mut CountedWriter<LineNumberWriter<'f, 'g, Ctx>, u16>) -> Result<(), EncodeError>,
+        F: for<'f, 'g> FnOnce(
+            &mut CountedWriter<LineNumberWriter<'f, 'g, Ctx>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("LineNumberTable")?;
         let mut builder = CountedWriter::new(self.context)?;
@@ -22,20 +24,14 @@ pub struct LineNumberWriter<'a, 'b, Ctx> {
 
 impl<'a, 'b, Ctx: EncoderContext> LineNumberWriter<'a, 'b, Ctx> {
     pub fn write_start(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::Start,
-            Context::AttributeContent,
-        )?;
+        EncodeError::result_from_state(self.state, &WriteState::Start, Context::AttributeContent)?;
 
         let offset = self.context.get_label_position(label)?;
-        let offset = u16::try_from(offset)
-            .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
+        let offset = u16::try_from(offset).map_err(|_| {
+            EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent)
+        })?;
 
-        self.context
-            .class_writer_mut()
-            .encoder
-            .write(offset)?;
+        self.context.class_writer_mut().encoder.write(offset)?;
         self.state = WriteState::LineNumber;
         Ok(self)
     }
@@ -47,10 +43,7 @@ impl<'a, 'b, Ctx: EncoderContext> LineNumberWriter<'a, 'b, Ctx> {
             Context::AttributeContent,
         )?;
 
-        self.context
-            .class_writer_mut()
-            .encoder
-            .write(line_number)?;
+        self.context.class_writer_mut().encoder.write(line_number)?;
         self.state = WriteState::Finished;
         Ok(self)
     }
