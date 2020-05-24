@@ -2,12 +2,14 @@ mod exception_table;
 pub mod instructions;
 mod line_number_table;
 mod local_variable_table;
+mod local_variable_type_table;
 mod stack_map;
 
 pub use exception_table::ExceptionWriter;
 pub use instructions::InstructionWriter;
 pub use line_number_table::LineNumberWriter;
 pub use local_variable_table::LocalVariableWriter;
+pub use local_variable_type_table::LocalVariableTypeWriter;
 pub use stack_map::StackMapTableWriter;
 
 use crate::error::*;
