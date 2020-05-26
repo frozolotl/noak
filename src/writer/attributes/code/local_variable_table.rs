@@ -45,7 +45,7 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx> {
                 ))
             }
             WriteState::Length { start } => start,
-            WriteState::Name | WriteState::Descriptor | WriteState::Finished => {
+            _ => {
                 return Err(EncodeError::with_context(
                     EncodeErrorKind::CantChangeAnymore,
                     Context::AttributeContent,
