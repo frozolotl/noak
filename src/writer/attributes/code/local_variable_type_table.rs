@@ -101,13 +101,8 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableTypeWriter<'a, 'b, Ctx> {
         Ok(self)
     }
 
-    pub fn write_index(&mut self, index: u16) -> Result<&mut Self, EncodeError>
-    {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::Index,
-            Context::AttributeContent,
-        )?;
+    pub fn write_index(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
+        EncodeError::result_from_state(self.state, &WriteState::Index, Context::AttributeContent)?;
 
         self.context.class_writer_mut().encoder.write(index)?;
 
