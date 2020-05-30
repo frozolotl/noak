@@ -119,12 +119,6 @@ impl<I> Index<I> {
     }
 }
 
-impl<I> fmt::Display for Index<I> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "#{}", self.index)
-    }
-}
-
 impl<I> fmt::Debug for Index<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "cpool::Index({})", self.index)

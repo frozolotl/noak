@@ -27,7 +27,7 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
 
     println!("- Interfaces:");
     for name in class.interfaces()? {
-        println!("  - {}", name?);
+        println!("  - {}", class.pool()?.retrieve(name?)?.name);
     }
 
     println!("- Fields:");
