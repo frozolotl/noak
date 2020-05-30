@@ -1,3 +1,7 @@
+pub mod value;
+
+pub use value::ToValue;
+
 use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::decoding::*;
@@ -9,6 +13,13 @@ pub struct ConstantPool<'a> {
 }
 
 impl<'a> ConstantPool<'a> {
+    pub fn retrieve<I>(&self, at: Index<I>) -> Result<<Index<I> as ToValue<'a>>::Target, DecodeError>
+    where
+        Index<I>: ToValue<'a>,
+    {
+        at.retrieve_from(self)
+    }
+
     pub fn get<I: TryFromItem<'a>>(&self, at: Index<I>) -> Result<&I, DecodeError> {
         let pos = at.index.get() as usize;
         if pos != 0 && pos <= self.content.len() {

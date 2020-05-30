@@ -26,28 +26,26 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
     }
 
     println!("- Interfaces:");
-    for name in class.interface_names()? {
+    for name in class.interfaces()? {
         println!("  - {}", name?);
     }
 
     println!("- Fields:");
     for field in class.fields()? {
         let field = field?;
-        let name = class.pool()?.get(field.name())?.content;
-        let descriptor = class.pool()?.get(field.descriptor())?.content;
-        println!("  - {}:", name);
+        let pool = class.pool()?;
+        println!("  - {}:", pool.retrieve(field.name())?);
         println!("    - Access Flags: {:?}", field.access_flags());
-        println!("    - Descriptor: {}", descriptor);
+        println!("    - Descriptor: {}", pool.retrieve(field.descriptor())?);
     }
 
     println!("- Methods:");
     for method in class.methods()? {
         let method = method?;
-        let name = class.pool()?.get(method.name())?.content;
-        let descriptor = class.pool()?.get(method.descriptor())?.content;
-        println!("  - {}:", name);
+        let pool = class.pool()?;
+        println!("  - {}:", pool.retrieve(method.name())?);
         println!("    - Access Flags: {:?}", method.access_flags());
-        println!("    - Descriptor: {}", descriptor);
+        println!("    - Descriptor: {}", pool.retrieve(method.descriptor())?);
     }
 
     Ok(())

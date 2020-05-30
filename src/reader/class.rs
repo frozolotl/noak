@@ -6,7 +6,7 @@ use crate::reader::{
     cpool::{self, ConstantPool},
     decoding::*,
     fields::FieldIter,
-    interfaces::{InterfaceIter, InterfaceNameIter},
+    interfaces::InterfaceIter,
     methods::MethodIter,
 };
 
@@ -175,36 +175,14 @@ impl<'a> Class<'a> {
     ///
     /// # let data = &[];
     /// let mut class = Class::new(data)?;
-    /// for interface_index in class.interface_indices()? {
-    ///     let pool = class.pool()?;
-    ///    
-    ///     let name_index = pool.get(interface_index?)?.name;
-    ///     let interface = pool.get(name_index)?.content;
-    ///     println!("Interface: {}", interface);
+    /// for interface in class.interfaces()? {
+    ///     println!("Interface: {}", class.pool()?.retrieve(interface?)?.name);
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn interface_indices(&mut self) -> Result<InterfaceIter<'a>, DecodeError> {
+    pub fn interfaces(&mut self) -> Result<InterfaceIter<'a>, DecodeError> {
         self.read_info()?;
         Ok(self.interfaces.clone().unwrap())
-    }
-
-    /// Returns an iterator over the interface names.
-    ///
-    /// ```no_run
-    /// use noak::reader::Class;
-    ///
-    /// # let data = &[];
-    /// let mut class = Class::new(data)?;
-    /// for interface in class.interface_names()? {
-    ///     println!("Interface: {}", interface?);
-    /// }
-    /// # Ok::<(), noak::error::DecodeError>(())
-    /// ```
-    pub fn interface_names(&mut self) -> Result<InterfaceNameIter<'a, '_>, DecodeError> {
-        let interfaces = self.interface_indices()?;
-        let pool = self.pool()?;
-        Ok(InterfaceNameIter::new(&pool, interfaces))
     }
 
     pub fn fields(&mut self) -> Result<FieldIter<'a>, DecodeError> {
