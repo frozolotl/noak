@@ -46,7 +46,7 @@ impl<'a> Code<'a> {
         self.exception_handlers.clone()
     }
 
-    pub fn attribute_indices(&self) -> AttributeIter<'a> {
+    pub fn attributes(&self) -> AttributeIter<'a> {
         self.attributes.clone()
     }
 }

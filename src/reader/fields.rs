@@ -27,7 +27,7 @@ impl<'a> Field<'a> {
         self.descriptor
     }
 
-    pub fn attribute_indices(&self) -> AttributeIter<'a> {
+    pub fn attributes(&self) -> AttributeIter<'a> {
         self.attributes.clone()
     }
 }

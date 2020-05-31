@@ -27,7 +27,7 @@ impl<'a> Method<'a> {
         self.descriptor
     }
 
-    pub fn attribute_indices(&self) -> AttributeIter<'a> {
+    pub fn attribute(&self) -> AttributeIter<'a> {
         self.attributes.clone()
     }
 }
