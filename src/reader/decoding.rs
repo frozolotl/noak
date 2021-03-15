@@ -410,3 +410,64 @@ impl Countdown for u16 {
         }
     }
 }
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __dec_structure {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $struct_name:ident<'a> $($into:ident)? {
+            $(
+                $(#[doc = $doc_comment:literal])*
+                $field_name:ident : $field_type:ty
+            ),* $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        #[derive(Clone)]
+        $vis struct $struct_name<'a> {
+            $(
+                $(#[doc = $doc_comment])*
+                $field_name : $field_type,
+            )*
+            _marker: std::marker::PhantomData<&'a ()>,
+        }
+
+        impl<'a> $struct_name<'a> {
+            $(
+                $(#[doc = $doc_comment])*
+                $vis fn $field_name(&self) -> $field_type {
+                    Clone::clone(&self.$field_name)
+                }
+            )*
+        }
+
+        $crate::__dec_structure!(@decode $($into)? => $struct_name; $($field_name),*);
+
+        impl<'a> std::fmt::Debug for $struct_name<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.debug_struct(std::stringify!($struct_name)).finish()
+            }
+        }
+    };
+    (@decode => $struct_name:ident; $($field_name:ident),*) => {
+        impl<'a> $crate::reader::decoding::Decode<'a> for $struct_name<'a> {
+            fn decode(decoder: &mut $crate::reader::decoding::Decoder<'a>) -> Result<Self, $crate::error::DecodeError> {
+                Ok(Self {
+                    $($field_name: decoder.read()?,)*
+                    _marker: std::marker::PhantomData,
+                })
+            }
+        }
+    };
+    (@decode into => $struct_name:ident; $($field_name:ident),*) => {
+        impl<'a> $crate::reader::decoding::DecodeInto<'a> for $struct_name<'a> {
+            fn decode_into(mut decoder: $crate::reader::decoding::Decoder<'a>) -> Result<Self, $crate::error::DecodeError> {
+                Ok(Self {
+                    $($field_name: decoder.read()?,)*
+                    _marker: std::marker::PhantomData,
+                })
+            }
+        }
+    };
+}

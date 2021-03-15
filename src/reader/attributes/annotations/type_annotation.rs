@@ -248,37 +248,13 @@ impl fmt::Debug for LocalVariable {
     }
 }
 
-pub type TypePath<'a> = DecodeCountedCopy<'a, TypePathSegment, u8>;
-pub type TypePathSegmentIter<'a> = DecodeCounted<'a, TypePathSegment, u8>;
+pub type TypePath<'a> = DecodeCountedCopy<'a, TypePathSegment<'a>, u8>;
+pub type TypePathSegmentIter<'a> = DecodeCounted<'a, TypePathSegment<'a>, u8>;
 
-#[derive(Clone)]
-pub struct TypePathSegment {
-    kind: TypePathSegmentKind,
-    type_argument_index: u8,
-}
-
-impl TypePathSegment {
-    pub fn kind(&self) -> TypePathSegmentKind {
-        self.kind
-    }
-
-    pub fn type_argument_index(&self) -> u8 {
-        self.type_argument_index
-    }
-}
-
-impl<'a> Decode<'a> for TypePathSegment {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(TypePathSegment {
-            kind: decoder.read()?,
-            type_argument_index: decoder.read()?,
-        })
-    }
-}
-
-impl fmt::Debug for TypePathSegment {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("TypePathSegment").finish()
+crate::__dec_structure! {
+    pub struct TypePathSegment<'a> {
+        kind: TypePathSegmentKind,
+        type_argument_index: u8,
     }
 }
 

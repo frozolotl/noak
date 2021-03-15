@@ -12,7 +12,6 @@ use crate::error::*;
 use crate::reader::decoding::{Decode, DecodeInto, Decoder};
 use crate::reader::{cpool, AttributeIter};
 use std::fmt;
-use std::ops::Range;
 
 #[derive(Clone)]
 pub struct Code<'a> {
@@ -93,7 +92,7 @@ pub struct ExceptionHandlers<'a> {
 }
 
 impl<'a> Iterator for ExceptionHandlers<'a> {
-    type Item = ExceptionHandler;
+    type Item = ExceptionHandler<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.decoder.read().ok()
@@ -106,43 +105,12 @@ impl<'a> fmt::Debug for ExceptionHandlers<'a> {
     }
 }
 
-pub struct ExceptionHandler {
-    start: Index,
-    end: Index,
-    handler: Index,
-    catch_type: cpool::Index<cpool::Class>,
-}
-
-impl ExceptionHandler {
-    pub fn range(&self) -> Range<Index> {
-        Range {
-            start: self.start,
-            end: self.end,
-        }
-    }
-
-    pub fn handler(&self) -> Index {
-        self.handler
-    }
-
-    pub fn catch_type(&self) -> cpool::Index<cpool::Class> {
-        self.catch_type
-    }
-}
-
-impl<'a> Decode<'a> for ExceptionHandler {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
-        let start: u16 = decoder.read()?;
-        let end: u16 = decoder.read()?;
-        let handler = decoder.read()?;
-        let catch_type = decoder.read()?;
-
-        Ok(ExceptionHandler {
-            start: Index::new(start.into()),
-            end: Index::new(end.into()),
-            handler,
-            catch_type,
-        })
+crate::__dec_structure! {
+    pub struct ExceptionHandler<'a> {
+        start: Index,
+        end: Index,
+        handler: Index,
+        catch_type: cpool::Index<cpool::Class>,
     }
 }
 
@@ -165,12 +133,6 @@ impl Index {
 impl<'a> Decode<'a> for Index {
     fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
         Ok(Index::new(decoder.read()?))
-    }
-}
-
-impl fmt::Display for Index {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "'{}", self.index)
     }
 }
 

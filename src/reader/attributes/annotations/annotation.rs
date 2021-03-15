@@ -58,41 +58,10 @@ impl<'a> fmt::Debug for Annotation<'a> {
 
 pub type ElementValuePairIter<'a> = DecodeCounted<'a, ElementValuePair<'a>, u16>;
 
-#[derive(Clone)]
-pub struct ElementValuePair<'a> {
-    name: cpool::Index<cpool::Utf8<'a>>,
-    value: ElementValue<'a>,
-}
-
-impl<'a> ElementValuePair<'a> {
-    pub fn name(&self) -> cpool::Index<cpool::Utf8<'a>> {
-        self.name
-    }
-
-    pub fn value(&self) -> &ElementValue<'a> {
-        &self.value
-    }
-}
-
-impl<'a> Decode<'a> for ElementValuePair<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let name = decoder.read()?;
-        let value = decoder.read()?;
-
-        Ok(ElementValuePair { name, value })
-    }
-
-    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
-        decoder.skip::<cpool::Index<cpool::Utf8>>()?; // name
-        decoder.skip::<ElementValue>()?;
-
-        Ok(())
-    }
-}
-
-impl<'a> fmt::Debug for ElementValuePair<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ElementValuePair").finish()
+crate::__dec_structure! {
+    pub struct ElementValuePair<'a> {
+        name: cpool::Index<cpool::Utf8<'a>>,
+        value: ElementValue<'a>,
     }
 }
 

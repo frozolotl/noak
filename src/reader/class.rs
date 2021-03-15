@@ -5,9 +5,8 @@ use crate::reader::{
     attributes::AttributeIter,
     cpool::{self, ConstantPool},
     decoding::*,
-    fields::FieldIter,
+    items::{FieldIter, MethodIter},
     interfaces::InterfaceIter,
-    methods::MethodIter,
 };
 
 #[derive(Clone)]
