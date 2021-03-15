@@ -168,8 +168,14 @@ fn decode_verification_type(
 fn skip_verification_type(decoder: &mut Decoder) -> Result<(), DecodeError> {
     let tag: u8 = decoder.read()?;
     match tag {
-        0x07 => decoder.skip::<cpool::Index<cpool::Class>>(),
-        0x08 => decoder.skip::<u16>(),
+        0x07 => {
+            decoder.read::<cpool::Index<cpool::Class>>()?;
+            Ok(())
+        },
+        0x08 => {
+            decoder.read::<u16>()?;
+            Ok(())
+        },
         _ if tag < 0x07 => Ok(()),
         _ => Err(DecodeError::from_decoder(
             DecodeErrorKind::InvalidTag,

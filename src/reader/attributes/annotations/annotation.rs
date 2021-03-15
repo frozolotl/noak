@@ -1,7 +1,6 @@
 use crate::error::*;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
-use std::fmt;
 
 pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>, u16>;
 pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>, u16>;
@@ -9,50 +8,10 @@ pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>, u16>;
 pub type ParameterAnnotations<'a> = DecodeCountedCopy<'a, Annotations<'a>, u8>;
 pub type ParameterAnnotationIter<'a> = DecodeCounted<'a, Annotations<'a>, u8>;
 
-#[derive(Clone)]
-pub struct Annotation<'a> {
-    r#type: cpool::Index<cpool::Utf8<'a>>,
-    pairs: ElementValuePairIter<'a>,
-}
-
-impl<'a> Annotation<'a> {
-    pub fn r#type(&self) -> cpool::Index<cpool::Utf8<'a>> {
-        self.r#type
-    }
-
-    pub fn pairs(&self) -> ElementValuePairIter<'a> {
-        self.pairs.clone()
-    }
-}
-
-impl<'a> Decode<'a> for Annotation<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        let r#type = decoder.read()?;
-
-        let pair_count: u16 = decoder.read()?;
-        let ev_decoder = decoder.clone();
-
-        for _ in 0..pair_count {
-            decoder.skip::<cpool::Index<cpool::Utf8>>()?; // name
-            decoder.skip::<ElementValue>()?;
-        }
-
-        Ok(Annotation {
-            r#type,
-            pairs: ElementValuePairIter::new(ev_decoder.clone(), pair_count),
-        })
-    }
-
-    fn skip(decoder: &mut Decoder<'a>) -> Result<(), DecodeError> {
-        decoder.skip::<cpool::Index<cpool::Utf8>>()?; // type
-        decoder.skip::<ElementValuePairIter>()?;
-        Ok(())
-    }
-}
-
-impl<'a> fmt::Debug for Annotation<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Annotation").finish()
+crate::__dec_structure! {
+    pub struct Annotation<'a> {
+        r#type: cpool::Index<cpool::Utf8<'a>>,
+        pairs: ElementValuePairIter<'a>,
     }
 }
 
@@ -115,33 +74,6 @@ impl<'a> Decode<'a> for ElementValue<'a> {
             }
         };
         Ok(value)
-    }
-
-    fn skip(decoder: &mut Decoder) -> Result<(), DecodeError> {
-        let tag = decoder.read()?;
-        match tag {
-            b'Z' | b'B' | b'S' | b'I' | b'J' | b'F' | b'D' | b'C' | b's' | b'c' => {
-                decoder.skip::<cpool::Index<cpool::Item>>()?;
-            }
-            b'e' => {
-                decoder.skip::<cpool::Index<cpool::Utf8>>()?; // type name
-                decoder.skip::<cpool::Index<cpool::Utf8>>()?; // const name
-            }
-            b'@' => {
-                decoder.skip::<Annotation>()?;
-            }
-            b'[' => {
-                decoder.skip::<ElementArray>()?;
-            }
-            _ => {
-                return Err(DecodeError::from_decoder(
-                    DecodeErrorKind::InvalidTag,
-                    decoder,
-                ))
-            }
-        }
-
-        Ok(())
     }
 }
 
