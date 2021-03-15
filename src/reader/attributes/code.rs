@@ -1,15 +1,13 @@
 mod instructions;
-mod lines;
 mod locals;
 mod stack_map;
 
 pub use instructions::*;
-pub use lines::*;
 pub use locals::*;
 pub use stack_map::*;
 
 use crate::error::*;
-use crate::reader::decoding::{Decode, DecodeInto, Decoder};
+use crate::reader::decoding::*;
 use crate::reader::{cpool, AttributeIter};
 use std::fmt;
 
@@ -139,5 +137,15 @@ impl<'a> Decode<'a> for Index {
 impl fmt::Debug for Index {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "code::Index({})", self.index)
+    }
+}
+
+pub type LineNumberTable<'a> = DecodeCountedCopy<'a, Line<'a>, u16>;
+pub type LineNumberIter<'a> = DecodeCounted<'a, Line<'a>, u16>;
+
+crate::__dec_structure! {
+    pub struct Line<'a> {
+        start: Index,
+        line_number: u16,
     }
 }

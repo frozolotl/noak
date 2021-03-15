@@ -6,7 +6,6 @@ use crate::reader::{
     cpool::{self, ConstantPool},
     decoding::*,
     items::{FieldIter, MethodIter},
-    interfaces::InterfaceIter,
 };
 
 #[derive(Clone)]
@@ -250,6 +249,8 @@ fn read_header(decoder: &mut Decoder) -> Result<Version, DecodeError> {
         ))
     }
 }
+
+pub type InterfaceIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
 
 #[cfg(test)]
 mod tests {
