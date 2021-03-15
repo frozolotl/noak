@@ -10,7 +10,7 @@ use std::{
     str,
 };
 
-/// A Modified UTF-8 string slice, like [str].
+/// A Modified UTF-8 string slice, like [prim@str].
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct MStr {
