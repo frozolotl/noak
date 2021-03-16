@@ -20,32 +20,32 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
     println!("- Major Version: {}", version.major);
     println!("- Minor Version: {}", version.minor);
     println!("- Access Flags: {:?}", class.access_flags()?);
-    println!("- Class Name: {}", class.this_class_name()?);
+    println!("- Class Name: {}", class.this_class_name()?.display());
     if let Some(name) = class.super_class_name()? {
-        println!("- Super Class Name: {}", name);
+        println!("- Super Class Name: {}", name.display());
     }
 
     println!("- Interfaces:");
     for name in class.interfaces()? {
-        println!("  - {}", class.pool()?.retrieve(name?)?.name);
+        println!("  - {}", class.pool()?.retrieve(name?)?.name.display());
     }
 
     println!("- Fields:");
     for field in class.fields()? {
         let field = field?;
         let pool = class.pool()?;
-        println!("  - {}:", pool.retrieve(field.name())?);
+        println!("  - {}:", pool.retrieve(field.name())?.display());
         println!("    - Access Flags: {:?}", field.access_flags());
-        println!("    - Descriptor: {}", pool.retrieve(field.descriptor())?);
+        println!("    - Descriptor: {}", pool.retrieve(field.descriptor())?.display());
     }
 
     println!("- Methods:");
     for method in class.methods()? {
         let method = method?;
         let pool = class.pool()?;
-        println!("  - {}:", pool.retrieve(method.name())?);
+        println!("  - {}:", pool.retrieve(method.name())?.display());
         println!("    - Access Flags: {:?}", method.access_flags());
-        println!("    - Descriptor: {}", pool.retrieve(method.descriptor())?);
+        println!("    - Descriptor: {}", pool.retrieve(method.descriptor())?.display());
     }
 
     Ok(())

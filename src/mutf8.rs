@@ -47,13 +47,18 @@ impl MStr {
     }
 
     #[inline]
+    pub fn to_str(&self) -> Option<&str> {
+        str::from_utf8(&self.inner).ok()
+    }
+
+    #[inline]
     pub fn is_char_boundary(&self, index: usize) -> bool {
         if index == 0 || index == self.len() {
             true
         } else {
             match self.as_bytes().get(index) {
                 None => false,
-                Some(&b) => b & 0b1100_0000 != 0b1000_0000 && b != 0b1110_1101,
+                Some(&b) => b & 0b1100_0000 != 0b1000_0000,
             }
         }
     }
@@ -62,48 +67,21 @@ impl MStr {
     pub fn chars(&self) -> Chars {
         Chars { inner: &self.inner }
     }
+
+    #[inline]
+    pub fn chars_lossy(&self) -> CharsLossy {
+        CharsLossy { inner: &self.inner }
+    }
+
+    #[inline]
+    pub fn display(&self) -> Display {
+        Display { inner: &self.inner }
+    }
 }
 
 impl Default for &'static MStr {
     fn default() -> &'static MStr {
         unsafe { MStr::from_mutf8_unchecked(&[]) }
-    }
-}
-
-pub struct Chars<'a> {
-    inner: &'a [u8],
-}
-
-impl<'a> Chars<'a> {
-    pub fn as_mstr(&self) -> &'a MStr {
-        // safe because the underlying buffer is guaranteed to be valid
-        unsafe { MStr::from_mutf8_unchecked(&self.inner) }
-    }
-}
-
-impl<'a> Iterator for Chars<'a> {
-    type Item = char;
-
-    fn next(&mut self) -> Option<char> {
-        if self.inner.is_empty() {
-            None
-        } else {
-            let (size, ch) = unsafe { decode_mutf8_char(&self.inner) };
-            self.inner = &self.inner[size..];
-            Some(ch)
-        }
-    }
-}
-
-impl<'a> DoubleEndedIterator for Chars<'a> {
-    fn next_back(&mut self) -> Option<char> {
-        if self.inner.is_empty() {
-            None
-        } else {
-            let (size, ch) = unsafe { decode_mutf8_char_reversed(&self.inner) };
-            self.inner = &self.inner[..self.inner.len() - size];
-            Some(ch)
-        }
     }
 }
 
@@ -252,11 +230,33 @@ impl ToOwned for MStr {
     }
 }
 
-impl fmt::Display for MStr {
+impl fmt::Debug for MStr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_char('"')?;
+        for c in self.chars_lossy() {
+            for c in c.escape_debug() {
+                f.write_char(c)?;
+            }
+        }
+        f.write_char('"')
+    }
+}
+
+impl fmt::Debug for MString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (&**self).fmt(f)
+    }
+}
+
+pub struct Display<'a> {
+    inner: &'a [u8],
+}
+
+impl<'a> fmt::Display for Display<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut start = 0;
         let mut i = 0;
-        while i < self.len() {
+        while i < self.inner.len() {
             if self.inner[i] < 0x80 {
                 i += 1;
             } else {
@@ -269,7 +269,7 @@ impl fmt::Display for MStr {
                 i += size;
 
                 start = i;
-                f.write_char(ch)?;
+                f.write_char(ch.unwrap_or(char::REPLACEMENT_CHARACTER))?;
             }
         }
 
@@ -282,21 +282,97 @@ impl fmt::Display for MStr {
     }
 }
 
-impl fmt::Debug for MStr {
+impl<'a> fmt::Debug for Display<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_char('"')?;
-        for c in self.chars() {
-            for c in c.escape_debug() {
-                f.write_char(c)?;
-            }
-        }
-        f.write_char('"')
+        unsafe { MStr::from_mutf8_unchecked(&self.inner) }.fmt(f)
     }
 }
 
-impl fmt::Debug for MString {
+pub struct Chars<'a> {
+    inner: &'a [u8],
+}
+
+impl<'a> Chars<'a> {
+    pub fn as_mstr(&self) -> &'a MStr {
+        // safe because the underlying buffer is guaranteed to be valid
+        unsafe { MStr::from_mutf8_unchecked(&self.inner) }
+    }
+}
+
+impl<'a> Iterator for Chars<'a> {
+    type Item = Option<char>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.inner.is_empty() {
+            None
+        } else {
+            let (size, ch) = unsafe { decode_mutf8_char(&self.inner) };
+            self.inner = &self.inner[size..];
+            Some(ch)
+        }
+    }
+}
+
+impl<'a> DoubleEndedIterator for Chars<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.inner.is_empty() {
+            None
+        } else {
+            let (size, ch) = unsafe { decode_mutf8_char_reversed(&self.inner) };
+            self.inner = &self.inner[..self.inner.len() - size];
+            Some(ch)
+        }
+    }
+}
+
+impl<'a> fmt::Debug for Chars<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        (&**self).fmt(f)
+        let s = unsafe { MStr::from_mutf8_unchecked(&self.inner) };
+        f.debug_struct("Chars").field("remaining", &s).finish()
+    }
+}
+
+pub struct CharsLossy<'a> {
+    inner: &'a [u8],
+}
+
+impl<'a> CharsLossy<'a> {
+    pub fn as_mstr(&self) -> &'a MStr {
+        // safe because the underlying buffer is guaranteed to be valid
+        unsafe { MStr::from_mutf8_unchecked(&self.inner) }
+    }
+}
+
+impl<'a> Iterator for CharsLossy<'a> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.inner.is_empty() {
+            None
+        } else {
+            let (size, ch) = unsafe { decode_mutf8_char(&self.inner) };
+            self.inner = &self.inner[size..];
+            Some(ch.unwrap_or(char::REPLACEMENT_CHARACTER))
+        }
+    }
+}
+
+impl<'a> DoubleEndedIterator for CharsLossy<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.inner.is_empty() {
+            None
+        } else {
+            let (size, ch) = unsafe { decode_mutf8_char_reversed(&self.inner) };
+            self.inner = &self.inner[..self.inner.len() - size];
+            Some(ch.unwrap_or(char::REPLACEMENT_CHARACTER))
+        }
+    }
+}
+
+impl<'a> fmt::Debug for CharsLossy<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = unsafe { MStr::from_mutf8_unchecked(&self.inner) };
+        f.debug_struct("CharsLossy").field("remaining", &s).finish()
     }
 }
 
@@ -348,32 +424,17 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     i += 2;
                 }
                 3 => {
-                    if b1 == 0b1110_1101 && v[i + 1] & 0b1111_0000 == 0b1010_0000 {
-                        // width = 6
-                        if v.len() - i < 6
-                            || v[i + 2] & 0b1100_0000 != 0b1000_0000
-                            || v[i + 3] != 0b1110_1101
-                            || v[i + 4] & 0b1111_0000 != 0b1011_0000
-                            || v[i + 5] & 0b1100_0000 != 0b1000_0000
-                        {
-                            return false;
-                        }
-
-                        i += 6;
-                    } else {
-                        // width = 3
-                        if v[i + 1] & 0b1100_0000 != 0b1000_0000
-                            || (b1 == 0b1110_1101 && v[i + 1] & 0b0011_0000 == 0b0011_0000)
-                            || v[i + 2] & 0b1100_0000 != 0b1000_0000
-                        {
-                            return false;
-                        }
-                        // overlong encodings are not allowed
-                        if b1.trailing_zeros() >= 4 && v[i + 1] & 0b0010_0000 == 0 {
-                            return false;
-                        }
-                        i += 3;
+                    // width = 3
+                    if v[i + 1] & 0b1100_0000 != 0b1000_0000
+                        || v[i + 2] & 0b1100_0000 != 0b1000_0000
+                    {
+                        return false;
                     }
+                    // overlong encodings are not allowed
+                    if b1.trailing_zeros() >= 4 && v[i + 1] & 0b0010_0000 == 0 {
+                        return false;
+                    }
+                    i += 3;
                 }
 
                 _ => return false,
@@ -386,42 +447,56 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
 
 /// Decodes a character and returns its size.
 /// The input bytes **must** be valid modified utf-8
-unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, char) {
+unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Option<char>) {
     if v[0] & 0b1000_0000 == 0b0000_0000 {
         // single byte case
-        return (1, v[0] as char);
+        return (1, Some(v[0] as char));
     }
 
     if v[0] & 0b1110_0000 == 0b1100_0000 {
         // two byte case
         let c1 = u32::from(v[0] & 0b0001_1111) << 6;
         let c2 = u32::from(v[1] & 0b0011_1111);
-        return (2, char::from_u32_unchecked(c1 | c2));
+        return (2, Some(char::from_u32_unchecked(c1 | c2)));
     }
 
-    if v[0] == 0b1110_1101 && v[1] & 0b1111_0000 == 0b1010_0000 {
-        // six byte case
-        let c2 = u32::from(v[1] & 0b0000_1111) << 16;
-        let c3 = u32::from(v[2] & 0b0011_1111) << 10;
-        let c5 = u32::from(v[4] & 0b0000_1111) << 6;
-        let c6 = u32::from(v[5] & 0b0011_1111);
-        return (6, char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6));
+    if v[0] == 0b1110_1101 {
+        if v.len() >= 6
+            && v[1] & 0b1111_0000 == 0b1010_0000
+            && v[3] == 0b1110_1101
+            && v[4] & 0b1111_0000 == 0b1011_0000
+        {
+            // six byte case (paired surrogate)
+            let c2 = u32::from(v[1] & 0b0000_1111) << 16;
+            let c3 = u32::from(v[2] & 0b0011_1111) << 10;
+            let c5 = u32::from(v[4] & 0b0000_1111) << 6;
+            let c6 = u32::from(v[5] & 0b0011_1111);
+            return (
+                6,
+                Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)),
+            );
+        }
+
+        // unpaired surrogates
+        if v[1] & 0b1110_0000 == 0b1010_0000 {
+            return (3, None);
+        }
     }
 
     // three byte case
     let c1 = u32::from(v[0] & 0b0000_1111) << 12;
     let c2 = u32::from(v[1] & 0b0011_1111) << 6;
     let c3 = u32::from(v[2] & 0b0011_1111);
-    (3, char::from_u32_unchecked(c1 | c2 | c3))
+    (3, Some(char::from_u32_unchecked(c1 | c2 | c3)))
 }
 
 /// Decodes a character from back to front and returns its size.
 /// The input bytes **must** be valid modified utf-8
-unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, char) {
+unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Option<char>) {
     let b1 = v[v.len() - 1];
     if b1 & 0b1000_0000 == 0b0000_0000 {
         // single byte case
-        return (1, b1 as char);
+        return (1, Some(b1 as char));
     }
 
     let b2 = v[v.len() - 2];
@@ -429,27 +504,40 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, char) {
         // two byte case
         let c1 = u32::from(b2 & 0b0001_1111) << 6;
         let c2 = u32::from(b1 & 0b0011_1111);
-        return (2, char::from_u32_unchecked(c1 | c2));
+        return (2, Some(char::from_u32_unchecked(c1 | c2)));
     }
 
     let b3 = v[v.len() - 3];
-    if b3 == 0b1110_1101 && b2 & 0b1111_0000 == 0b1011_0000 {
-        // six byte case
-        let b4 = v[v.len() - 4];
-        let b5 = v[v.len() - 5];
-
-        let c2 = u32::from(b5 & 0b0000_1111) << 16;
-        let c3 = u32::from(b4 & 0b0011_1111) << 10;
-        let c5 = u32::from(b2 & 0b0000_1111) << 6;
-        let c6 = u32::from(b1 & 0b0011_1111);
-        return (6, char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6));
+    if b3 == 0b1110_1101 {
+        if v.len() >= 6 {
+            let b4 = v[v.len() - 4];
+            let b5 = v[v.len() - 5];
+            let b6 = v[v.len() - 6];
+            if b2 & 0b1111_0000 == 0b1011_0000
+                && b5 & 0b1111_0000 == 0b1010_0000
+                && b6 == 0b1110_1101
+            {
+                // six byte case
+                let c2 = u32::from(b5 & 0b0000_1111) << 16;
+                let c3 = u32::from(b4 & 0b0011_1111) << 10;
+                let c5 = u32::from(b2 & 0b0000_1111) << 6;
+                let c6 = u32::from(b1 & 0b0011_1111);
+                return (
+                    6,
+                    Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)),
+                );
+            }
+        }
+        if b2 & 0b1110_0000 == 0b1010_0000 {
+            return (3, None);
+        }
     }
 
     // three byte case
     let c1 = u32::from(b3 & 0b0000_1111) << 12;
     let c2 = u32::from(b2 & 0b0011_1111) << 6;
     let c3 = u32::from(b1 & 0b0011_1111);
-    (3, char::from_u32_unchecked(c1 | c2 | c3))
+    (3, Some(char::from_u32_unchecked(c1 | c2 | c3)))
 }
 
 impl From<&str> for MString {
@@ -523,7 +611,12 @@ mod tests {
         assert!(is_mutf8_valid(b"Hello World"));
         assert!(is_mutf8_valid("Ich grüße die Welt".as_bytes()));
         assert!(is_mutf8_valid("你好，世界".as_bytes()));
+        // paired surrogates
         assert!(is_mutf8_valid(&[0xED, 0xA0, 0xBD, 0xED, 0xB0, 0x96]));
+        // unpaired surrogates
+        assert!(is_mutf8_valid(&[0xED, 0xBB, 0x8B]));
+        assert!(is_mutf8_valid(&[0xED, 0xA7, 0xAB]));
+        assert!(is_mutf8_valid(&[0xED, 0xAD, 0x9C, 0x26, 0x0A, 0x0A]));
     }
 
     #[test]
@@ -531,8 +624,6 @@ mod tests {
         assert!(!is_mutf8_valid(&[0xFF]));
         assert!(!is_mutf8_valid(&[0x00]));
         assert!(!is_mutf8_valid(&[0xED, 0xAD, 0xBD, 0xED, 0x25]));
-        assert!(!is_mutf8_valid(&[0xED, 0xAD, 0xBD]));
-        assert!(!is_mutf8_valid(&[0xED, 0xAD, 0x9C, 0x26, 0x0A, 0x0A]));
     }
 
     #[test]

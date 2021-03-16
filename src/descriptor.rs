@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::mutf8::{Chars, MStr};
+use crate::mutf8::{CharsLossy, MStr};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -27,7 +27,7 @@ impl<'a> fmt::Display for BaseType<'a> {
             Float => write!(f, "F"),
             Double => write!(f, "D"),
             Char => write!(f, "C"),
-            Object(name) => write!(f, "L{};", name),
+            Object(name) => write!(f, "L{};", name.display()),
         }
     }
 }
@@ -44,7 +44,7 @@ impl<'a> TypeDescriptor<'a> {
     }
 
     pub fn parse(s: &'a MStr) -> Result<TypeDescriptor<'a>, DecodeError> {
-        let mut chars = s.chars().enumerate();
+        let mut chars = s.chars_lossy().enumerate();
         let mut dimensions = 0;
         while let Some((start, ch)) = chars.next() {
             if ch == '[' {
@@ -127,7 +127,7 @@ pub struct MethodDescriptor<'a> {
 impl<'a> MethodDescriptor<'a> {
     pub fn parse(input: &'a MStr) -> Result<MethodDescriptor, DecodeError> {
         if input.len() <= u16::max_value() as usize {
-            let mut chars = input.chars();
+            let mut chars = input.chars_lossy();
             if let Some('(') = chars.next() {
                 loop {
                     let ch = chars.next();
@@ -154,7 +154,7 @@ impl<'a> MethodDescriptor<'a> {
 
     pub fn parameters(&self) -> impl Iterator<Item = TypeDescriptor<'a>> + 'a {
         struct Parameters<'a> {
-            chars: Chars<'a>,
+            chars: CharsLossy<'a>,
         }
 
         impl<'a> Iterator for Parameters<'a> {
@@ -163,7 +163,7 @@ impl<'a> MethodDescriptor<'a> {
             fn next(&mut self) -> Option<TypeDescriptor<'a>> {
                 let ch = self.chars.next();
                 if ch == Some(')') || ch == None {
-                    self.chars = <&MStr>::default().chars();
+                    self.chars = <&MStr>::default().chars_lossy();
                     None
                 } else {
                     read_type(ch.unwrap(), &mut self.chars)
@@ -171,7 +171,7 @@ impl<'a> MethodDescriptor<'a> {
             }
         }
 
-        let mut chars = self.input.chars();
+        let mut chars = self.input.chars_lossy();
         // skip the `(`
         chars.next();
         Parameters { chars }
@@ -182,7 +182,7 @@ impl<'a> MethodDescriptor<'a> {
         if input.as_bytes() == b"V" {
             None
         } else {
-            let mut chars = input.chars();
+            let mut chars = input.chars_lossy();
             read_type(chars.next().unwrap(), &mut chars)
         }
     }
@@ -229,7 +229,7 @@ fn validate_type(
     Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
 }
 
-fn read_type<'a>(mut ch: char, chars: &mut Chars<'a>) -> Option<TypeDescriptor<'a>> {
+fn read_type<'a>(mut ch: char, chars: &mut CharsLossy<'a>) -> Option<TypeDescriptor<'a>> {
     use BaseType::*;
 
     let mut dimensions = 0;

@@ -78,7 +78,7 @@ impl<'a> Class<'a> {
     /// let pool = class.pool()?;
     ///
     /// let item: &cpool::Utf8 = pool.get(index)?;
-    /// println!("Item: {}", item.content);
+    /// println!("Item: {}", item.content.display());
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
     pub fn pool(&mut self) -> Result<&ConstantPool<'a>, DecodeError> {
@@ -137,7 +137,7 @@ impl<'a> Class<'a> {
     /// let pool = class.pool()?;
     /// let name_index = pool.get(class_index)?.name;
     /// let class_name = pool.get(name_index)?.content;
-    /// println!("Class: {}", class_name);
+    /// println!("Class: {}", class_name.display());
     ///
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
@@ -174,7 +174,7 @@ impl<'a> Class<'a> {
     /// # let data = &[];
     /// let mut class = Class::new(data)?;
     /// for interface in class.interfaces()? {
-    ///     println!("Interface: {}", class.pool()?.retrieve(interface?)?.name);
+    ///     println!("Interface: {}", class.pool()?.retrieve(interface?)?.name.display());
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
