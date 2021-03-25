@@ -363,6 +363,7 @@ impl_counter!(u16);
 macro_rules! __enc_state {
     ($vis:vis mod $mod:ident : $($state:ident),* $(,)?) => {
         #[allow(non_snake_case)]
+        #[doc(hidden)]
         $vis mod $mod {
             pub trait State: sealed::Sealed {}
 
