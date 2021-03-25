@@ -3,17 +3,17 @@ use std::marker::PhantomData;
 use crate::error::*;
 use crate::writer::{attributes::code::*, encoding::*};
 
-pub struct TableSwitchWriter<'a, 'b, 'c, Ctx, State: TableSwitchWriterState::State> {
-    context: &'a mut InstructionWriter<'b, 'c, Ctx>,
+pub struct TableSwitchWriter<'a, Ctx, State: TableSwitchWriterState::State> {
+    context: &'a mut InstructionWriter<Ctx>,
     remaining: u32,
     _marker: PhantomData<State>,
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Default> {
+impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Default> {
     pub fn write_default(
         self,
         label: LabelRef,
-    ) -> Result<TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Low>, EncodeError> {
+    ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Low>, EncodeError> {
         self.context.class_writer_mut().encoder.write(label.0)?;
 
         Ok(TableSwitchWriter {
@@ -24,11 +24,11 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSw
     }
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Low> {
+impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Low> {
     pub fn write_low(
         mut self,
         low: i32,
-    ) -> Result<TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::High>, EncodeError> {
+    ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High>, EncodeError> {
         self.context.class_writer_mut().encoder.write(low)?;
         self.remaining = low as u32;
 
@@ -40,11 +40,11 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSw
     }
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::High> {
+impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High> {
     pub fn write_high(
         mut self,
         high: i32,
-    ) -> Result<TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Jumps>, EncodeError> {
+    ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps>, EncodeError> {
         self.context.class_writer_mut().encoder.write(high)?;
 
         let low = self.remaining as i32;
@@ -65,7 +65,7 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSw
     }
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Jumps> {
+impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps> {
     pub fn write_jump(mut self, label: LabelRef) -> Result<Self, EncodeError> {
         if self.remaining == 0 {
             return Err(EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code));
@@ -82,13 +82,11 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> TableSwitchWriter<'a, 'b, 'c, Ctx, TableSw
     }
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> WriteAssembler<'a>
-    for TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Default>
-{
-    type Context = InstructionWriter<'b, 'c, Ctx>;
-    type Disassembler = TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Jumps>;
+impl<'a, Ctx: EncoderContext> WriteAssembler for TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Default> {
+    type Context = &'a mut InstructionWriter<Ctx>;
+    type Disassembler = TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps>;
 
-    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
+    fn new(context: Self::Context) -> Result<Self, EncodeError> {
         let offset = context.current_offset();
 
         context.class_writer_mut().encoder.write(0xaau8)?;
@@ -104,12 +102,10 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> WriteAssembler<'a>
     }
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> WriteDisassembler<'a>
-    for TableSwitchWriter<'a, 'b, 'c, Ctx, TableSwitchWriterState::Jumps>
-{
-    type Context = InstructionWriter<'b, 'c, Ctx>;
+impl<'a, Ctx: EncoderContext> WriteDisassembler for TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps> {
+    type Context = &'a mut InstructionWriter<Ctx>;
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+    fn finish(self) -> Result<Self::Context, EncodeError> {
         if self.remaining == 0 {
             Ok(self.context)
         } else {

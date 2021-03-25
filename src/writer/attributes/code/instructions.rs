@@ -8,12 +8,12 @@ use crate::error::*;
 use crate::reader::{attributes::RawInstruction, decoding::*};
 use crate::writer::{attributes::code::*, cpool, encoding::*};
 
-pub struct InstructionWriter<'a, 'b, Ctx> {
-    code_writer: &'a mut CodeWriter<'b, Ctx, CodeWriterState::Instructions>,
+pub struct InstructionWriter<Ctx> {
+    code_writer: CodeWriter<Ctx, CodeWriterState::Instructions>,
     start_offset: Offset,
 }
 
-impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
+impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     /// The current offset starting from the code table start.
     pub(crate) fn current_offset(&self) -> Offset {
         self.code_writer
@@ -1225,7 +1225,7 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_lookupswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> WriteOnce<'f, LookupSwitchWriter<'f, 'a, 'b, Ctx, LookupSwitchWriterState::Default>>,
+        F: for<'f> WriteOnce<LookupSwitchWriter<'f, Ctx, LookupSwitchWriterState::Default>>,
     {
         f.write_once(LookupSwitchWriter::new(self)?)?.finish()?;
 
@@ -1447,7 +1447,7 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_tableswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> WriteOnce<'f, TableSwitchWriter<'f, 'a, 'b, Ctx, TableSwitchWriterState::Default>>,
+        F: for<'f> WriteOnce<TableSwitchWriter<'f, Ctx, TableSwitchWriterState::Default>>,
     {
         f.write_once(TableSwitchWriter::new(self)?)?.finish()?;
 
@@ -1455,11 +1455,11 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> WriteAssembler<'a> for InstructionWriter<'a, 'b, Ctx> {
-    type Context = CodeWriter<'b, Ctx, CodeWriterState::Instructions>;
-    type Disassembler = InstructionWriter<'a, 'b, Ctx>;
+impl<Ctx: EncoderContext> WriteAssembler for InstructionWriter<Ctx> {
+    type Context = CodeWriter<Ctx, CodeWriterState::Instructions>;
+    type Disassembler = InstructionWriter<Ctx>;
 
-    fn new(code_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
+    fn new(mut code_writer: Self::Context) -> Result<Self, EncodeError> {
         let start_offset = code_writer
             .class_writer_mut()
             .encoder
@@ -1472,10 +1472,10 @@ impl<'a, 'b, Ctx: EncoderContext> WriteAssembler<'a> for InstructionWriter<'a, '
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> WriteDisassembler<'a> for InstructionWriter<'a, 'b, Ctx> {
-    type Context = CodeWriter<'b, Ctx, CodeWriterState::Instructions>;
+impl<Ctx: EncoderContext> WriteDisassembler for InstructionWriter<Ctx> {
+    type Context = CodeWriter<Ctx, CodeWriterState::Instructions>;
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+    fn finish(mut self) -> Result<Self::Context, EncodeError> {
         let start_offset = self.start_offset.add(self.code_writer.class_writer_mut().pool_end);
         let len = self.current_offset().get();
         let mut offset = 0;
@@ -1633,7 +1633,7 @@ impl<'a, 'b, Ctx: EncoderContext> WriteDisassembler<'a> for InstructionWriter<'a
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> EncoderContext for InstructionWriter<'a, 'b, Ctx> {
+impl<Ctx: EncoderContext> EncoderContext for InstructionWriter<Ctx> {
     type State = Ctx::State;
 
     fn class_writer(&self) -> &ClassWriter<Self::State> {

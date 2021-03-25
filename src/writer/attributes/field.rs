@@ -7,18 +7,18 @@ use crate::writer::{
     encoding::*,
 };
 
-impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx, AttributeWriterState::Start> {
+impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     pub fn write_constant_value<I>(
         mut self,
         value: I,
-    ) -> Result<AttributeWriter<'a, Ctx, AttributeWriterState::End>, EncodeError>
+    ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
         I: Insertable<cpool::Item>,
     {
         let length_writer = self.attribute_writer("ConstantValue")?;
-        let value_index = value.insert(self.context)?;
+        let value_index = value.insert(&mut self.context)?;
         self.context.class_writer_mut().encoder.write(value_index)?;
-        length_writer.finish(self.context)?;
+        length_writer.finish(&mut self.context)?;
         Ok(AttributeWriter {
             context: self.context,
             _marker: PhantomData,

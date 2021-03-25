@@ -229,36 +229,36 @@ impl<'a, Ctx: EncoderContext> EncoderContext for &'a mut Ctx {
     }
 }
 
-pub trait WriteAssembler<'a>: Sized {
+pub trait WriteAssembler: Sized {
     type Context: EncoderContext;
-    type Disassembler: WriteDisassembler<'a, Context = Self::Context>;
+    type Disassembler: WriteDisassembler<Context = Self::Context>;
 
-    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError>;
+    fn new(context: Self::Context) -> Result<Self, EncodeError>;
 }
 
-pub trait WriteDisassembler<'a> {
+pub trait WriteDisassembler {
     type Context: EncoderContext;
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError>;
+    fn finish(self) -> Result<Self::Context, EncodeError>;
 }
 
-pub struct CountedWriter<'a, W: WriteAssembler<'a>, Count> {
+pub struct CountedWriter<W: WriteAssembler, Count> {
     /// The offset of the counter starting at the pool end.
     count_offset: Offset,
-    context: Option<&'a mut W::Context>,
+    context: Option<W::Context>,
     count: Count,
     marker: PhantomData<W>,
 }
 
-impl<'a, W, Count> WriteAssembler<'a> for CountedWriter<'a, W, Count>
+impl<W, Count> WriteAssembler for CountedWriter<W, Count>
 where
-    W: WriteAssembler<'a> + 'a,
+    W: WriteAssembler,
     Count: Encode + Counter,
 {
     type Context = W::Context;
     type Disassembler = Self;
 
-    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
+    fn new(mut context: Self::Context) -> Result<Self, EncodeError> {
         let count_offset = context
             .class_writer_mut()
             .encoder
@@ -275,33 +275,33 @@ where
     }
 }
 
-impl<'a, W, Count> WriteDisassembler<'a> for CountedWriter<'a, W, Count>
+impl<W, Count> WriteDisassembler for CountedWriter<W, Count>
 where
-    W: WriteAssembler<'a> + 'a,
+    W: WriteAssembler,
     Count: Encode + Counter,
 {
     type Context = W::Context;
 
-    fn finish(mut self) -> Result<&'a mut Self::Context, EncodeError> {
+    fn finish(mut self) -> Result<Self::Context, EncodeError> {
         self.context
             .take()
             .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None))
     }
 }
 
-impl<'a, W, Count> CountedWriter<'a, W, Count>
+impl<W, Count> CountedWriter<W, Count>
 where
-    W: WriteAssembler<'a> + 'a,
+    W: WriteAssembler,
     Count: Encode + Counter,
 {
-    pub fn begin<F: WriteOnce<'a, W>>(&mut self, f: F) -> Result<&mut Self, EncodeError> {
+    pub fn begin<F: WriteOnce<W>>(&mut self, f: F) -> Result<&mut Self, EncodeError> {
         let context = self
             .context
             .take()
             .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None))?;
         self.count.check()?;
 
-        let context = f.write_once(W::new(context)?)?.finish()?;
+        let mut context = f.write_once(W::new(context)?)?.finish()?;
 
         self.count.increment()?;
         let position = self.count_offset.add(context.class_writer().pool_end);
@@ -381,11 +381,11 @@ macro_rules! __enc_state {
     };
 }
 
-pub trait WriteOnce<'a, W: WriteAssembler<'a>> {
+pub trait WriteOnce<W: WriteAssembler> {
     fn write_once(self, writer: W) -> Result<W::Disassembler, EncodeError>;
 }
 
-impl<'a, W: WriteAssembler<'a>, F> WriteOnce<'a, W> for F
+impl<W: WriteAssembler, F> WriteOnce<W> for F
 where
     F: FnOnce(W) -> Result<W::Disassembler, EncodeError>,
 {
@@ -394,18 +394,15 @@ where
     }
 }
 
-// -        F: for<'f> FnOnce(&mut CountedWriter<'f, InterfaceWriter<'f>, u16>) -> Result<(), EncodeError>,
-// +        F: for<'f> CountedWrite<'a, 'f, InterfaceWriter<'f, InterfaceWriterState::Start>, u16>,
-
-pub trait CountedWrite<'a, W: WriteAssembler<'a> + 'a, N> {
-    fn write_to(self, writer: &mut CountedWriter<'a, W, N>) -> Result<(), EncodeError>;
+pub trait CountedWrite<W: WriteAssembler, N> {
+    fn write_to(self, writer: &mut CountedWriter<W, N>) -> Result<(), EncodeError>;
 }
 
-impl<'a, W: WriteAssembler<'a> + 'a, N, F> CountedWrite<'a, W, N> for F
+impl<W: WriteAssembler, N, F> CountedWrite<W, N> for F
 where
-    F: for<'g> FnOnce(&mut CountedWriter<'g, W, N>) -> Result<(), EncodeError>,
+    F: FnOnce(&mut CountedWriter<W, N>) -> Result<(), EncodeError>,
 {
-    fn write_to(self, writer: &mut CountedWriter<'a, W, N>) -> Result<(), EncodeError> {
+    fn write_to(self, writer: &mut CountedWriter<W, N>) -> Result<(), EncodeError> {
         self(writer)
     }
 }

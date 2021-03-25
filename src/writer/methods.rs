@@ -9,13 +9,13 @@ use crate::writer::{
     ClassWriter,
 };
 
-pub struct MethodWriter<'a, State: MethodWriterState::State> {
-    class_writer: &'a mut ClassWriter<class::ClassWriterState::Methods>,
+pub struct MethodWriter<State: MethodWriterState::State> {
+    class_writer: ClassWriter<class::ClassWriterState::Methods>,
     _marker: PhantomData<State>,
 }
 
-impl<'a> MethodWriter<'a, MethodWriterState::AccessFlags> {
-    pub fn access_flags(self, flags: AccessFlags) -> Result<MethodWriter<'a, MethodWriterState::Name>, EncodeError> {
+impl MethodWriter<MethodWriterState::AccessFlags> {
+    pub fn access_flags(mut self, flags: AccessFlags) -> Result<MethodWriter<MethodWriterState::Name>, EncodeError> {
         self.class_writer.encoder.write(flags)?;
         Ok(MethodWriter {
             class_writer: self.class_writer,
@@ -24,8 +24,8 @@ impl<'a> MethodWriter<'a, MethodWriterState::AccessFlags> {
     }
 }
 
-impl<'a> MethodWriter<'a, MethodWriterState::Name> {
-    pub fn name<I>(mut self, name: I) -> Result<MethodWriter<'a, MethodWriterState::Descriptor>, EncodeError>
+impl MethodWriter<MethodWriterState::Name> {
+    pub fn name<I>(mut self, name: I) -> Result<MethodWriter<MethodWriterState::Descriptor>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
@@ -38,11 +38,8 @@ impl<'a> MethodWriter<'a, MethodWriterState::Name> {
     }
 }
 
-impl<'a> MethodWriter<'a, MethodWriterState::Descriptor> {
-    pub fn descriptor<I>(
-        mut self,
-        descriptor: I,
-    ) -> Result<MethodWriter<'a, MethodWriterState::Attributes>, EncodeError>
+impl MethodWriter<MethodWriterState::Descriptor> {
+    pub fn descriptor<I>(mut self, descriptor: I) -> Result<MethodWriter<MethodWriterState::Attributes>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
@@ -55,18 +52,17 @@ impl<'a> MethodWriter<'a, MethodWriterState::Descriptor> {
     }
 }
 
-impl<'a> MethodWriter<'a, MethodWriterState::Attributes> {
-    pub fn attributes<F>(self, f: F) -> Result<MethodWriter<'a, MethodWriterState::End>, EncodeError>
+impl MethodWriter<MethodWriterState::Attributes> {
+    pub fn attributes<F>(mut self, f: F) -> Result<MethodWriter<MethodWriterState::End>, EncodeError>
     where
-        F: for<'f> CountedWrite<
-            'f,
-            AttributeWriter<'f, ClassWriter<class::ClassWriterState::Methods>, AttributeWriterState::Start>,
+        F: CountedWrite<
+            AttributeWriter<ClassWriter<class::ClassWriterState::Methods>, AttributeWriterState::Start>,
             u16,
         >,
     {
         let mut builder = CountedWriter::new(self.class_writer)?;
         f.write_to(&mut builder)?;
-        builder.finish()?;
+        self.class_writer = builder.finish()?;
 
         Ok(MethodWriter {
             class_writer: self.class_writer,
@@ -75,11 +71,11 @@ impl<'a> MethodWriter<'a, MethodWriterState::Attributes> {
     }
 }
 
-impl<'a> WriteAssembler<'a> for MethodWriter<'a, MethodWriterState::AccessFlags> {
+impl WriteAssembler for MethodWriter<MethodWriterState::AccessFlags> {
     type Context = ClassWriter<class::ClassWriterState::Methods>;
-    type Disassembler = MethodWriter<'a, MethodWriterState::End>;
+    type Disassembler = MethodWriter<MethodWriterState::End>;
 
-    fn new(class_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
+    fn new(class_writer: Self::Context) -> Result<Self, EncodeError> {
         Ok(MethodWriter {
             class_writer,
             _marker: PhantomData,
@@ -87,10 +83,10 @@ impl<'a> WriteAssembler<'a> for MethodWriter<'a, MethodWriterState::AccessFlags>
     }
 }
 
-impl<'a> WriteDisassembler<'a> for MethodWriter<'a, MethodWriterState::End> {
+impl WriteDisassembler for MethodWriter<MethodWriterState::End> {
     type Context = ClassWriter<class::ClassWriterState::Methods>;
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+    fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.class_writer)
     }
 }

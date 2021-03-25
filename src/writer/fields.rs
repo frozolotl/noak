@@ -9,13 +9,13 @@ use crate::writer::{
     ClassWriter,
 };
 
-pub struct FieldWriter<'a, State: FieldWriterState::State> {
-    class_writer: &'a mut ClassWriter<class::ClassWriterState::Fields>,
+pub struct FieldWriter<State: FieldWriterState::State> {
+    class_writer: ClassWriter<class::ClassWriterState::Fields>,
     _marker: PhantomData<State>,
 }
 
-impl<'a> FieldWriter<'a, FieldWriterState::AccessFlags> {
-    pub fn access_flags(self, flags: AccessFlags) -> Result<FieldWriter<'a, FieldWriterState::Name>, EncodeError> {
+impl FieldWriter<FieldWriterState::AccessFlags> {
+    pub fn access_flags(mut self, flags: AccessFlags) -> Result<FieldWriter<FieldWriterState::Name>, EncodeError> {
         self.class_writer.encoder.write(flags)?;
         Ok(FieldWriter {
             class_writer: self.class_writer,
@@ -24,8 +24,8 @@ impl<'a> FieldWriter<'a, FieldWriterState::AccessFlags> {
     }
 }
 
-impl<'a> FieldWriter<'a, FieldWriterState::Name> {
-    pub fn name<I>(mut self, name: I) -> Result<FieldWriter<'a, FieldWriterState::Descriptor>, EncodeError>
+impl FieldWriter<FieldWriterState::Name> {
+    pub fn name<I>(mut self, name: I) -> Result<FieldWriter<FieldWriterState::Descriptor>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
@@ -38,8 +38,8 @@ impl<'a> FieldWriter<'a, FieldWriterState::Name> {
     }
 }
 
-impl<'a> FieldWriter<'a, FieldWriterState::Descriptor> {
-    pub fn descriptor<I>(mut self, descriptor: I) -> Result<FieldWriter<'a, FieldWriterState::Attributes>, EncodeError>
+impl FieldWriter<FieldWriterState::Descriptor> {
+    pub fn descriptor<I>(mut self, descriptor: I) -> Result<FieldWriter<FieldWriterState::Attributes>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
@@ -52,18 +52,17 @@ impl<'a> FieldWriter<'a, FieldWriterState::Descriptor> {
     }
 }
 
-impl<'a> FieldWriter<'a, FieldWriterState::Attributes> {
-    pub fn attributes<F>(self, f: F) -> Result<FieldWriter<'a, FieldWriterState::End>, EncodeError>
+impl FieldWriter<FieldWriterState::Attributes> {
+    pub fn attributes<F>(mut self, f: F) -> Result<FieldWriter<FieldWriterState::End>, EncodeError>
     where
-        F: for<'f> CountedWrite<
-            'f,
-            AttributeWriter<'f, ClassWriter<class::ClassWriterState::Fields>, AttributeWriterState::Start>,
+        F: CountedWrite<
+            AttributeWriter<ClassWriter<class::ClassWriterState::Fields>, AttributeWriterState::Start>,
             u16,
         >,
     {
         let mut builder = CountedWriter::new(self.class_writer)?;
         f.write_to(&mut builder)?;
-        builder.finish()?;
+        self.class_writer = builder.finish()?;
 
         Ok(FieldWriter {
             class_writer: self.class_writer,
@@ -72,11 +71,11 @@ impl<'a> FieldWriter<'a, FieldWriterState::Attributes> {
     }
 }
 
-impl<'a> WriteAssembler<'a> for FieldWriter<'a, FieldWriterState::AccessFlags> {
+impl WriteAssembler for FieldWriter<FieldWriterState::AccessFlags> {
     type Context = ClassWriter<class::ClassWriterState::Fields>;
-    type Disassembler = FieldWriter<'a, FieldWriterState::End>;
+    type Disassembler = FieldWriter<FieldWriterState::End>;
 
-    fn new(class_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
+    fn new(class_writer: Self::Context) -> Result<Self, EncodeError> {
         Ok(FieldWriter {
             class_writer,
             _marker: PhantomData,
@@ -84,10 +83,10 @@ impl<'a> WriteAssembler<'a> for FieldWriter<'a, FieldWriterState::AccessFlags> {
     }
 }
 
-impl<'a> WriteDisassembler<'a> for FieldWriter<'a, FieldWriterState::End> {
+impl WriteDisassembler for FieldWriter<FieldWriterState::End> {
     type Context = ClassWriter<class::ClassWriterState::Fields>;
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+    fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.class_writer)
     }
 }

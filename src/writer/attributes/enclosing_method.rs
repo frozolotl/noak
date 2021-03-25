@@ -7,18 +7,20 @@ use crate::writer::{
     encoding::*,
 };
 
-impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx, AttributeWriterState::Start> {
+impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     pub fn write_enclosing_method<F>(
         mut self,
         f: F,
-    ) -> Result<AttributeWriter<'a, Ctx, AttributeWriterState::End>, EncodeError>
+    ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
-        F: for<'f> CountedWrite<'f, EnclosingMethodWriter<'f, Ctx, EnclosingMethodWriterState::Class>, u16>,
+        F: CountedWrite<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class>, u16>,
     {
         let length_writer = self.attribute_writer("EnclosingMethod")?;
         let mut builder = CountedWriter::new(self.context)?;
         f.write_to(&mut builder)?;
-        length_writer.finish(self.context)?;
+        self.context = builder.finish()?;
+        length_writer.finish(&mut self.context)?;
+
         Ok(AttributeWriter {
             context: self.context,
             _marker: PhantomData,
@@ -26,21 +28,22 @@ impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx, AttributeWriterState::Sta
     }
 }
 
-pub struct EnclosingMethodWriter<'a, Ctx, State: EnclosingMethodWriterState::State> {
-    context: &'a mut Ctx,
+pub struct EnclosingMethodWriter<Ctx, State: EnclosingMethodWriterState::State> {
+    context: Ctx,
     _marker: PhantomData<State>,
 }
 
-impl<'a, Ctx: EncoderContext> EnclosingMethodWriter<'a, Ctx, EnclosingMethodWriterState::Class> {
+impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class> {
     pub fn write_class<I>(
-        self,
+        mut self,
         class: I,
-    ) -> Result<EnclosingMethodWriter<'a, Ctx, EnclosingMethodWriterState::Method>, EncodeError>
+    ) -> Result<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Method>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        let index = class.insert(self.context)?;
+        let index = class.insert(&mut self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;
+
         Ok(EnclosingMethodWriter {
             context: self.context,
             _marker: PhantomData,
@@ -48,16 +51,16 @@ impl<'a, Ctx: EncoderContext> EnclosingMethodWriter<'a, Ctx, EnclosingMethodWrit
     }
 }
 
-impl<'a, Ctx: EncoderContext> EnclosingMethodWriter<'a, Ctx, EnclosingMethodWriterState::Method> {
+impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Method> {
     pub fn write_method<I>(
-        self,
+        mut self,
         class: Option<I>,
-    ) -> Result<EnclosingMethodWriter<'a, Ctx, EnclosingMethodWriterState::End>, EncodeError>
+    ) -> Result<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::End>, EncodeError>
     where
         I: cpool::Insertable<cpool::NameAndType>,
     {
         let index = class
-            .map(|class| Ok(Some(class.insert(self.context)?)))
+            .map(|class| Ok(Some(class.insert(&mut self.context)?)))
             .unwrap_or(Ok(None))?;
         self.context.class_writer_mut().encoder.write(index)?;
 
@@ -68,11 +71,11 @@ impl<'a, Ctx: EncoderContext> EnclosingMethodWriter<'a, Ctx, EnclosingMethodWrit
     }
 }
 
-impl<'a, Ctx: EncoderContext> WriteAssembler<'a> for EnclosingMethodWriter<'a, Ctx, EnclosingMethodWriterState::Class> {
+impl<Ctx: EncoderContext> WriteAssembler for EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class> {
     type Context = Ctx;
-    type Disassembler = EnclosingMethodWriter<'a, Ctx, EnclosingMethodWriterState::End>;
+    type Disassembler = EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::End>;
 
-    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
+    fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(EnclosingMethodWriter {
             context,
             _marker: PhantomData,
@@ -80,12 +83,10 @@ impl<'a, Ctx: EncoderContext> WriteAssembler<'a> for EnclosingMethodWriter<'a, C
     }
 }
 
-impl<'a, Ctx: EncoderContext> WriteDisassembler<'a>
-    for EnclosingMethodWriter<'a, Ctx, EnclosingMethodWriterState::End>
-{
+impl<Ctx: EncoderContext> WriteDisassembler for EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::End> {
     type Context = Ctx;
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+    fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
     }
 }

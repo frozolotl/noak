@@ -5,23 +5,20 @@ use crate::writer::{
     encoding::*,
 };
 
-impl<'a, 'b, Ctx: EncoderContext>
-    AttributeWriter<'a, CodeWriter<'b, Ctx, CodeWriterState::Attributes>, AttributeWriterState::Start>
-{
+impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::Start> {
     pub fn write_local_variable_table<F>(
         mut self,
         f: F,
-    ) -> Result<
-        AttributeWriter<'a, CodeWriter<'b, Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>,
-        EncodeError,
-    >
+    ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
     where
-        F: for<'f, 'g> CountedWrite<'f, LocalVariableWriter<'f, 'g, Ctx, LocalVariableWriterState::Start>, u16>,
+        F: for<'g> CountedWrite<LocalVariableWriter<Ctx, LocalVariableWriterState::Start>, u16>,
     {
         let length_writer = self.attribute_writer("LocalVariableTable")?;
         let mut builder = CountedWriter::new(self.context)?;
         f.write_to(&mut builder)?;
-        length_writer.finish(self.context)?;
+        self.context = builder.finish()?;
+        length_writer.finish(&mut self.context)?;
+
         Ok(AttributeWriter {
             context: self.context,
             _marker: PhantomData,
@@ -29,22 +26,22 @@ impl<'a, 'b, Ctx: EncoderContext>
     }
 }
 
-pub struct LocalVariableWriter<'a, 'b, Ctx, State: LocalVariableWriterState::State> {
-    context: &'a mut CodeWriter<'b, Ctx, CodeWriterState::Attributes>,
+pub struct LocalVariableWriter<Ctx, State: LocalVariableWriterState::State> {
+    context: CodeWriter<Ctx, CodeWriterState::Attributes>,
     start: u32,
     _marker: PhantomData<State>,
 }
 
-impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Start> {
+impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Start> {
     pub fn write_start(
-        self,
+        mut self,
         label: LabelRef,
-    ) -> Result<LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Length>, EncodeError> {
+    ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Length>, EncodeError> {
         let offset = self.context.get_label_position(label)?;
         let offset_u16 = u16::try_from(offset)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
-
         self.context.class_writer_mut().encoder.write(offset_u16)?;
+
         Ok(LocalVariableWriter {
             context: self.context,
             start: offset,
@@ -53,11 +50,11 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariable
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Length> {
+impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Length> {
     pub fn write_end(
-        self,
+        mut self,
         label: LabelRef,
-    ) -> Result<LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Name>, EncodeError> {
+    ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Name>, EncodeError> {
         let offset = self.context.get_label_position(label)?;
 
         if offset < self.start {
@@ -69,8 +66,8 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariable
 
         let length = u16::try_from(offset - self.start)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
-
         self.context.class_writer_mut().encoder.write(length)?;
+
         Ok(LocalVariableWriter {
             context: self.context,
             start: self.start,
@@ -79,15 +76,15 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariable
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Name> {
+impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Name> {
     pub fn write_name<I>(
-        self,
+        mut self,
         name: I,
-    ) -> Result<LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Descriptor>, EncodeError>
+    ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Descriptor>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
-        let index = name.insert(self.context)?;
+        let index = name.insert(&mut self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;
 
         Ok(LocalVariableWriter {
@@ -98,15 +95,15 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariable
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Descriptor> {
+impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Descriptor> {
     pub fn write_descriptor<I>(
-        self,
+        mut self,
         descriptor: I,
-    ) -> Result<LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Index>, EncodeError>
+    ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Index>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
-        let index = descriptor.insert(self.context)?;
+        let index = descriptor.insert(&mut self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;
 
         Ok(LocalVariableWriter {
@@ -117,12 +114,13 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariable
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Index> {
+impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Index> {
     pub fn write_index(
-        self,
+        mut self,
         index: u16,
-    ) -> Result<LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::End>, EncodeError> {
+    ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::End>, EncodeError> {
         self.context.class_writer_mut().encoder.write(index)?;
+
         Ok(LocalVariableWriter {
             context: self.context,
             start: self.start,
@@ -131,13 +129,11 @@ impl<'a, 'b, Ctx: EncoderContext> LocalVariableWriter<'a, 'b, Ctx, LocalVariable
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> WriteAssembler<'a>
-    for LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::Start>
-{
-    type Context = CodeWriter<'b, Ctx, CodeWriterState::Attributes>;
-    type Disassembler = LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::End>;
+impl<Ctx: EncoderContext> WriteAssembler for LocalVariableWriter<Ctx, LocalVariableWriterState::Start> {
+    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
+    type Disassembler = LocalVariableWriter<Ctx, LocalVariableWriterState::End>;
 
-    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
+    fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(LocalVariableWriter {
             context,
             start: 0,
@@ -146,12 +142,10 @@ impl<'a, 'b, Ctx: EncoderContext> WriteAssembler<'a>
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> WriteDisassembler<'a>
-    for LocalVariableWriter<'a, 'b, Ctx, LocalVariableWriterState::End>
-{
-    type Context = CodeWriter<'b, Ctx, CodeWriterState::Attributes>;
+impl<Ctx: EncoderContext> WriteDisassembler for LocalVariableWriter<Ctx, LocalVariableWriterState::End> {
+    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+    fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
     }
 }

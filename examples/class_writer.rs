@@ -1,6 +1,6 @@
 //! This example writes an example class.
 
-use noak::writer::{cpool, ClassWriter, FieldWriter, FieldWriterState, CountedWriter};
+use noak::writer::{cpool, ClassWriter};
 use noak::AccessFlags;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -111,6 +111,7 @@ impl<State: ClassWriterState::State> ClassWriter<State> {
 impl ClassWriter<ClassWriterState::AccessFlags> {
     pub fn access_flags(mut self, flags: AccessFlags) -> Result<ClassWriter<ClassWriterState::ThisClass>, EncodeError> {
         self.encoder.write(flags)?;
+
         Ok(ClassWriter {
             encoder: self.encoder,
             pool: self.pool,
@@ -127,6 +128,7 @@ impl ClassWriter<ClassWriterState::ThisClass> {
     {
         let index = name.insert(&mut self)?;
         self.encoder.write(index)?;
+
         Ok(ClassWriter {
             encoder: self.encoder,
             pool: self.pool,
@@ -143,6 +145,7 @@ impl ClassWriter<ClassWriterState::SuperClass> {
     {
         let index = name.insert(&mut self)?;
         self.encoder.write(index)?;
+
         Ok(ClassWriter {
             encoder: self.encoder,
             pool: self.pool,
@@ -153,6 +156,7 @@ impl ClassWriter<ClassWriterState::SuperClass> {
 
     pub fn no_super_class(mut self) -> Result<ClassWriter<ClassWriterState::Interfaces>, EncodeError> {
         self.encoder.write::<Option<cpool::Index<cpool::Class>>>(None)?;
+
         Ok(ClassWriter {
             encoder: self.encoder,
             pool: self.pool,
@@ -165,11 +169,12 @@ impl ClassWriter<ClassWriterState::SuperClass> {
 impl ClassWriter<ClassWriterState::Interfaces> {
     pub fn interfaces<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Fields>, EncodeError>
     where
-        F: for<'f> CountedWrite<'f, InterfaceWriter<'f, InterfaceWriterState::Start>, u16>,
+        F: CountedWrite<InterfaceWriter<InterfaceWriterState::Start>, u16>,
     {
-        let mut builder = CountedWriter::new(&mut self)?;
+        let mut builder = CountedWriter::new(self)?;
         f.write_to(&mut builder)?;
-        builder.finish()?;
+        self = builder.finish()?;
+
         Ok(ClassWriter {
             encoder: self.encoder,
             pool: self.pool,
@@ -182,11 +187,12 @@ impl ClassWriter<ClassWriterState::Interfaces> {
 impl ClassWriter<ClassWriterState::Fields> {
     pub fn fields<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Methods>, EncodeError>
     where
-        F: for<'f> CountedWrite<'f, FieldWriter<'f, FieldWriterState::AccessFlags>, u16>,
+        F: CountedWrite<FieldWriter<FieldWriterState::AccessFlags>, u16>,
     {
-        let mut builder = CountedWriter::new(&mut self)?;
+        let mut builder = CountedWriter::new(self)?;
         f.write_to(&mut builder)?;
-        builder.finish()?;
+        self = builder.finish()?;
+
         Ok(ClassWriter {
             encoder: self.encoder,
             pool: self.pool,
@@ -199,11 +205,12 @@ impl ClassWriter<ClassWriterState::Fields> {
 impl ClassWriter<ClassWriterState::Methods> {
     pub fn methods<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Attributes>, EncodeError>
     where
-        F: for<'f> CountedWrite<'f, MethodWriter<'f, MethodWriterState::AccessFlags>, u16>,
+        F: CountedWrite<MethodWriter<MethodWriterState::AccessFlags>, u16>,
     {
-        let mut builder = CountedWriter::new(&mut self)?;
+        let mut builder = CountedWriter::new(self)?;
         f.write_to(&mut builder)?;
-        builder.finish()?;
+        self = builder.finish()?;
+
         Ok(ClassWriter {
             encoder: self.encoder,
             pool: self.pool,
@@ -214,18 +221,20 @@ impl ClassWriter<ClassWriterState::Methods> {
 }
 
 impl ClassWriter<ClassWriterState::Attributes> {
-    pub fn attributes<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+    pub fn attributes<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::End>, EncodeError>
     where
-        F: for<'f> CountedWrite<
-            'f,
-            AttributeWriter<'f, ClassWriter<ClassWriterState::Attributes>, AttributeWriterState::Start>,
-            u16,
-        >,
+        F: CountedWrite<AttributeWriter<ClassWriter<ClassWriterState::Attributes>, AttributeWriterState::Start>, u16>,
     {
         let mut builder = CountedWriter::new(self)?;
         f.write_to(&mut builder)?;
+        self = builder.finish()?;
 
-        Ok(self)
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
     }
 }
 
