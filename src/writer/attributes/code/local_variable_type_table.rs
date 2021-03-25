@@ -6,7 +6,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::Start> {
-    pub fn write_local_variable_type_table<F>(
+    pub fn local_variable_type_table<F>(
         mut self,
         f: F,
     ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
@@ -32,7 +32,7 @@ pub struct LocalVariableTypeWriter<Ctx, State: LocalVariableTypeWriterState::Sta
 }
 
 impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Start> {
-    pub fn write_start(
+    pub fn start(
         mut self,
         label: LabelRef,
     ) -> Result<LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Length>, EncodeError> {
@@ -50,7 +50,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
 }
 
 impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Length> {
-    pub fn write_end(
+    pub fn end(
         mut self,
         label: LabelRef,
     ) -> Result<LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Name>, EncodeError> {
@@ -76,7 +76,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
 }
 
 impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Name> {
-    pub fn write_name<I>(
+    pub fn name<I>(
         mut self,
         name: I,
     ) -> Result<LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Signature>, EncodeError>
@@ -95,7 +95,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
 }
 
 impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Signature> {
-    pub fn write_signature<I>(
+    pub fn signature<I>(
         mut self,
         signature: I,
     ) -> Result<LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Index>, EncodeError>
@@ -114,7 +114,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
 }
 
 impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Index> {
-    pub fn write_index(
+    pub fn index(
         mut self,
         index: u16,
     ) -> Result<LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::End>, EncodeError> {

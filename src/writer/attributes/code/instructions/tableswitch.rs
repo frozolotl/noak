@@ -10,7 +10,7 @@ pub struct TableSwitchWriter<'a, Ctx, State: TableSwitchWriterState::State> {
 }
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Default> {
-    pub fn write_default(
+    pub fn default(
         self,
         label: LabelRef,
     ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Low>, EncodeError> {
@@ -25,7 +25,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 }
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Low> {
-    pub fn write_low(
+    pub fn low(
         mut self,
         low: i32,
     ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High>, EncodeError> {
@@ -41,7 +41,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 }
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High> {
-    pub fn write_high(
+    pub fn high(
         mut self,
         high: i32,
     ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps>, EncodeError> {
@@ -66,7 +66,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 }
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps> {
-    pub fn write_jump(mut self, label: LabelRef) -> Result<Self, EncodeError> {
+    pub fn jump(mut self, label: LabelRef) -> Result<Self, EncodeError> {
         if self.remaining == 0 {
             return Err(EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code));
         }

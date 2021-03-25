@@ -5,7 +5,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::Start> {
-    pub fn write_line_number_table<F>(
+    pub fn line_number_table<F>(
         mut self,
         f: F,
     ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
@@ -31,7 +31,7 @@ pub struct LineNumberWriter<Ctx, State: LineNumberWriterState::State> {
 }
 
 impl<Ctx: EncoderContext> LineNumberWriter<Ctx, LineNumberWriterState::Start> {
-    pub fn write_start(
+    pub fn start(
         mut self,
         label: LabelRef,
     ) -> Result<LineNumberWriter<Ctx, LineNumberWriterState::LineNumber>, EncodeError> {
@@ -48,7 +48,7 @@ impl<Ctx: EncoderContext> LineNumberWriter<Ctx, LineNumberWriterState::Start> {
 }
 
 impl<Ctx: EncoderContext> LineNumberWriter<Ctx, LineNumberWriterState::LineNumber> {
-    pub fn write_line_number(
+    pub fn line_number(
         mut self,
         line_number: u16,
     ) -> Result<LineNumberWriter<Ctx, LineNumberWriterState::End>, EncodeError> {

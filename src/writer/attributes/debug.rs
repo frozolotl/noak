@@ -9,7 +9,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn write_source_file<I>(
+    pub fn source_file<I>(
         mut self,
         file_name: I,
     ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
@@ -26,7 +26,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         })
     }
 
-    pub fn write_source_debug_extension<I>(
+    pub fn source_debug_extension<I>(
         mut self,
         debug_extension: I,
     ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
@@ -45,7 +45,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         })
     }
 
-    pub fn write_synthetic(mut self) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError> {
+    pub fn synthetic(mut self) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError> {
         self.attribute_writer("Synthetic")?.finish(&mut self.context)?;
         Ok(AttributeWriter {
             context: self.context,
@@ -53,7 +53,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         })
     }
 
-    pub fn write_deprecated(mut self) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError> {
+    pub fn deprecated(mut self) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError> {
         self.attribute_writer("Deprecated")?.finish(&mut self.context)?;
         Ok(AttributeWriter {
             context: self.context,
@@ -61,7 +61,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         })
     }
 
-    pub fn write_signature<I>(
+    pub fn signature<I>(
         mut self,
         signature: I,
     ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>

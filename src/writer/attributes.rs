@@ -31,7 +31,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         LengthWriter::new(&mut self.context)
     }
 
-    pub fn write_attribute<I>(
+    pub fn raw_attribute<I>(
         mut self,
         name: I,
         bytes: &[u8],

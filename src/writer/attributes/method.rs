@@ -8,7 +8,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn write_exceptions<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
+    pub fn exceptions<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
         F: CountedWrite<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>,
     {
@@ -32,7 +32,7 @@ pub struct ExceptionWriter<Ctx, State: ExceptionWriterState::State> {
 
 impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
     /// Writes the index to an exception able to be thrown by this method.
-    pub fn write_exception<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+    pub fn exception<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {

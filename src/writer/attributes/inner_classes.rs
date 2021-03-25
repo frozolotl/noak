@@ -9,7 +9,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn write_inner_classes<F>(
+    pub fn inner_classes<F>(
         mut self,
         f: F,
     ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
@@ -35,7 +35,7 @@ pub struct InnerClassWriter<Ctx, State: InnerClassWriterState::State> {
 }
 
 impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerClass> {
-    pub fn write_inner_class<I>(
+    pub fn inner_class<I>(
         mut self,
         class: I,
     ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::OuterClass>, EncodeError>
@@ -53,7 +53,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerClas
 }
 
 impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::OuterClass> {
-    pub fn write_outer_class<I>(
+    pub fn outer_class<I>(
         mut self,
         class: I,
     ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::InnerName>, EncodeError>
@@ -69,7 +69,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::OuterClas
         })
     }
 
-    pub fn write_no_outer_class<I>(
+    pub fn no_outer_class<I>(
         mut self,
     ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::InnerName>, EncodeError>
     where
@@ -85,7 +85,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::OuterClas
 }
 
 impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerName> {
-    pub fn write_inner_name<I>(
+    pub fn inner_name<I>(
         mut self,
         name: I,
     ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::InnerAccessFlags>, EncodeError>
@@ -101,7 +101,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerName
         })
     }
 
-    pub fn write_no_inner_name<I>(
+    pub fn no_inner_name<I>(
         mut self,
     ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::InnerAccessFlags>, EncodeError>
     where
@@ -117,7 +117,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerName
 }
 
 impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerAccessFlags> {
-    pub fn write_inner_access_flags(
+    pub fn inner_access_flags(
         mut self,
         flags: AccessFlags,
     ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::End>, EncodeError> {

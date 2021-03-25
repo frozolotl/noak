@@ -13,7 +13,7 @@ pub struct TypeAnnotation<'a> {
     target_type: TargetType,
     target_info: TargetInfo<'a>,
     target_path: TypePath<'a>,
-    r#type: cpool::Index<cpool::Utf8<'a>>,
+    type_: cpool::Index<cpool::Utf8<'a>>,
     pairs: ElementValuePairIter<'a>,
 }
 
@@ -30,8 +30,8 @@ impl<'a> TypeAnnotation<'a> {
         &self.target_path
     }
 
-    pub fn r#type(&self) -> cpool::Index<cpool::Utf8<'a>> {
-        self.r#type
+    pub fn type_(&self) -> cpool::Index<cpool::Utf8<'a>> {
+        self.type_
     }
 
     pub fn pairs(&self) -> ElementValuePairIter<'a> {
@@ -86,14 +86,14 @@ impl<'a> Decode<'a> for TypeAnnotation<'a> {
             }
         };
         let target_path = decoder.read()?;
-        let r#type = decoder.read()?;
+        let type_ = decoder.read()?;
         let pairs = decoder.read()?;
 
         Ok(TypeAnnotation {
             target_type,
             target_info,
             target_path,
-            r#type,
+            type_,
             pairs,
         })
     }

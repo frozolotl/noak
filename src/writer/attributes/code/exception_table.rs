@@ -7,7 +7,7 @@ pub struct ExceptionWriter<Ctx, State: ExceptionWriterState::State> {
 }
 
 impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
-    pub fn write_start(
+    pub fn start(
         mut self,
         label: LabelRef,
     ) -> Result<ExceptionWriter<Ctx, ExceptionWriterState::Length>, EncodeError> {
@@ -27,7 +27,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
 }
 
 impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Length> {
-    pub fn write_end(
+    pub fn end(
         mut self,
         label: LabelRef,
     ) -> Result<ExceptionWriter<Ctx, ExceptionWriterState::Handler>, EncodeError> {
@@ -45,7 +45,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Length> {
 }
 
 impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Handler> {
-    pub fn write_handler(
+    pub fn handler(
         mut self,
         label: LabelRef,
     ) -> Result<ExceptionWriter<Ctx, ExceptionWriterState::CatchType>, EncodeError> {
@@ -63,7 +63,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Handler> {
 }
 
 impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::CatchType> {
-    pub fn write_catch_type<I>(
+    pub fn catch_type<I>(
         mut self,
         catch_type: I,
     ) -> Result<ExceptionWriter<Ctx, ExceptionWriterState::End>, EncodeError>

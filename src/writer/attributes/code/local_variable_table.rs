@@ -6,7 +6,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::Start> {
-    pub fn write_local_variable_table<F>(
+    pub fn local_variable_table<F>(
         mut self,
         f: F,
     ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
@@ -33,7 +33,7 @@ pub struct LocalVariableWriter<Ctx, State: LocalVariableWriterState::State> {
 }
 
 impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Start> {
-    pub fn write_start(
+    pub fn start(
         mut self,
         label: LabelRef,
     ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Length>, EncodeError> {
@@ -51,7 +51,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Sta
 }
 
 impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Length> {
-    pub fn write_end(
+    pub fn end(
         mut self,
         label: LabelRef,
     ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Name>, EncodeError> {
@@ -77,7 +77,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Len
 }
 
 impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Name> {
-    pub fn write_name<I>(
+    pub fn name<I>(
         mut self,
         name: I,
     ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Descriptor>, EncodeError>
@@ -96,7 +96,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Nam
 }
 
 impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Descriptor> {
-    pub fn write_descriptor<I>(
+    pub fn descriptor<I>(
         mut self,
         descriptor: I,
     ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::Index>, EncodeError>
@@ -115,7 +115,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Des
 }
 
 impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Index> {
-    pub fn write_index(
+    pub fn index(
         mut self,
         index: u16,
     ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::End>, EncodeError> {

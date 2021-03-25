@@ -8,7 +8,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn write_constant_value<I>(
+    pub fn constant_value<I>(
         mut self,
         value: I,
     ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>

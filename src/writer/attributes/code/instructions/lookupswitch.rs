@@ -12,7 +12,7 @@ pub struct LookupSwitchWriter<'a, Ctx, State: LookupSwitchWriterState::State> {
 }
 
 impl<'a, Ctx: EncoderContext> LookupSwitchWriter<'a, Ctx, LookupSwitchWriterState::Default> {
-    pub fn write_default(
+    pub fn default(
         self,
         label: LabelRef,
     ) -> Result<LookupSwitchWriter<'a, Ctx, LookupSwitchWriterState::Jumps>, EncodeError> {
@@ -30,7 +30,7 @@ impl<'a, Ctx: EncoderContext> LookupSwitchWriter<'a, Ctx, LookupSwitchWriterStat
 
 impl<'a, Ctx: EncoderContext> LookupSwitchWriter<'a, Ctx, LookupSwitchWriterState::Jumps> {
     /// Write a key-label pair, where the keys must be written in an increasing numerical order.
-    pub fn write_pair(mut self, key: i32, label: LabelRef) -> Result<Self, EncodeError> {
+    pub fn pair(mut self, key: i32, label: LabelRef) -> Result<Self, EncodeError> {
         if self.last_key.map_or(false, |last_key| last_key >= key) {
             return Err(EncodeError::with_context(
                 EncodeErrorKind::InvalidKeyOrder,

@@ -10,7 +10,7 @@ pub type ParameterAnnotationIter<'a> = DecodeCounted<'a, Annotations<'a>, u8>;
 
 crate::__dec_structure! {
     pub struct Annotation<'a> {
-        r#type: cpool::Index<cpool::Utf8<'a>>,
+        type_: cpool::Index<cpool::Utf8<'a>>,
         pairs: ElementValuePairIter<'a>,
     }
 }

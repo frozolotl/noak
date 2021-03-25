@@ -8,7 +8,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn write_enclosing_method<F>(
+    pub fn enclosing_method<F>(
         mut self,
         f: F,
     ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
@@ -34,7 +34,7 @@ pub struct EnclosingMethodWriter<Ctx, State: EnclosingMethodWriterState::State> 
 }
 
 impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class> {
-    pub fn write_class<I>(
+    pub fn class<I>(
         mut self,
         class: I,
     ) -> Result<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Method>, EncodeError>
@@ -52,7 +52,7 @@ impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState:
 }
 
 impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Method> {
-    pub fn write_method<I>(
+    pub fn method<I>(
         mut self,
         class: Option<I>,
     ) -> Result<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::End>, EncodeError>
