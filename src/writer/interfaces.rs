@@ -10,7 +10,7 @@ pub struct InterfaceWriter<State: InterfaceWriterState::State> {
 
 impl InterfaceWriter<InterfaceWriterState::End> {
     /// Writes the index to an interface implemented by this class.
-    pub fn write_interface<I>(mut self, name: I) -> Result<InterfaceWriter<InterfaceWriterState::End>, EncodeError>
+    pub fn interface<I>(mut self, name: I) -> Result<InterfaceWriter<InterfaceWriterState::End>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
