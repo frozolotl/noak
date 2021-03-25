@@ -49,10 +49,7 @@ impl<'a> Attribute<'a> {
         self.content.buf()
     }
 
-    pub fn read_content(
-        &self,
-        pool: &cpool::ConstantPool<'a>,
-    ) -> Result<AttributeContent<'a>, DecodeError> {
+    pub fn read_content(&self, pool: &cpool::ConstantPool<'a>) -> Result<AttributeContent<'a>, DecodeError> {
         let name = pool.get(self.name)?.content;
         let decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
@@ -66,33 +63,27 @@ impl<'a> Attribute<'a> {
             b"InnerClasses" => Ok(AttributeContent::InnerClasses(decoder.read_into()?)),
             b"LineNumberTable" => Ok(AttributeContent::LineNumberTable(decoder.read_into()?)),
             b"LocalVariableTable" => Ok(AttributeContent::LocalVariableTable(decoder.read_into()?)),
-            b"LocalVariableTypeTable" => Ok(AttributeContent::LocalVariableTypeTable(
-                decoder.read_into()?,
-            )),
+            b"LocalVariableTypeTable" => Ok(AttributeContent::LocalVariableTypeTable(decoder.read_into()?)),
             b"MethodParameters" => Ok(AttributeContent::MethodParameters(decoder.read_into()?)),
             b"Module" => Ok(AttributeContent::Module(Box::new(decoder.read_into()?))),
             b"ModuleMainClass" => Ok(AttributeContent::ModuleMainClass(decoder.read_into()?)),
             b"ModulePackages" => Ok(AttributeContent::ModulePackages(decoder.read_into()?)),
             b"NestMembers" => Ok(AttributeContent::NestMembers(decoder.read_into()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
-            b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(
+            b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(decoder.read_into()?)),
+            b"RuntimeInvisibleParameterAnnotations" => Ok(AttributeContent::RuntimeInvisibleParameterAnnotations(
                 decoder.read_into()?,
             )),
-            b"RuntimeInvisibleParameterAnnotations" => Ok(
-                AttributeContent::RuntimeInvisibleParameterAnnotations(decoder.read_into()?),
-            ),
-            b"RuntimeInvisibleTypeAnnotations" => Ok(
-                AttributeContent::RuntimeInvisibleTypeAnnotations(decoder.read_into()?),
-            ),
-            b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(
+            b"RuntimeInvisibleTypeAnnotations" => {
+                Ok(AttributeContent::RuntimeInvisibleTypeAnnotations(decoder.read_into()?))
+            }
+            b"RuntimeVisibleAnnotations" => Ok(AttributeContent::RuntimeVisibleAnnotations(decoder.read_into()?)),
+            b"RuntimeVisibleParameterAnnotations" => Ok(AttributeContent::RuntimeVisibleParameterAnnotations(
                 decoder.read_into()?,
             )),
-            b"RuntimeVisibleParameterAnnotations" => Ok(
-                AttributeContent::RuntimeVisibleParameterAnnotations(decoder.read_into()?),
-            ),
-            b"RuntimeVisibleTypeAnnotations" => Ok(
-                AttributeContent::RuntimeVisibleTypeAnnotations(decoder.read_into()?),
-            ),
+            b"RuntimeVisibleTypeAnnotations" => {
+                Ok(AttributeContent::RuntimeVisibleTypeAnnotations(decoder.read_into()?))
+            }
             b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
             b"SourceDebugExtension" => {
                 let content = MStr::from_bytes(decoder.buf())?;

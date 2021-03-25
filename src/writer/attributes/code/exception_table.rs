@@ -1,105 +1,102 @@
 use crate::error::*;
 use crate::writer::{attributes::code::*, cpool, encoding::*};
 
-pub struct ExceptionWriter<'a, 'b, Ctx> {
-    code_writer: &'a mut CodeWriter<'b, Ctx>,
-    state: WriteState,
+pub struct ExceptionWriter<'a, 'b, Ctx, State: ExceptionWriterState::State> {
+    context: &'a mut CodeWriter<'b, Ctx, CodeWriterState::ExceptionTable>,
+    _marker: PhantomData<State>,
 }
 
-impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx> {
-    pub fn write_start(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::Start, Context::Code)?;
-
-        let position = self.code_writer.get_label_position(label)?;
+impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::Start> {
+    pub fn write_start(
+        self,
+        label: LabelRef,
+    ) -> Result<ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::Length>, EncodeError> {
+        let position = self.context.get_label_position(label)?;
         // end has to fit into an u16 and thus the last valid index for end is 65535
         // but start has to be less than end and thus the last valid index for start is 65534
         if position >= u16::max_value() as u32 {
-            return Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ));
+            return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
 
-        self.code_writer
-            .class_writer_mut()
-            .encoder
-            .write(position as u16)?;
-        self.state = WriteState::End;
-        Ok(self)
+        self.context.class_writer_mut().encoder.write(position as u16)?;
+        Ok(ExceptionWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
+}
 
-    pub fn write_end(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::End, Context::Code)?;
-
-        let position = self.code_writer.get_label_position(label)?;
+impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::Length> {
+    pub fn write_end(
+        self,
+        label: LabelRef,
+    ) -> Result<ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::Handler>, EncodeError> {
+        let position = self.context.get_label_position(label)?;
         if position > u16::max_value() as u32 {
-            return Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ));
+            return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
 
-        self.code_writer
-            .class_writer_mut()
-            .encoder
-            .write(position as u16)?;
-        self.state = WriteState::Handler;
-        Ok(self)
+        self.context.class_writer_mut().encoder.write(position as u16)?;
+        Ok(ExceptionWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
+}
 
-    pub fn write_handler(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::Handler, Context::Code)?;
-
-        let position = self.code_writer.get_label_position(label)?;
+impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::Handler> {
+    pub fn write_handler(
+        self,
+        label: LabelRef,
+    ) -> Result<ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::CatchType>, EncodeError> {
+        let position = self.context.get_label_position(label)?;
         if position > u16::max_value() as u32 {
-            return Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ));
+            return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
 
-        self.code_writer
-            .class_writer_mut()
-            .encoder
-            .write(position as u16)?;
-        self.state = WriteState::CatchType;
-        Ok(self)
+        self.context.class_writer_mut().encoder.write(position as u16)?;
+        Ok(ExceptionWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
+}
 
-    pub fn write_catch_type<I>(&mut self, catch_type: I) -> Result<&mut Self, EncodeError>
+impl<'a, 'b, Ctx: EncoderContext> ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::CatchType> {
+    pub fn write_catch_type<I>(
+        mut self,
+        catch_type: I,
+    ) -> Result<ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::End>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        EncodeError::result_from_state(self.state, &WriteState::CatchType, Context::Code)?;
-        let index = catch_type.insert(&mut self.code_writer)?;
-        self.code_writer.class_writer_mut().encoder.write(index)?;
-        self.state = WriteState::Finished;
-        Ok(self)
-    }
-}
-
-impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for ExceptionWriter<'a, 'b, Ctx> {
-    type Context = CodeWriter<'b, Ctx>;
-
-    fn new(code_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
+        let index = catch_type.insert(&mut self.context)?;
+        self.context.class_writer_mut().encoder.write(index)?;
         Ok(ExceptionWriter {
-            code_writer,
-            state: WriteState::Start,
+            context: self.context,
+            _marker: PhantomData,
         })
     }
+}
 
-    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::Finished, Context::Code)?;
+impl<'a, 'b, Ctx: EncoderContext> WriteAssembler<'a> for ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::Start> {
+    type Context = CodeWriter<'b, Ctx, CodeWriterState::ExceptionTable>;
+    type Disassembler = ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::End>;
 
-        Ok(self.code_writer)
+    fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
+        Ok(ExceptionWriter {
+            context,
+            _marker: PhantomData,
+        })
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum WriteState {
-    Start,
-    End,
-    Handler,
-    CatchType,
-    Finished,
+impl<'a, 'b, Ctx: EncoderContext> WriteDisassembler<'a> for ExceptionWriter<'a, 'b, Ctx, ExceptionWriterState::End> {
+    type Context = CodeWriter<'b, Ctx, CodeWriterState::ExceptionTable>;
+
+    fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
+        Ok(self.context)
+    }
 }
+
+crate::__enc_state!(pub mod ExceptionWriterState: Start, Length, Handler, CatchType, End);

@@ -549,31 +549,22 @@ impl fmt::Debug for TablePair {
 }
 
 impl<'a> RawInstruction<'a> {
-    pub(crate) fn decode(
-        decoder: &mut Decoder<'a>,
-        instruction_start: usize,
-    ) -> Result<Self, DecodeError> {
+    pub(crate) fn decode(decoder: &mut Decoder<'a>, instruction_start: usize) -> Result<Self, DecodeError> {
         use RawInstruction::*;
         let opcode: u8 = decoder.read()?;
         let instruction = match opcode {
             0x32 => AALoad,
             0x53 => AAStore,
             0x01 => AConstNull,
-            0x19 => ALoad {
-                index: decoder.read()?,
-            },
+            0x19 => ALoad { index: decoder.read()? },
             0x2a => ALoad0,
             0x2b => ALoad1,
             0x2c => ALoad2,
             0x2d => ALoad3,
-            0xbd => ANewArray {
-                index: decoder.read()?,
-            },
+            0xbd => ANewArray { index: decoder.read()? },
             0xb0 => AReturn,
             0xbe => ArrayLength,
-            0x3a => AStore {
-                index: decoder.read()?,
-            },
+            0x3a => AStore { index: decoder.read()? },
             0x4b => AStore0,
             0x4c => AStore1,
             0x4d => AStore2,
@@ -581,14 +572,10 @@ impl<'a> RawInstruction<'a> {
             0xbf => AThrow,
             0x33 => BALoad,
             0x54 => BAStore,
-            0x10 => BIPush {
-                value: decoder.read()?,
-            },
+            0x10 => BIPush { value: decoder.read()? },
             0x34 => CALoad,
             0x55 => CAStore,
-            0xc0 => CheckCast {
-                index: decoder.read()?,
-            },
+            0xc0 => CheckCast { index: decoder.read()? },
             0x90 => D2F,
             0x8e => D2I,
             0x8f => D2L,
@@ -600,9 +587,7 @@ impl<'a> RawInstruction<'a> {
             0x0e => DConst0,
             0x0f => DConst1,
             0x6f => DDiv,
-            0x18 => DLoad {
-                index: decoder.read()?,
-            },
+            0x18 => DLoad { index: decoder.read()? },
             0x26 => DLoad0,
             0x27 => DLoad1,
             0x28 => DLoad2,
@@ -611,9 +596,7 @@ impl<'a> RawInstruction<'a> {
             0x77 => DNeg,
             0x73 => DRem,
             0xaf => DReturn,
-            0x39 => DStore {
-                index: decoder.read()?,
-            },
+            0x39 => DStore { index: decoder.read()? },
             0x47 => DStore0,
             0x48 => DStore1,
             0x49 => DStore2,
@@ -637,9 +620,7 @@ impl<'a> RawInstruction<'a> {
             0x0c => FConst1,
             0x0d => FConst2,
             0x6e => FDiv,
-            0x17 => FLoad {
-                index: decoder.read()?,
-            },
+            0x17 => FLoad { index: decoder.read()? },
             0x22 => FLoad0,
             0x23 => FLoad1,
             0x24 => FLoad2,
@@ -648,20 +629,14 @@ impl<'a> RawInstruction<'a> {
             0x76 => FNeg,
             0x72 => FRem,
             0xae => FReturn,
-            0x38 => FStore {
-                index: decoder.read()?,
-            },
+            0x38 => FStore { index: decoder.read()? },
             0x43 => FStore0,
             0x44 => FStore1,
             0x45 => FStore2,
             0x46 => FStore3,
             0x66 => FSub,
-            0xb4 => GetField {
-                index: decoder.read()?,
-            },
-            0xb2 => GetStatic {
-                index: decoder.read()?,
-            },
+            0xb4 => GetField { index: decoder.read()? },
+            0xb2 => GetStatic { index: decoder.read()? },
             0xa7 => Goto {
                 offset: decoder.read()?,
             },
@@ -738,25 +713,18 @@ impl<'a> RawInstruction<'a> {
                 index: decoder.read()?,
                 value: decoder.read()?,
             },
-            0x15 => ILoad {
-                index: decoder.read()?,
-            },
+            0x15 => ILoad { index: decoder.read()? },
             0x1a => ILoad0,
             0x1b => ILoad1,
             0x1c => ILoad2,
             0x1d => ILoad3,
             0x68 => IMul,
             0x74 => INeg,
-            0xc1 => InstanceOf {
-                index: decoder.read()?,
-            },
+            0xc1 => InstanceOf { index: decoder.read()? },
             0xba => {
                 let index = decoder.read()?;
                 if decoder.read::<u8>()? != 0 || decoder.read::<u8>()? != 0 {
-                    return Err(DecodeError::from_decoder(
-                        DecodeErrorKind::InvalidInstruction,
-                        decoder,
-                    ));
+                    return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder));
                 }
                 InvokeDynamic { index }
             }
@@ -764,30 +732,19 @@ impl<'a> RawInstruction<'a> {
                 let index = decoder.read()?;
                 let count = decoder.read()?;
                 if decoder.read::<u8>()? != 0 {
-                    return Err(DecodeError::from_decoder(
-                        DecodeErrorKind::InvalidInstruction,
-                        decoder,
-                    ));
+                    return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder));
                 }
                 InvokeInterface { index, count }
             }
-            0xb7 => InvokeSpecial {
-                index: decoder.read()?,
-            },
-            0xb8 => InvokeStatic {
-                index: decoder.read()?,
-            },
-            0xb6 => InvokeVirtual {
-                index: decoder.read()?,
-            },
+            0xb7 => InvokeSpecial { index: decoder.read()? },
+            0xb8 => InvokeStatic { index: decoder.read()? },
+            0xb6 => InvokeVirtual { index: decoder.read()? },
             0x80 => IOr,
             0x70 => IRem,
             0xac => IReturn,
             0x78 => IShL,
             0x7a => IShR,
-            0x36 => IStore {
-                index: decoder.read()?,
-            },
+            0x36 => IStore { index: decoder.read()? },
             0x3b => IStore0,
             0x3c => IStore1,
             0x3d => IStore2,
@@ -814,16 +771,10 @@ impl<'a> RawInstruction<'a> {
             0x12 => LdC {
                 index: cpool::Index::new(decoder.read::<u8>()?.into())?,
             },
-            0x13 => LdCW {
-                index: decoder.read()?,
-            },
-            0x14 => LdC2W {
-                index: decoder.read()?,
-            },
+            0x13 => LdCW { index: decoder.read()? },
+            0x14 => LdC2W { index: decoder.read()? },
             0x6d => LDiv,
-            0x16 => LLoad {
-                index: decoder.read()?,
-            },
+            0x16 => LLoad { index: decoder.read()? },
             0x1e => LLoad0,
             0x1f => LLoad1,
             0x20 => LLoad2,
@@ -845,9 +796,7 @@ impl<'a> RawInstruction<'a> {
             0xad => LReturn,
             0x79 => LShL,
             0x7b => LShR,
-            0x37 => LStore {
-                index: decoder.read()?,
-            },
+            0x37 => LStore { index: decoder.read()? },
             0x3f => LStore0,
             0x40 => LStore1,
             0x41 => LStore2,
@@ -861,30 +810,18 @@ impl<'a> RawInstruction<'a> {
                 index: decoder.read()?,
                 dimensions: decoder.read()?,
             },
-            0xbb => New {
-                index: decoder.read()?,
-            },
-            0xbc => NewArray {
-                atype: decoder.read()?,
-            },
+            0xbb => New { index: decoder.read()? },
+            0xbc => NewArray { atype: decoder.read()? },
             0x00 => Nop,
             0x57 => Pop,
             0x58 => Pop2,
-            0xb5 => PutField {
-                index: decoder.read()?,
-            },
-            0xb3 => PutStatic {
-                index: decoder.read()?,
-            },
-            0xa9 => Ret {
-                index: decoder.read()?,
-            },
+            0xb5 => PutField { index: decoder.read()? },
+            0xb3 => PutStatic { index: decoder.read()? },
+            0xa9 => Ret { index: decoder.read()? },
             0xb1 => Return,
             0x35 => SALoad,
             0x56 => SAStore,
-            0x11 => SIPush {
-                value: decoder.read()?,
-            },
+            0x11 => SIPush { value: decoder.read()? },
             0x5f => Swap,
             0xaa => {
                 // skip padding
@@ -899,57 +836,25 @@ impl<'a> RawInstruction<'a> {
             0xc4 => {
                 let opcode: u8 = decoder.read()?;
                 match opcode {
-                    0x19 => ALoadW {
-                        index: decoder.read()?,
-                    },
-                    0x3a => AStoreW {
-                        index: decoder.read()?,
-                    },
-                    0x18 => DLoadW {
-                        index: decoder.read()?,
-                    },
-                    0x39 => DStoreW {
-                        index: decoder.read()?,
-                    },
-                    0x17 => FLoadW {
-                        index: decoder.read()?,
-                    },
-                    0x38 => FStoreW {
-                        index: decoder.read()?,
-                    },
-                    0x15 => ILoadW {
-                        index: decoder.read()?,
-                    },
-                    0x36 => IStoreW {
-                        index: decoder.read()?,
-                    },
-                    0x16 => LLoadW {
-                        index: decoder.read()?,
-                    },
-                    0x37 => LStoreW {
-                        index: decoder.read()?,
-                    },
-                    0xa9 => RetW {
-                        index: decoder.read()?,
-                    },
+                    0x19 => ALoadW { index: decoder.read()? },
+                    0x3a => AStoreW { index: decoder.read()? },
+                    0x18 => DLoadW { index: decoder.read()? },
+                    0x39 => DStoreW { index: decoder.read()? },
+                    0x17 => FLoadW { index: decoder.read()? },
+                    0x38 => FStoreW { index: decoder.read()? },
+                    0x15 => ILoadW { index: decoder.read()? },
+                    0x36 => IStoreW { index: decoder.read()? },
+                    0x16 => LLoadW { index: decoder.read()? },
+                    0x37 => LStoreW { index: decoder.read()? },
+                    0xa9 => RetW { index: decoder.read()? },
                     0x84 => IIncW {
                         index: decoder.read()?,
                         value: decoder.read()?,
                     },
-                    _ => {
-                        return Err(DecodeError::from_decoder(
-                            DecodeErrorKind::InvalidInstruction,
-                            decoder,
-                        ))
-                    }
+                    _ => return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder)),
                 }
             }
-            _ => {
-                return Err(DecodeError::from_decoder(
-                    DecodeErrorKind::InvalidInstruction,
-                    decoder,
-                ))
-            }
+            _ => return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder)),
         };
         Ok(instruction)
     }
@@ -969,10 +874,7 @@ impl<'a> Decode<'a> for ArrayType {
             9 => Ok(Short),
             10 => Ok(Int),
             11 => Ok(Long),
-            _ => Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidTag,
-                decoder,
-            )),
+            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
         }
     }
 }
@@ -983,10 +885,7 @@ impl<'a> Decode<'a> for TablePairs<'a> {
         let high: i32 = decoder.read()?;
         let count = (i64::from(high) - i64::from(low) + 1) * 4;
         if count < 0 {
-            return Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidInstruction,
-                decoder,
-            ));
+            return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder));
         }
         let count = count as usize;
         let pair_decoder = decoder.limit(count, Context::Code)?;
@@ -1004,10 +903,7 @@ impl<'a> Decode<'a> for LookupPairs<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let count = decoder.read::<i32>()?;
         if count < 0 {
-            return Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidInstruction,
-                decoder,
-            ));
+            return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder));
         }
         let byte_count = count as usize * 8;
         let pair_decoder = decoder.limit(byte_count, Context::Code)?;

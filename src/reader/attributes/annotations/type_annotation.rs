@@ -153,10 +153,7 @@ impl<'a> Decode<'a> for TargetType {
             0x49 => Ok(MethodInvocationTypeArgument),
             0x4A => Ok(ConstructorReferenceTypeArgument),
             0x4B => Ok(MethodReferenceTypeArgument),
-            _ => Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidTag,
-                decoder,
-            )),
+            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
         }
     }
 }
@@ -276,10 +273,7 @@ impl<'a> Decode<'a> for TypePathSegmentKind {
             0x01 => Ok(InnerType),
             0x02 => Ok(WildcardBound),
             0x03 => Ok(TypeArgument),
-            _ => Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidTag,
-                decoder,
-            )),
+            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
         }
     }
 }

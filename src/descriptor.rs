@@ -141,10 +141,7 @@ impl<'a> MethodDescriptor<'a> {
                 let return_index = (input.len() - chars.as_mstr().len()) as u16;
                 validate_type(chars.next(), &mut chars, true)?;
                 if chars.next().is_none() {
-                    return Ok(MethodDescriptor {
-                        input,
-                        return_index,
-                    });
+                    return Ok(MethodDescriptor { input, return_index });
                 }
             }
         }
@@ -337,10 +334,7 @@ mod test {
         eq("(I)V", &[TypeDescriptor::new(Integer, 0)], None);
         eq(
             "([[IF)V",
-            &[
-                TypeDescriptor::new(Integer, 2),
-                TypeDescriptor::new(Float, 0),
-            ],
+            &[TypeDescriptor::new(Integer, 2), TypeDescriptor::new(Float, 0)],
             None,
         );
         eq(

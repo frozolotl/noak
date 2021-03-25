@@ -1,6 +1,6 @@
 use crate::error::*;
-use crate::reader::cpool::{self, ConstantPool, Index};
 use crate::mutf8::MStr;
+use crate::reader::cpool::{self, ConstantPool, Index};
 
 pub trait ToValue<'a> {
     type Target;
@@ -104,9 +104,7 @@ impl<'a> ToValue<'a> for Index<cpool::Integer> {
 
     fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
-        Ok(Integer {
-            value: this.value,
-        })
+        Ok(Integer { value: this.value })
     }
 }
 
@@ -120,9 +118,7 @@ impl<'a> ToValue<'a> for Index<cpool::Long> {
 
     fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
-        Ok(Long {
-            value: this.value,
-        })
+        Ok(Long { value: this.value })
     }
 }
 
@@ -136,9 +132,7 @@ impl<'a> ToValue<'a> for Index<cpool::Float> {
 
     fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
-        Ok(Float {
-            value: this.value,
-        })
+        Ok(Float { value: this.value })
     }
 }
 
@@ -152,9 +146,7 @@ impl<'a> ToValue<'a> for Index<cpool::Double> {
 
     fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
-        Ok(Double {
-            value: this.value,
-        })
+        Ok(Double { value: this.value })
     }
 }
 

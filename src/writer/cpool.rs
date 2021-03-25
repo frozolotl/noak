@@ -151,9 +151,8 @@ impl Encode for Item {
         match self {
             Item::Utf8(v) => {
                 encoder.write(1u8)?;
-                let length = u16::try_from(v.content.len()).map_err(|_| {
-                    EncodeError::with_context(EncodeErrorKind::StringTooLong, Context::ConstantPool)
-                })?;
+                let length = u16::try_from(v.content.len())
+                    .map_err(|_| EncodeError::with_context(EncodeErrorKind::StringTooLong, Context::ConstantPool))?;
                 encoder.write(length)?;
                 encoder.write(v.content.as_bytes())?;
             }
@@ -260,10 +259,7 @@ impl FieldRef {
         Class: Insertable<self::Class>,
         Nat: Insertable<NameAndType>,
     {
-        FieldRefInserter {
-            class,
-            name_and_type,
-        }
+        FieldRefInserter { class, name_and_type }
     }
 }
 
@@ -279,10 +275,7 @@ impl MethodRef {
         Class: Insertable<self::Class>,
         Nat: Insertable<NameAndType>,
     {
-        MethodRefInserter {
-            class,
-            name_and_type,
-        }
+        MethodRefInserter { class, name_and_type }
     }
 }
 
@@ -293,18 +286,12 @@ pub struct InterfaceMethodRef {
 }
 
 impl InterfaceMethodRef {
-    pub fn by<Class, Nat>(
-        class: Class,
-        name_and_type: Nat,
-    ) -> InterfaceMethodRefInserter<Class, Nat>
+    pub fn by<Class, Nat>(class: Class, name_and_type: Nat) -> InterfaceMethodRefInserter<Class, Nat>
     where
         Class: Insertable<self::Class>,
         Nat: Insertable<NameAndType>,
     {
-        InterfaceMethodRefInserter {
-            class,
-            name_and_type,
-        }
+        InterfaceMethodRefInserter { class, name_and_type }
     }
 }
 
@@ -600,18 +587,16 @@ impl Insertable<Item> for Index<Item> {
 
 impl<I: Into<MString>> Insertable<Utf8> for I {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Utf8>, EncodeError> {
-        context.class_writer_mut().insert_constant(Utf8 {
-            content: self.into(),
-        })
+        context
+            .class_writer_mut()
+            .insert_constant(Utf8 { content: self.into() })
     }
 }
 
 impl<I: Insertable<Utf8>> Insertable<String> for I {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<String>, EncodeError> {
         let string = self.insert(context)?;
-        context
-            .class_writer_mut()
-            .insert_constant(String { string })
+        context.class_writer_mut().insert_constant(String { string })
     }
 }
 
@@ -624,9 +609,7 @@ impl<I: Insertable<Utf8>> Insertable<Class> for I {
 
 impl Insertable<Integer> for i32 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Integer>, EncodeError> {
-        context
-            .class_writer_mut()
-            .insert_constant(Integer { value: self })
+        context.class_writer_mut().insert_constant(Integer { value: self })
     }
 }
 
@@ -638,9 +621,7 @@ impl Insertable<Item> for i32 {
 
 impl Insertable<Long> for i64 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Long>, EncodeError> {
-        context
-            .class_writer_mut()
-            .insert_constant(Long { value: self })
+        context.class_writer_mut().insert_constant(Long { value: self })
     }
 }
 
@@ -652,9 +633,7 @@ impl Insertable<Item> for i64 {
 
 impl Insertable<Float> for f32 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Float>, EncodeError> {
-        context
-            .class_writer_mut()
-            .insert_constant(Float { value: self })
+        context.class_writer_mut().insert_constant(Float { value: self })
     }
 }
 
@@ -666,9 +645,7 @@ impl Insertable<Item> for f32 {
 
 impl Insertable<Double> for f64 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Double>, EncodeError> {
-        context
-            .class_writer_mut()
-            .insert_constant(Double { value: self })
+        context.class_writer_mut().insert_constant(Double { value: self })
     }
 }
 
@@ -700,10 +677,7 @@ pub struct MethodHandleInserter<I> {
 }
 
 impl<I: Insertable<Item>> Insertable<MethodHandle> for MethodHandleInserter<I> {
-    fn insert<Ctx: EncoderContext>(
-        self,
-        context: &mut Ctx,
-    ) -> Result<Index<MethodHandle>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<MethodHandle>, EncodeError> {
         let reference = self.reference.insert(context)?;
         context.class_writer_mut().insert_constant(MethodHandle {
             kind: self.kind,
@@ -723,14 +697,9 @@ pub struct MethodTypeInserter<I> {
 }
 
 impl<I: Insertable<Utf8>> Insertable<MethodType> for MethodTypeInserter<I> {
-    fn insert<Ctx: EncoderContext>(
-        self,
-        context: &mut Ctx,
-    ) -> Result<Index<MethodType>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<MethodType>, EncodeError> {
         let descriptor = self.descriptor.insert(context)?;
-        context
-            .class_writer_mut()
-            .insert_constant(MethodType { descriptor })
+        context.class_writer_mut().insert_constant(MethodType { descriptor })
     }
 }
 
@@ -767,10 +736,7 @@ pub struct InvokeDynamicInserter<I> {
 }
 
 impl<I: Insertable<NameAndType>> Insertable<InvokeDynamic> for InvokeDynamicInserter<I> {
-    fn insert<Ctx: EncoderContext>(
-        self,
-        context: &mut Ctx,
-    ) -> Result<Index<InvokeDynamic>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<InvokeDynamic>, EncodeError> {
         let name_and_type = self.name_and_type.insert(context)?;
         context.class_writer_mut().insert_constant(InvokeDynamic {
             bootstrap_method_attr: self.bootstrap_method_attr,
@@ -856,10 +822,7 @@ where
     Name: Insertable<Utf8>,
     Descriptor: Insertable<Utf8>,
 {
-    fn insert<Ctx: EncoderContext>(
-        self,
-        context: &mut Ctx,
-    ) -> Result<Index<NameAndType>, EncodeError> {
+    fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<NameAndType>, EncodeError> {
         let name = self.0.insert(context)?;
         let descriptor = self.1.insert(context)?;
         context
@@ -890,16 +853,12 @@ macro_rules! ref_inserter {
             Class: Insertable<self::Class>,
             Nat: Insertable<NameAndType>,
         {
-            fn insert<Ctx: EncoderContext>(
-                self,
-                context: &mut Ctx,
-            ) -> Result<Index<$out>, EncodeError> {
+            fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<$out>, EncodeError> {
                 let class = self.class.insert(context)?;
                 let name_and_type = self.name_and_type.insert(context)?;
-                context.class_writer_mut().insert_constant($out {
-                    class,
-                    name_and_type,
-                })
+                context
+                    .class_writer_mut()
+                    .insert_constant($out { class, name_and_type })
             }
         }
 
@@ -908,10 +867,7 @@ macro_rules! ref_inserter {
             Class: Insertable<self::Class>,
             Nat: Insertable<NameAndType>,
         {
-            fn insert<Ctx: EncoderContext>(
-                self,
-                context: &mut Ctx,
-            ) -> Result<Index<Item>, EncodeError> {
+            fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
                 Ok(<Self as Insertable<$out>>::insert(self, context)?.as_item())
             }
         }

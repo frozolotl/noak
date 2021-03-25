@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::writer::class::ClassWriter;
+use crate::writer::class::{ClassWriter, ClassWriterState};
 use std::convert::TryFrom;
 use std::marker::PhantomData;
 
@@ -138,10 +138,7 @@ pub struct ReplacingEncoder<'a> {
 
 impl<'a> Encoder for ReplacingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        assert!(
-            bytes.len() <= self.buf.len(),
-            "cannot replace bytes which do not exist"
-        );
+        assert!(bytes.len() <= self.buf.len(), "cannot replace bytes which do not exist");
         let (a, b) = std::mem::replace(&mut self.buf, &mut []).split_at_mut(bytes.len());
         a.copy_from_slice(&bytes);
         self.buf = b;
@@ -201,11 +198,7 @@ impl<Ctx: EncoderContext> LengthWriter<Ctx> {
         let length = u32::try_from(length.0)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))?;
         let position = self.length_offset.add(context.class_writer().pool_end);
-        context
-            .class_writer_mut()
-            .encoder
-            .replacing(position)
-            .write(length)?;
+        context.class_writer_mut().encoder.replacing(position).write(length)?;
         Ok(())
     }
 }
@@ -216,36 +209,40 @@ impl<E: Encoder> Encoder for &mut E {
     }
 }
 
+#[doc(hidden)]
 pub trait EncoderContext {
-    fn class_writer(&self) -> &ClassWriter;
-    fn class_writer_mut(&mut self) -> &mut ClassWriter;
+    type State: ClassWriterState::State;
+
+    fn class_writer(&self) -> &ClassWriter<Self::State>;
+    fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State>;
 }
 
 impl<'a, Ctx: EncoderContext> EncoderContext for &'a mut Ctx {
-    fn class_writer(&self) -> &ClassWriter {
+    type State = Ctx::State;
+
+    fn class_writer(&self) -> &ClassWriter<Self::State> {
         Ctx::class_writer(self)
     }
 
-    fn class_writer_mut(&mut self) -> &mut ClassWriter {
+    fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State> {
         Ctx::class_writer_mut(self)
     }
 }
 
-pub trait WriteBuilder<'a>: Sized {
+pub trait WriteAssembler<'a>: Sized {
     type Context: EncoderContext;
+    type Disassembler: WriteDisassembler<'a, Context = Self::Context>;
 
     fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError>;
+}
+
+pub trait WriteDisassembler<'a> {
+    type Context: EncoderContext;
+
     fn finish(self) -> Result<&'a mut Self::Context, EncodeError>;
 }
 
-pub trait WriteSimple<'a, I>: WriteBuilder<'a> {
-    fn write_simple(
-        context: &'a mut Self::Context,
-        to_write: I,
-    ) -> Result<&'a mut Self::Context, EncodeError>;
-}
-
-pub struct CountedWriter<'a, W: WriteBuilder<'a>, Count> {
+pub struct CountedWriter<'a, W: WriteAssembler<'a>, Count> {
     /// The offset of the counter starting at the pool end.
     count_offset: Offset,
     context: Option<&'a mut W::Context>,
@@ -253,12 +250,13 @@ pub struct CountedWriter<'a, W: WriteBuilder<'a>, Count> {
     marker: PhantomData<W>,
 }
 
-impl<'a, W, Count> WriteBuilder<'a> for CountedWriter<'a, W, Count>
+impl<'a, W, Count> WriteAssembler<'a> for CountedWriter<'a, W, Count>
 where
-    W: WriteBuilder<'a> + 'a,
+    W: WriteAssembler<'a> + 'a,
     Count: Encode + Counter,
 {
     type Context = W::Context;
+    type Disassembler = Self;
 
     fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
         let count_offset = context
@@ -275,6 +273,14 @@ where
             marker: PhantomData,
         })
     }
+}
+
+impl<'a, W, Count> WriteDisassembler<'a> for CountedWriter<'a, W, Count>
+where
+    W: WriteAssembler<'a> + 'a,
+    Count: Encode + Counter,
+{
+    type Context = W::Context;
 
     fn finish(mut self) -> Result<&'a mut Self::Context, EncodeError> {
         self.context
@@ -285,21 +291,17 @@ where
 
 impl<'a, W, Count> CountedWriter<'a, W, Count>
 where
-    W: WriteBuilder<'a> + 'a,
+    W: WriteAssembler<'a> + 'a,
     Count: Encode + Counter,
 {
-    pub fn write<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
-    where
-        F: for<'f> FnOnce(&'f mut W) -> Result<(), EncodeError>,
-    {
-        let context = self.context.take().ok_or_else(|| {
-            EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
-        })?;
+    pub fn begin<F: WriteOnce<'a, W>>(&mut self, f: F) -> Result<&mut Self, EncodeError> {
+        let context = self
+            .context
+            .take()
+            .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None))?;
         self.count.check()?;
 
-        let mut builder = W::new(context)?;
-        f(&mut builder)?;
-        let context = builder.finish()?;
+        let context = f.write_once(W::new(context)?)?.finish()?;
 
         self.count.increment()?;
         let position = self.count_offset.add(context.class_writer().pool_end);
@@ -309,28 +311,6 @@ where
             .replacing(position)
             .write(&self.count)?;
         self.context = Some(context);
-        Ok(self)
-    }
-
-    pub fn write_simple<I>(&mut self, item: I) -> Result<&mut Self, EncodeError>
-    where
-        W: WriteSimple<'a, I>,
-    {
-        let context = self.context.take().ok_or_else(|| {
-            EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None)
-        })?;
-
-        let context = W::write_simple(context, item)?;
-
-        self.count.increment()?;
-        let position = self.count_offset.add(context.class_writer().pool_end);
-        context
-            .class_writer_mut()
-            .encoder
-            .replacing(position)
-            .write(&self.count)?;
-        self.context = Some(context);
-
         Ok(self)
     }
 }
@@ -377,3 +357,55 @@ macro_rules! impl_counter {
 
 impl_counter!(u8);
 impl_counter!(u16);
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __enc_state {
+    ($vis:vis mod $mod:ident : $($state:ident),* $(,)?) => {
+        #[allow(non_snake_case)]
+        $vis mod $mod {
+            pub trait State: sealed::Sealed {}
+
+            $(
+                pub struct $state(std::convert::Infallible);
+                impl State for $state {}
+            )*
+
+            mod sealed {
+                pub trait Sealed {}
+                $(
+                    impl Sealed for super::$state {}
+                )*
+            }
+        }
+    };
+}
+
+pub trait WriteOnce<'a, W: WriteAssembler<'a>> {
+    fn write_once(self, writer: W) -> Result<W::Disassembler, EncodeError>;
+}
+
+impl<'a, W: WriteAssembler<'a>, F> WriteOnce<'a, W> for F
+where
+    F: FnOnce(W) -> Result<W::Disassembler, EncodeError>,
+{
+    fn write_once(self, writer: W) -> Result<W::Disassembler, EncodeError> {
+        self(writer)
+    }
+}
+
+// -        F: for<'f> FnOnce(&mut CountedWriter<'f, InterfaceWriter<'f>, u16>) -> Result<(), EncodeError>,
+// +        F: for<'f> CountedWrite<'a, 'f, InterfaceWriter<'f, InterfaceWriterState::Start>, u16>,
+
+pub trait CountedWrite<'a, W: WriteAssembler<'a> + 'a, N> {
+    fn write_to(self, writer: &mut CountedWriter<'a, W, N>) -> Result<(), EncodeError>;
+}
+
+impl<'a, W: WriteAssembler<'a> + 'a, N, F> CountedWrite<'a, W, N> for F
+where
+    F: for<'g> FnOnce(&mut CountedWriter<'g, W, N>) -> Result<(), EncodeError>,
+{
+    fn write_to(self, writer: &mut CountedWriter<'a, W, N>) -> Result<(), EncodeError> {
+        self(writer)
+    }
+}

@@ -99,10 +99,7 @@ impl ops::Index<ops::Range<usize>> for MStr {
 
     #[inline]
     fn index(&self, index: ops::Range<usize>) -> &MStr {
-        if index.start <= index.end
-            && self.is_char_boundary(index.start)
-            && self.is_char_boundary(index.end)
-        {
+        if index.start <= index.end && self.is_char_boundary(index.start) && self.is_char_boundary(index.end) {
             unsafe { MStr::from_mutf8_unchecked(&self.inner.get_unchecked(index)) }
         } else {
             panic!("MUtf8 index out of bounds");
@@ -425,9 +422,7 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                 }
                 3 => {
                     // width = 3
-                    if v[i + 1] & 0b1100_0000 != 0b1000_0000
-                        || v[i + 2] & 0b1100_0000 != 0b1000_0000
-                    {
+                    if v[i + 1] & 0b1100_0000 != 0b1000_0000 || v[i + 2] & 0b1100_0000 != 0b1000_0000 {
                         return false;
                     }
                     // overlong encodings are not allowed
@@ -461,20 +456,14 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Option<char>) {
     }
 
     if v[0] == 0b1110_1101 {
-        if v.len() >= 6
-            && v[1] & 0b1111_0000 == 0b1010_0000
-            && v[3] == 0b1110_1101
-            && v[4] & 0b1111_0000 == 0b1011_0000
+        if v.len() >= 6 && v[1] & 0b1111_0000 == 0b1010_0000 && v[3] == 0b1110_1101 && v[4] & 0b1111_0000 == 0b1011_0000
         {
             // six byte case (paired surrogate)
             let c2 = u32::from(v[1] & 0b0000_1111) << 16;
             let c3 = u32::from(v[2] & 0b0011_1111) << 10;
             let c5 = u32::from(v[4] & 0b0000_1111) << 6;
             let c6 = u32::from(v[5] & 0b0011_1111);
-            return (
-                6,
-                Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)),
-            );
+            return (6, Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)));
         }
 
         // unpaired surrogates
@@ -513,19 +502,13 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Option<char>) {
             let b4 = v[v.len() - 4];
             let b5 = v[v.len() - 5];
             let b6 = v[v.len() - 6];
-            if b2 & 0b1111_0000 == 0b1011_0000
-                && b5 & 0b1111_0000 == 0b1010_0000
-                && b6 == 0b1110_1101
-            {
+            if b2 & 0b1111_0000 == 0b1011_0000 && b5 & 0b1111_0000 == 0b1010_0000 && b6 == 0b1110_1101 {
                 // six byte case
                 let c2 = u32::from(b5 & 0b0000_1111) << 16;
                 let c3 = u32::from(b4 & 0b0011_1111) << 10;
                 let c5 = u32::from(b2 & 0b0000_1111) << 6;
                 let c6 = u32::from(b1 & 0b0011_1111);
-                return (
-                    6,
-                    Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)),
-                );
+                return (6, Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)));
             }
         }
         if b2 & 0b1110_0000 == 0b1010_0000 {

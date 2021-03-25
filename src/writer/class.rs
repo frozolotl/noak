@@ -1,12 +1,14 @@
+use std::marker::PhantomData;
+
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
 use crate::writer::{
-    attributes::AttributeWriter,
+    attributes::{AttributeWriter, AttributeWriterState},
     cpool::{self, ConstantPool},
     encoding::*,
-    fields::FieldWriter,
-    interfaces::InterfaceWriter,
-    methods::MethodWriter,
+    fields::{FieldWriter, FieldWriterState},
+    interfaces::{InterfaceWriter, InterfaceWriterState},
+    methods::{MethodWriter, MethodWriterState},
 };
 
 const CAFEBABE_END: Offset = Offset::new(4);
@@ -21,12 +23,12 @@ const EMPTY_POOL_END: Offset = POOL_START.offset(2);
 /// use noak::AccessFlags;
 ///
 /// let buf = ClassWriter::new()
-///     .write_access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
-///     .write_this_class("com/example/Example")?
-///     .write_super_class("java/lang/Object")?
-///     .write_attributes(|writer| {
+///     .access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
+///     .this_class("com/example/Example")?
+///     .super_class("java/lang/Object")?
+///     .attributes(|writer| {
 ///         writer.write(|writer| {
-///             writer.write_source_file("Example.java")?;
+///             writer.source_file("Example.java")?;
 ///             Ok(())
 ///         })?;
 ///         Ok(())
@@ -35,80 +37,66 @@ const EMPTY_POOL_END: Offset = POOL_START.offset(2);
 /// # Ok::<(), noak::error::EncodeError>(())
 /// ```
 #[derive(Clone)]
-pub struct ClassWriter {
+pub struct ClassWriter<State: ClassWriterState::State> {
     pub(crate) encoder: VecEncoder,
-    state: WriteState,
-
     pool: ConstantPool,
     pub(crate) pool_end: Offset,
+    _marker: PhantomData<State>,
 }
 
-impl Default for ClassWriter {
-    fn default() -> ClassWriter {
+impl Default for ClassWriter<ClassWriterState::Start> {
+    fn default() -> ClassWriter<ClassWriterState::Start> {
         ClassWriter::new()
     }
 }
 
-impl ClassWriter {
+impl ClassWriter<ClassWriterState::Start> {
     /// Creates a new class writer with a sensitive initial capacity.
-    pub fn new() -> ClassWriter {
+    pub fn new() -> ClassWriter<ClassWriterState::Start> {
         ClassWriter::with_capacity(2048)
     }
 
     /// Creates a new class writer with a specific capacity.
-    pub fn with_capacity(capacity: usize) -> ClassWriter {
+    pub fn with_capacity(capacity: usize) -> ClassWriter<ClassWriterState::Start> {
         ClassWriter {
             encoder: VecEncoder::new(Vec::with_capacity(capacity)),
-            state: WriteState::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
+            _marker: PhantomData,
         }
     }
 
     /// Creates a new class writer and uses an existing buffer.
     /// The existing data on the buffer will be cleared.
-    pub fn with_buffer(mut buffer: Vec<u8>) -> ClassWriter {
+    pub fn with_buffer(mut buffer: Vec<u8>) -> ClassWriter<ClassWriterState::Start> {
         buffer.clear();
         ClassWriter {
             encoder: VecEncoder::new(buffer),
-            state: WriteState::Start,
             pool: ConstantPool::new(),
             pool_end: EMPTY_POOL_END,
+            _marker: PhantomData,
         }
     }
 
-    pub fn write_version(&mut self, version: Version) -> Result<&mut Self, EncodeError> {
-        if self.state == WriteState::Start {
-            self.encoder.write(0xCAFE_BABEu32)?;
-            self.encoder.write(version.minor)?;
-            self.encoder.write(version.major)?;
-            self.state = WriteState::ConstantPool;
-        } else {
-            let mut encoder = self.encoder.replacing(CAFEBABE_END);
-            encoder.write(version.minor)?;
-            encoder.write(version.major)?;
-        }
-        Ok(self)
+    pub fn version(mut self, version: Version) -> Result<ClassWriter<ClassWriterState::AccessFlags>, EncodeError> {
+        self.encoder.write(0xCAFE_BABEu32)?;
+        self.encoder.write(version.minor)?;
+        self.encoder.write(version.major)?;
+
+        // constant pool length
+        self.encoder.write(1u16)?;
+
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
     }
+}
 
-    fn write_empty_pool(&mut self) -> Result<&mut Self, EncodeError> {
-        if self.state == WriteState::Start {
-            self.write_version(Version::latest())?;
-        }
-
-        if self.state == WriteState::ConstantPool {
-            self.encoder.write(1u16)?;
-            self.state = WriteState::AccessFlags;
-        }
-        Ok(self)
-    }
-
-    pub fn insert_constant<I: Into<cpool::Item>>(
-        &mut self,
-        item: I,
-    ) -> Result<cpool::Index<I>, EncodeError> {
-        self.write_empty_pool()?;
-
+impl<State: ClassWriterState::State> ClassWriter<State> {
+    pub fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
         let mut encoder = self.encoder.inserting(self.pool_end);
 
         let index = self.pool.insert(item, &mut encoder)?;
@@ -118,160 +106,145 @@ impl ClassWriter {
 
         Ok(index)
     }
+}
 
-    pub fn write_access_flags(&mut self, flags: AccessFlags) -> Result<&mut Self, EncodeError> {
-        self.write_empty_pool()?;
-        EncodeError::result_from_state(self.state, &WriteState::AccessFlags, Context::ClassInfo)?;
+impl ClassWriter<ClassWriterState::AccessFlags> {
+    pub fn access_flags(mut self, flags: AccessFlags) -> Result<ClassWriter<ClassWriterState::ThisClass>, EncodeError> {
         self.encoder.write(flags)?;
-        self.state = WriteState::ThisClass;
-        Ok(self)
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
     }
+}
 
-    pub fn write_this_class<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+impl ClassWriter<ClassWriterState::ThisClass> {
+    pub fn this_class<I>(mut self, name: I) -> Result<ClassWriter<ClassWriterState::SuperClass>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        EncodeError::result_from_state(self.state, &WriteState::ThisClass, Context::ClassInfo)?;
-        let index = name.insert(self)?;
+        let index = name.insert(&mut self)?;
         self.encoder.write(index)?;
-        self.state = WriteState::SuperClass;
-        Ok(self)
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
     }
+}
 
-    pub fn write_super_class<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+impl ClassWriter<ClassWriterState::SuperClass> {
+    pub fn super_class<I>(mut self, name: I) -> Result<ClassWriter<ClassWriterState::Interfaces>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        EncodeError::result_from_state(self.state, &WriteState::SuperClass, Context::ClassInfo)?;
-        let index = name.insert(self)?;
+        let index = name.insert(&mut self)?;
         self.encoder.write(index)?;
-        self.state = WriteState::Interfaces;
-        Ok(self)
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
     }
 
-    pub fn write_no_super_class(&mut self) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::SuperClass, Context::ClassInfo)?;
-        self.encoder
-            .write::<Option<cpool::Index<cpool::Class>>>(None)?;
-        self.state = WriteState::Interfaces;
-        Ok(self)
-    }
-
-    pub fn write_interfaces<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
-    where
-        F: for<'f> FnOnce(
-            &mut CountedWriter<'f, InterfaceWriter<'f>, u16>,
-        ) -> Result<(), EncodeError>,
-    {
-        EncodeError::result_from_state(self.state, &WriteState::Interfaces, Context::Interfaces)?;
-        let mut builder = CountedWriter::new(self)?;
-        f(&mut builder)?;
-        self.state = WriteState::Fields;
-        Ok(self)
-    }
-
-    pub fn write_fields<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
-    where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, FieldWriter<'f>, u16>) -> Result<(), EncodeError>,
-    {
-        self.write_zero_interfaces()?;
-        EncodeError::result_from_state(self.state, &WriteState::Fields, Context::Fields)?;
-        let mut builder = CountedWriter::new(self)?;
-        f(&mut builder)?;
-        self.state = WriteState::Methods;
-        Ok(self)
-    }
-
-    pub fn write_methods<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
-    where
-        F: for<'f> FnOnce(&mut CountedWriter<'f, MethodWriter<'f>, u16>) -> Result<(), EncodeError>,
-    {
-        self.write_zero_fields()?;
-        EncodeError::result_from_state(self.state, &WriteState::Methods, Context::Methods)?;
-        let mut builder = CountedWriter::new(self)?;
-        f(&mut builder)?;
-        self.state = WriteState::Attributes;
-        Ok(self)
-    }
-
-    pub fn write_attributes<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
-    where
-        F: for<'f> FnOnce(
-            &mut CountedWriter<'f, AttributeWriter<'f, ClassWriter>, u16>,
-        ) -> Result<(), EncodeError>,
-    {
-        self.write_zero_methods()?;
-        EncodeError::result_from_state(self.state, &WriteState::Attributes, Context::Attributes)?;
-        let mut builder = CountedWriter::new(self)?;
-        f(&mut builder)?;
-        self.state = WriteState::Finished;
-
-        Ok(self)
-    }
-
-    fn write_zero_interfaces(&mut self) -> Result<(), EncodeError> {
-        if EncodeError::can_write(self.state, &WriteState::Interfaces, Context::Interfaces)? {
-            self.write_interfaces(|_| Ok(()))?;
-        }
-        Ok(())
-    }
-
-    fn write_zero_fields(&mut self) -> Result<(), EncodeError> {
-        self.write_zero_interfaces()?;
-        if EncodeError::can_write(self.state, &WriteState::Fields, Context::Fields)? {
-            self.write_fields(|_| Ok(()))?;
-        }
-        Ok(())
-    }
-
-    fn write_zero_methods(&mut self) -> Result<(), EncodeError> {
-        self.write_zero_fields()?;
-        if EncodeError::can_write(self.state, &WriteState::Methods, Context::Methods)? {
-            self.write_methods(|_| Ok(()))?;
-        }
-        Ok(())
-    }
-
-    fn write_zero_attributes(&mut self) -> Result<(), EncodeError> {
-        self.write_zero_methods()?;
-        if EncodeError::can_write(self.state, &WriteState::Attributes, Context::Attributes)? {
-            self.write_attributes(|_| Ok(()))?;
-        }
-        Ok(())
-    }
-
-    pub fn finish(&mut self) -> Result<Vec<u8>, EncodeError> {
-        self.write_zero_attributes()?;
-        // we can't move the encoder out of the ClassWriter, so we just replace it
-        // this should be fairly cheap or even optimized away by the compiler
-        // any code that wouldn't work after calling this method should throw an error
-        let encoder = std::mem::replace(&mut self.encoder, VecEncoder::new(Vec::new()));
-        Ok(encoder.into_inner())
+    pub fn no_super_class(mut self) -> Result<ClassWriter<ClassWriterState::Interfaces>, EncodeError> {
+        self.encoder.write::<Option<cpool::Index<cpool::Class>>>(None)?;
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
     }
 }
 
-impl EncoderContext for ClassWriter {
-    fn class_writer(&self) -> &ClassWriter {
+impl ClassWriter<ClassWriterState::Interfaces> {
+    pub fn interfaces<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Fields>, EncodeError>
+    where
+        F: for<'f> CountedWrite<'f, InterfaceWriter<'f, InterfaceWriterState::Start>, u16>,
+    {
+        let mut builder = CountedWriter::new(&mut self)?;
+        f.write_to(&mut builder)?;
+        builder.finish()?;
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl ClassWriter<ClassWriterState::Fields> {
+    pub fn fields<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Methods>, EncodeError>
+    where
+        F: for<'f> CountedWrite<'f, FieldWriter<'f, FieldWriterState::AccessFlags>, u16>,
+    {
+        let mut builder = CountedWriter::new(&mut self)?;
+        f.write_to(&mut builder)?;
+        builder.finish()?;
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl ClassWriter<ClassWriterState::Methods> {
+    pub fn methods<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Attributes>, EncodeError>
+    where
+        F: for<'f> CountedWrite<'f, MethodWriter<'f, MethodWriterState::AccessFlags>, u16>,
+    {
+        let mut builder = CountedWriter::new(&mut self)?;
+        f.write_to(&mut builder)?;
+        builder.finish()?;
+        Ok(ClassWriter {
+            encoder: self.encoder,
+            pool: self.pool,
+            pool_end: self.pool_end,
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl ClassWriter<ClassWriterState::Attributes> {
+    pub fn attributes<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+    where
+        F: for<'f> CountedWrite<
+            'f,
+            AttributeWriter<'f, ClassWriter<ClassWriterState::Attributes>, AttributeWriterState::Start>,
+            u16,
+        >,
+    {
+        let mut builder = CountedWriter::new(self)?;
+        f.write_to(&mut builder)?;
+
+        Ok(self)
+    }
+}
+
+impl ClassWriter<ClassWriterState::End> {
+    pub fn finish(self) -> Result<Vec<u8>, EncodeError> {
+        Ok(self.encoder.into_inner())
+    }
+}
+
+impl<State: ClassWriterState::State> EncoderContext for ClassWriter<State> {
+    type State = State;
+
+    fn class_writer(&self) -> &ClassWriter<Self::State> {
         self
     }
 
-    fn class_writer_mut(&mut self) -> &mut ClassWriter {
+    fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State> {
         self
     }
 }
 
-/// What's written next
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum WriteState {
-    // Version numbers
-    Start,
-    ConstantPool,
-    AccessFlags,
-    ThisClass,
-    SuperClass,
-    Interfaces,
-    Fields,
-    Methods,
-    Attributes,
-    Finished,
-}
+crate::__enc_state!(pub mod ClassWriterState: Start, AccessFlags, ThisClass, SuperClass, Interfaces, Fields, Methods, Attributes, End);

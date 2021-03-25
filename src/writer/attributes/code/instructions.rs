@@ -1,15 +1,15 @@
 mod lookupswitch;
 mod tableswitch;
 
-pub use lookupswitch::*;
-pub use tableswitch::*;
+pub use lookupswitch::{LookupSwitchWriter, LookupSwitchWriterState};
+pub use tableswitch::{TableSwitchWriter, TableSwitchWriterState};
 
 use crate::error::*;
 use crate::reader::{attributes::RawInstruction, decoding::*};
 use crate::writer::{attributes::code::*, cpool, encoding::*};
 
 pub struct InstructionWriter<'a, 'b, Ctx> {
-    code_writer: &'a mut CodeWriter<'b, Ctx>,
+    code_writer: &'a mut CodeWriter<'b, Ctx, CodeWriterState::Instructions>,
     start_offset: Offset,
 }
 
@@ -29,9 +29,11 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
     }
 
     pub fn write_label(&mut self, label: Label) -> Result<&mut Self, EncodeError> {
-        let offset = self.current_offset().get().checked_add(1).ok_or_else(|| {
-            EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::Code)
-        })?;
+        let offset = self
+            .current_offset()
+            .get()
+            .checked_add(1)
+            .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::Code))?;
         let offset = u32::try_from(offset)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::Code))?;
         self.code_writer.label_positions[label.0 as usize] = NonZeroU32::new(offset);
@@ -577,11 +579,7 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_goto(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa7u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa7u8)?.write(i)?;
             Ok(self)
         } else {
             self.write_gotow(label)
@@ -689,257 +687,145 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_ifacmpeq(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa5u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa5u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifacmpne(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa6u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa6u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ificmpeq(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0x9fu8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0x9fu8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ificmpne(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa0u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa0u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ificmplt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa1u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa1u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ificmpge(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa2u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa2u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ificmpgt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa3u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa3u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ificmple(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa4u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa4u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifeq(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0x99u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0x99u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifne(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0x9au8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0x9au8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_iflt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0x9bu8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0x9bu8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifge(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0x9cu8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0x9cu8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifgt(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0x9du8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0x9du8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifle(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0x9eu8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0x9eu8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifnonnull(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xc7u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xc7u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
     pub fn write_ifnull(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xc6u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xc6u8)?.write(i)?;
             Ok(self)
         } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::LabelTooFar,
-                Context::Code,
-            ))
+            Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
         }
     }
 
@@ -1041,11 +927,7 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
         Ok(self)
     }
 
-    pub fn write_invokeinterface<I>(
-        &mut self,
-        method: I,
-        count: u8,
-    ) -> Result<&mut Self, EncodeError>
+    pub fn write_invokeinterface<I>(&mut self, method: I, count: u8) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::InterfaceMethodRef>,
     {
@@ -1180,11 +1062,7 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_jsr(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
         if let Ok(i) = u16::try_from(label.0) {
-            self.code_writer
-                .class_writer_mut()
-                .encoder
-                .write(0xa8u8)?
-                .write(i)?;
+            self.code_writer.class_writer_mut().encoder.write(0xa8u8)?.write(i)?;
             Ok(self)
         } else {
             self.write_jsrw(label)
@@ -1254,12 +1132,9 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
     where
         I: cpool::Insertable<cpool::Item>,
     {
-        let index = constant
-            .insert(self.code_writer.class_writer_mut())?
-            .as_u16();
-        let index = u8::try_from(index).map_err(|_| {
-            EncodeError::with_context(EncodeErrorKind::IndexNotFitting, Context::Code)
-        })?;
+        let index = constant.insert(self.code_writer.class_writer_mut())?.as_u16();
+        let index = u8::try_from(index)
+            .map_err(|_| EncodeError::with_context(EncodeErrorKind::IndexNotFitting, Context::Code))?;
         self.code_writer
             .class_writer_mut()
             .encoder
@@ -1350,11 +1225,9 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_lookupswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut LookupSwitchWriter<'f, 'a, 'b, Ctx>) -> Result<(), EncodeError>,
+        F: for<'f> WriteOnce<'f, LookupSwitchWriter<'f, 'a, 'b, Ctx, LookupSwitchWriterState::Default>>,
     {
-        let mut builder = LookupSwitchWriter::new(self)?;
-        f(&mut builder)?;
-        builder.finish()?;
+        f.write_once(LookupSwitchWriter::new(self)?)?.finish()?;
 
         Ok(self)
     }
@@ -1448,11 +1321,7 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
         Ok(self)
     }
 
-    pub fn write_multianewarray<I>(
-        &mut self,
-        array_type: I,
-        dimensions: u8,
-    ) -> Result<&mut Self, EncodeError>
+    pub fn write_multianewarray<I>(&mut self, array_type: I, dimensions: u8) -> Result<&mut Self, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
@@ -1578,18 +1447,17 @@ impl<'a, 'b, Ctx: EncoderContext> InstructionWriter<'a, 'b, Ctx> {
 
     pub fn write_tableswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> FnOnce(&mut TableSwitchWriter<'f, 'a, 'b, Ctx>) -> Result<(), EncodeError>,
+        F: for<'f> WriteOnce<'f, TableSwitchWriter<'f, 'a, 'b, Ctx, TableSwitchWriterState::Default>>,
     {
-        let mut builder = TableSwitchWriter::new(self)?;
-        f(&mut builder)?;
-        builder.finish()?;
+        f.write_once(TableSwitchWriter::new(self)?)?.finish()?;
 
         Ok(self)
     }
 }
 
-impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b, Ctx> {
-    type Context = CodeWriter<'b, Ctx>;
+impl<'a, 'b, Ctx: EncoderContext> WriteAssembler<'a> for InstructionWriter<'a, 'b, Ctx> {
+    type Context = CodeWriter<'b, Ctx, CodeWriterState::Instructions>;
+    type Disassembler = InstructionWriter<'a, 'b, Ctx>;
 
     fn new(code_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
         let start_offset = code_writer
@@ -1602,11 +1470,13 @@ impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b,
             start_offset,
         })
     }
+}
+
+impl<'a, 'b, Ctx: EncoderContext> WriteDisassembler<'a> for InstructionWriter<'a, 'b, Ctx> {
+    type Context = CodeWriter<'b, Ctx, CodeWriterState::Instructions>;
 
     fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
-        let start_offset = self
-            .start_offset
-            .add(self.code_writer.class_writer_mut().pool_end);
+        let start_offset = self.start_offset.add(self.code_writer.class_writer_mut().pool_end);
         let len = self.current_offset().get();
         let mut offset = 0;
         while offset < len {
@@ -1615,8 +1485,7 @@ impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b,
             let instruction_start = start_offset.offset(offset);
 
             // we need to create a new decoder in each iteration as the bytes are modified later on in this block
-            let mut decoder =
-                Decoder::new(self.code_writer.class_writer().encoder.buf(), Context::Code);
+            let mut decoder = Decoder::new(self.code_writer.class_writer().encoder.buf(), Context::Code);
             // slicing does not work here because the decoder uses the current offset to compute table- and lookupswitch paddings
             decoder
                 .advance(instruction_start.get())
@@ -1648,8 +1517,7 @@ impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b,
 
             macro_rules! jmp_i32 {
                 ($read_offset:expr) => {{
-                    let bytes =
-                        &self.code_writer.class_writer_mut().encoder.buf()[$read_offset.get()..];
+                    let bytes = &self.code_writer.class_writer_mut().encoder.buf()[$read_offset.get()..];
                     let mut decoder = Decoder::new(bytes, Context::Code);
                     let label_index = LabelRef(decoder.read::<u32>().unwrap());
                     let label_position = self.code_writer.get_label_position(label_index)?;
@@ -1666,97 +1534,61 @@ impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b,
             }
 
             match instruction {
-                Goto {
-                    offset: jump_offset,
-                } => {
+                Goto { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
                 GotoW { .. } => {
                     jmp_i32!(instruction_start.offset(1));
                 }
-                IfACmpEq {
-                    offset: jump_offset,
-                } => {
+                IfACmpEq { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfACmpNe {
-                    offset: jump_offset,
-                } => {
+                IfACmpNe { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfICmpEq {
-                    offset: jump_offset,
-                } => {
+                IfICmpEq { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfICmpNe {
-                    offset: jump_offset,
-                } => {
+                IfICmpNe { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfICmpLt {
-                    offset: jump_offset,
-                } => {
+                IfICmpLt { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfICmpGe {
-                    offset: jump_offset,
-                } => {
+                IfICmpGe { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfICmpGt {
-                    offset: jump_offset,
-                } => {
+                IfICmpGt { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfICmpLe {
-                    offset: jump_offset,
-                } => {
+                IfICmpLe { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfEq {
-                    offset: jump_offset,
-                } => {
+                IfEq { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfNe {
-                    offset: jump_offset,
-                } => {
+                IfNe { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfLt {
-                    offset: jump_offset,
-                } => {
+                IfLt { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfGe {
-                    offset: jump_offset,
-                } => {
+                IfGe { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfGt {
-                    offset: jump_offset,
-                } => {
+                IfGt { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfLe {
-                    offset: jump_offset,
-                } => {
+                IfLe { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfNonNull {
-                    offset: jump_offset,
-                } => {
+                IfNonNull { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                IfNull {
-                    offset: jump_offset,
-                } => {
+                IfNull { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
-                JSr {
-                    offset: jump_offset,
-                } => {
+                JSr { offset: jump_offset } => {
                     jmp_i16!(jump_offset);
                 }
                 JSrW { .. } => {
@@ -1802,11 +1634,13 @@ impl<'a, 'b, Ctx: EncoderContext> WriteBuilder<'a> for InstructionWriter<'a, 'b,
 }
 
 impl<'a, 'b, Ctx: EncoderContext> EncoderContext for InstructionWriter<'a, 'b, Ctx> {
-    fn class_writer(&self) -> &ClassWriter {
+    type State = Ctx::State;
+
+    fn class_writer(&self) -> &ClassWriter<Self::State> {
         self.code_writer.class_writer()
     }
 
-    fn class_writer_mut(&mut self) -> &mut ClassWriter {
+    fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State> {
         self.code_writer.class_writer_mut()
     }
 }

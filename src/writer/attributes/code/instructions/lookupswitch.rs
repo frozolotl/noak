@@ -1,26 +1,36 @@
+use std::marker::PhantomData;
+
 use crate::error::*;
 use crate::writer::{attributes::code::*, encoding::*};
 
-pub struct LookupSwitchWriter<'a, 'b, 'c, Ctx> {
+pub struct LookupSwitchWriter<'a, 'b, 'c, Ctx, State: LookupSwitchWriterState::State> {
     context: &'a mut InstructionWriter<'b, 'c, Ctx>,
-    state: WriteState,
     count_offset: Offset,
     count: u32,
     last_key: Option<i32>,
+    _marker: PhantomData<State>,
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, 'c, Ctx> {
-    pub fn write_default(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::Default, Context::Code)?;
-
+impl<'a, 'b, 'c, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, 'c, Ctx, LookupSwitchWriterState::Default> {
+    pub fn write_default(
+        self,
+        label: LabelRef,
+    ) -> Result<LookupSwitchWriter<'a, 'b, 'c, Ctx, LookupSwitchWriterState::Jumps>, EncodeError> {
         self.context.class_writer_mut().encoder.write(label.0)?;
-        self.state = WriteState::Jumps;
-        Ok(self)
-    }
 
+        Ok(LookupSwitchWriter {
+            context: self.context,
+            count_offset: self.count_offset,
+            count: self.count,
+            last_key: self.last_key,
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl<'a, 'b, 'c, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, 'c, Ctx, LookupSwitchWriterState::Jumps> {
     /// Write a key-label pair, where the keys must be written in an increasing numerical order.
-    pub fn write_pair(&mut self, key: i32, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::Jumps, Context::Code)?;
+    pub fn write_pair(mut self, key: i32, label: LabelRef) -> Result<Self, EncodeError> {
         if self.last_key.map_or(false, |last_key| last_key >= key) {
             return Err(EncodeError::with_context(
                 EncodeErrorKind::InvalidKeyOrder,
@@ -28,15 +38,14 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, 'c, Ctx> {
             ));
         }
 
-        self.count = self.count.checked_add(1).ok_or_else(|| {
-            EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code)
-        })?;
+        self.count = self
+            .count
+            .checked_add(1)
+            .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code))?;
         if self.count == 1 {
             self.context.class_writer_mut().encoder.write(self.count)?;
         } else {
-            let count_offset = self
-                .count_offset
-                .add(self.context.class_writer_mut().pool_end);
+            let count_offset = self.count_offset.add(self.context.class_writer_mut().pool_end);
             self.context
                 .class_writer_mut()
                 .encoder
@@ -44,20 +53,25 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> LookupSwitchWriter<'a, 'b, 'c, Ctx> {
                 .write(self.count)?;
         }
 
-        self.context
-            .class_writer_mut()
-            .encoder
-            .write(key)?
-            .write(label.0)?;
+        self.context.class_writer_mut().encoder.write(key)?.write(label.0)?;
 
         self.last_key = Some(key);
 
-        Ok(self)
+        Ok(LookupSwitchWriter {
+            context: self.context,
+            count_offset: self.count_offset,
+            count: self.count,
+            last_key: self.last_key,
+            _marker: PhantomData,
+        })
     }
 }
 
-impl<'a, 'b, 'c, Ctx: EncoderContext> WriteBuilder<'a> for LookupSwitchWriter<'a, 'b, 'c, Ctx> {
+impl<'a, 'b, 'c, Ctx: EncoderContext> WriteAssembler<'a>
+    for LookupSwitchWriter<'a, 'b, 'c, Ctx, LookupSwitchWriterState::Default>
+{
     type Context = InstructionWriter<'b, 'c, Ctx>;
+    type Disassembler = LookupSwitchWriter<'a, 'b, 'c, Ctx, LookupSwitchWriterState::Jumps>;
 
     fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
         let offset = context.current_offset();
@@ -76,22 +90,22 @@ impl<'a, 'b, 'c, Ctx: EncoderContext> WriteBuilder<'a> for LookupSwitchWriter<'a
 
         Ok(LookupSwitchWriter {
             context,
-            state: WriteState::Default,
             count_offset,
             count: 0,
             last_key: None,
+            _marker: PhantomData,
         })
     }
+}
+
+impl<'a, 'b, 'c, Ctx: EncoderContext> WriteDisassembler<'a>
+    for LookupSwitchWriter<'a, 'b, 'c, Ctx, LookupSwitchWriterState::Jumps>
+{
+    type Context = InstructionWriter<'b, 'c, Ctx>;
 
     fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
-        EncodeError::result_from_state(self.state, &WriteState::Jumps, Context::Code)?;
         Ok(self.context)
     }
 }
 
-/// What's written next
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum WriteState {
-    Default,
-    Jumps,
-}
+crate::__enc_state!(pub mod LookupSwitchWriterState: Default, Jumps);

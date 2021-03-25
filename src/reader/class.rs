@@ -243,10 +243,7 @@ fn read_header(decoder: &mut Decoder) -> Result<Version, DecodeError> {
         let major = decoder.read()?;
         Ok(Version { major, minor })
     } else {
-        Err(DecodeError::from_decoder(
-            DecodeErrorKind::InvalidPrefix,
-            decoder,
-        ))
+        Err(DecodeError::from_decoder(DecodeErrorKind::InvalidPrefix, decoder))
     }
 }
 
@@ -269,13 +266,7 @@ mod tests {
         ], Context::Start);
 
         let version = read_header(&mut decoder).unwrap();
-        assert_eq!(
-            version,
-            Version {
-                major: 0x38,
-                minor: 0
-            }
-        );
+        assert_eq!(version, Version { major: 0x38, minor: 0 });
     }
 
     #[test]

@@ -66,12 +66,7 @@ impl<'a> Decode<'a> for ElementValue<'a> {
             },
             b'@' => Annotation(decoder.read()?),
             b'[' => Array(decoder.read()?),
-            _ => {
-                return Err(DecodeError::from_decoder(
-                    DecodeErrorKind::InvalidTag,
-                    decoder,
-                ))
-            }
+            _ => return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
         };
         Ok(value)
     }

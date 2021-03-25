@@ -323,9 +323,7 @@ where
     Count: Decode<'a> + Countdown,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(DecodeCountedCopy {
-            iter: decoder.read()?,
-        })
+        Ok(DecodeCountedCopy { iter: decoder.read()? })
     }
 }
 

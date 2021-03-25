@@ -1,5 +1,4 @@
 use crate::reader::decoding::Decoder;
-use std::cmp::Ordering;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,11 +60,7 @@ impl DecodeError {
         }
     }
 
-    pub(crate) fn with_info(
-        kind: DecodeErrorKind,
-        position: usize,
-        context: Context,
-    ) -> DecodeError {
+    pub(crate) fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
         DecodeError {
             kind,
             position: Some(position),
@@ -156,41 +151,6 @@ pub struct EncodeError {
 impl EncodeError {
     pub(crate) fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
         EncodeError { kind, context }
-    }
-
-    #[inline]
-    pub(crate) fn result_from_state<S: Ord>(
-        prev: S,
-        now: &S,
-        context: Context,
-    ) -> Result<(), EncodeError> {
-        match prev.cmp(now) {
-            Ordering::Less => Err(EncodeError::with_context(
-                EncodeErrorKind::ValuesMissing,
-                context,
-            )),
-            Ordering::Equal => Ok(()),
-            Ordering::Greater => Err(EncodeError::with_context(
-                EncodeErrorKind::CantChangeAnymore,
-                context,
-            )),
-        }
-    }
-
-    #[inline]
-    pub(crate) fn can_write<S: Ord>(
-        prev: S,
-        now: &S,
-        context: Context,
-    ) -> Result<bool, EncodeError> {
-        match prev.cmp(now) {
-            Ordering::Less => Err(EncodeError::with_context(
-                EncodeErrorKind::ValuesMissing,
-                context,
-            )),
-            Ordering::Equal => Ok(true),
-            Ordering::Greater => Ok(false),
-        }
     }
 
     pub fn kind(&self) -> EncodeErrorKind {

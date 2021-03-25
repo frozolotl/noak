@@ -24,9 +24,8 @@ impl<'a> ConstantPool<'a> {
         let pos = at.index.get() as usize;
         if pos != 0 && pos <= self.content.len() {
             if let Some(item) = &self.content[pos - 1] {
-                return I::try_from_item(item).ok_or_else(|| {
-                    DecodeError::with_context(DecodeErrorKind::TagMismatch, Context::ConstantPool)
-                });
+                return I::try_from_item(item)
+                    .ok_or_else(|| DecodeError::with_context(DecodeErrorKind::TagMismatch, Context::ConstantPool));
             }
         }
 
@@ -41,10 +40,10 @@ impl<'a> ConstantPool<'a> {
     }
 
     pub fn iter_indices(&self) -> impl Iterator<Item = (Index<Item<'a>>, &Item<'a>)> {
-        self.content.iter().enumerate().filter_map(|(i, opt)| {
-            opt.as_ref()
-                .map(|item| (Index::new(i as u16 + 1).unwrap(), item))
-        })
+        self.content
+            .iter()
+            .enumerate()
+            .filter_map(|(i, opt)| opt.as_ref().map(|item| (Index::new(i as u16 + 1).unwrap(), item)))
     }
 }
 
@@ -53,10 +52,7 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
         decoder.set_context(Context::ConstantPool);
         let length = decoder.read::<u16>()?;
         if length == 0 {
-            return Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidLength,
-                decoder,
-            ));
+            return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidLength, decoder));
         }
         let length = length as usize - 1;
         let mut content = Vec::with_capacity(length);
@@ -127,8 +123,7 @@ impl<I> fmt::Debug for Index<I> {
 
 impl<'a, I: 'a> Decode<'a> for Index<I> {
     fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
-        let index = Index::new(decoder.read()?)
-            .map_err(|err| DecodeError::from_decoder(err.kind(), decoder))?;
+        let index = Index::new(decoder.read()?).map_err(|err| DecodeError::from_decoder(err.kind(), decoder))?;
         Ok(index)
     }
 }
@@ -171,21 +166,11 @@ impl<'a> Decode<'a> for Item<'a> {
                     content: MStr::from_bytes(buf)?,
                 }))
             }
-            3 => Ok(Item::Integer(Integer {
-                value: decoder.read()?,
-            })),
-            4 => Ok(Item::Float(Float {
-                value: decoder.read()?,
-            })),
-            5 => Ok(Item::Long(Long {
-                value: decoder.read()?,
-            })),
-            6 => Ok(Item::Double(Double {
-                value: decoder.read()?,
-            })),
-            7 => Ok(Item::Class(Class {
-                name: decoder.read()?,
-            })),
+            3 => Ok(Item::Integer(Integer { value: decoder.read()? })),
+            4 => Ok(Item::Float(Float { value: decoder.read()? })),
+            5 => Ok(Item::Long(Long { value: decoder.read()? })),
+            6 => Ok(Item::Double(Double { value: decoder.read()? })),
+            7 => Ok(Item::Class(Class { name: decoder.read()? })),
             8 => Ok(Item::String(String {
                 string: decoder.read()?,
             })),
@@ -220,16 +205,9 @@ impl<'a> Decode<'a> for Item<'a> {
                 bootstrap_method_attr: decoder.read()?,
                 name_and_type: decoder.read()?,
             })),
-            19 => Ok(Item::Module(Module {
-                name: decoder.read()?,
-            })),
-            20 => Ok(Item::Package(Package {
-                name: decoder.read()?,
-            })),
-            _ => Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidTag,
-                decoder,
-            )),
+            19 => Ok(Item::Module(Module { name: decoder.read()? })),
+            20 => Ok(Item::Package(Package { name: decoder.read()? })),
+            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
         }
     }
 }
@@ -411,10 +389,7 @@ impl<'a> Decode<'a> for MethodKind {
             7 => Ok(InvokeSpecial),
             8 => Ok(NewInvokeSpecial),
             9 => Ok(InvokeInterface),
-            _ => Err(DecodeError::from_decoder(
-                DecodeErrorKind::InvalidTag,
-                decoder,
-            )),
+            _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
         }
     }
 }

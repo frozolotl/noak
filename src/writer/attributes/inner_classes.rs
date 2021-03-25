@@ -1,149 +1,145 @@
+use std::marker::PhantomData;
+
 use crate::error::*;
 use crate::header::AccessFlags;
-use crate::writer::{cpool, encoding::*, AttributeWriter};
+use crate::writer::{
+    attributes::{AttributeWriter, AttributeWriterState},
+    cpool,
+    encoding::*,
+};
 
-impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx> {
-    pub fn write_inner_classes<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+impl<'a, Ctx: EncoderContext> AttributeWriter<'a, Ctx, AttributeWriterState::Start> {
+    pub fn write_inner_classes<F>(
+        mut self,
+        f: F,
+    ) -> Result<AttributeWriter<'a, Ctx, AttributeWriterState::End>, EncodeError>
     where
-        F: for<'f> FnOnce(
-            &mut CountedWriter<'f, InnerClassWriter<'f, Ctx>, u16>,
-        ) -> Result<(), EncodeError>,
+        F: for<'f> CountedWrite<'f, InnerClassWriter<'f, Ctx, InnerClassWriterState::InnerClass>, u16>,
     {
         let length_writer = self.attribute_writer("InnerClasses")?;
         let mut builder = CountedWriter::new(self.context)?;
-        f(&mut builder)?;
+        f.write_to(&mut builder)?;
         length_writer.finish(self.context)?;
-        self.finished = true;
-        Ok(self)
+        Ok(AttributeWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
 }
 
-pub struct InnerClassWriter<'a, Ctx> {
+pub struct InnerClassWriter<'a, Ctx, State: InnerClassWriterState::State> {
     context: &'a mut Ctx,
-    state: WriteState,
+    _marker: PhantomData<State>,
 }
 
-impl<'a, Ctx: EncoderContext> InnerClassWriter<'a, Ctx> {
-    pub fn write_inner_class<I>(&mut self, class: I) -> Result<&mut Self, EncodeError>
+impl<'a, Ctx: EncoderContext> InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerClass> {
+    pub fn write_inner_class<I>(
+        self,
+        class: I,
+    ) -> Result<InnerClassWriter<'a, Ctx, InnerClassWriterState::OuterClass>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::InnerClass,
-            Context::AttributeContent,
-        )?;
-
         let index = class.insert(self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;
-        self.state = WriteState::OuterClass;
-        Ok(self)
+        Ok(InnerClassWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
+}
 
-    pub fn write_outer_class<I>(&mut self, class: I) -> Result<&mut Self, EncodeError>
+impl<'a, Ctx: EncoderContext> InnerClassWriter<'a, Ctx, InnerClassWriterState::OuterClass> {
+    pub fn write_outer_class<I>(
+        self,
+        class: I,
+    ) -> Result<InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerName>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::OuterClass,
-            Context::AttributeContent,
-        )?;
-
         let index = class.insert(self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;
-        self.state = WriteState::InnerName;
-        Ok(self)
+        Ok(InnerClassWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
 
-    pub fn write_no_outer_class<I>(&mut self) -> Result<&mut Self, EncodeError>
+    pub fn write_no_outer_class<I>(
+        self,
+    ) -> Result<InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerName>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::OuterClass,
-            Context::AttributeContent,
-        )?;
-
-        self.context.class_writer_mut().encoder.write(0)?;
-        self.state = WriteState::InnerName;
-        Ok(self)
+        self.context.class_writer_mut().encoder.write(0u16)?;
+        Ok(InnerClassWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
+}
 
-    pub fn write_inner_name<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+impl<'a, Ctx: EncoderContext> InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerName> {
+    pub fn write_inner_name<I>(
+        self,
+        name: I,
+    ) -> Result<InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerAccessFlags>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::InnerName,
-            Context::AttributeContent,
-        )?;
-
         let index = name.insert(self.context)?;
         self.context.class_writer_mut().encoder.write(index)?;
-        self.state = WriteState::InnerAccessFlags;
-        Ok(self)
+        Ok(InnerClassWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
 
-    pub fn write_no_inner_name<I>(&mut self) -> Result<&mut Self, EncodeError>
+    pub fn write_no_inner_name<I>(
+        self,
+    ) -> Result<InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerAccessFlags>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::InnerName,
-            Context::AttributeContent,
-        )?;
-
-        self.context.class_writer_mut().encoder.write(0)?;
-        self.state = WriteState::InnerAccessFlags;
-        Ok(self)
-    }
-
-    pub fn write_inner_access_flags(
-        &mut self,
-        flags: AccessFlags,
-    ) -> Result<&mut Self, EncodeError> {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::InnerAccessFlags,
-            Context::AttributeContent,
-        )?;
-
-        self.context.class_writer_mut().encoder.write(flags)?;
-        self.state = WriteState::Finished;
-        Ok(self)
+        self.context.class_writer_mut().encoder.write(0u16)?;
+        Ok(InnerClassWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
     }
 }
 
-impl<'a, Ctx: EncoderContext> WriteBuilder<'a> for InnerClassWriter<'a, Ctx> {
+impl<'a, Ctx: EncoderContext> InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerAccessFlags> {
+    pub fn write_inner_access_flags(
+        self,
+        flags: AccessFlags,
+    ) -> Result<InnerClassWriter<'a, Ctx, InnerClassWriterState::End>, EncodeError> {
+        self.context.class_writer_mut().encoder.write(flags)?;
+        Ok(InnerClassWriter {
+            context: self.context,
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl<'a, Ctx: EncoderContext> WriteAssembler<'a> for InnerClassWriter<'a, Ctx, InnerClassWriterState::InnerClass> {
     type Context = Ctx;
+    type Disassembler = InnerClassWriter<'a, Ctx, InnerClassWriterState::End>;
 
     fn new(context: &'a mut Self::Context) -> Result<Self, EncodeError> {
         Ok(InnerClassWriter {
             context,
-            state: WriteState::InnerClass,
+            _marker: PhantomData,
         })
     }
+}
+
+impl<'a, Ctx: EncoderContext> WriteDisassembler<'a> for InnerClassWriter<'a, Ctx, InnerClassWriterState::End> {
+    type Context = Ctx;
 
     fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
-        EncodeError::result_from_state(
-            self.state,
-            &WriteState::Finished,
-            Context::AttributeContent,
-        )?;
-
         Ok(self.context)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum WriteState {
-    InnerClass,
-    OuterClass,
-    InnerName,
-    InnerAccessFlags,
-    Finished,
-}
+crate::__enc_state!(pub mod InnerClassWriterState: InnerClass, OuterClass, InnerName, InnerAccessFlags, End);

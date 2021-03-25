@@ -120,10 +120,7 @@ fn decode_stack_map_frame<'a>(
 
         Ok((index, StackMapFrame::Full { locals, stack }))
     } else {
-        Err(DecodeError::from_decoder(
-            DecodeErrorKind::TagReserved,
-            decoder,
-        ))
+        Err(DecodeError::from_decoder(DecodeErrorKind::TagReserved, decoder))
     }
 }
 
@@ -140,10 +137,7 @@ pub enum VerificationType {
     Double,
 }
 
-fn decode_verification_type(
-    decoder: &mut Decoder,
-    current_offset: u32,
-) -> Result<VerificationType, DecodeError> {
+fn decode_verification_type(decoder: &mut Decoder, current_offset: u32) -> Result<VerificationType, DecodeError> {
     let tag: u8 = decoder.read()?;
     match tag {
         0x00 => Ok(VerificationType::Top),
@@ -158,10 +152,7 @@ fn decode_verification_type(
             let index = code::Index::new(current_offset + u32::from(decoder.read::<u16>()?));
             Ok(VerificationType::UninitializedVariable(index))
         }
-        _ => Err(DecodeError::from_decoder(
-            DecodeErrorKind::InvalidTag,
-            decoder,
-        )),
+        _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
     }
 }
 
@@ -171,16 +162,13 @@ fn skip_verification_type(decoder: &mut Decoder) -> Result<(), DecodeError> {
         0x07 => {
             decoder.read::<cpool::Index<cpool::Class>>()?;
             Ok(())
-        },
+        }
         0x08 => {
             decoder.read::<u16>()?;
             Ok(())
-        },
+        }
         _ if tag < 0x07 => Ok(()),
-        _ => Err(DecodeError::from_decoder(
-            DecodeErrorKind::InvalidTag,
-            decoder,
-        )),
+        _ => Err(DecodeError::from_decoder(DecodeErrorKind::InvalidTag, decoder)),
     }
 }
 
@@ -218,8 +206,7 @@ impl<'a> Iterator for VerificationTypeIter<'a> {
         } else {
             self.remaining -= 1;
             let bytes_remaining = self.decoder.bytes_remaining() as u32;
-            let verification_type =
-                decode_verification_type(&mut self.decoder, self.current_offset);
+            let verification_type = decode_verification_type(&mut self.decoder, self.current_offset);
             self.current_offset += bytes_remaining - self.decoder.bytes_remaining() as u32;
             Some(verification_type)
         }

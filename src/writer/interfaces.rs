@@ -1,63 +1,46 @@
-use crate::error::*;
-use crate::writer::{cpool, encoding::*, ClassWriter};
+use std::marker::PhantomData;
 
-pub struct InterfaceWriter<'a> {
-    class_writer: &'a mut ClassWriter,
-    finished: bool,
+use crate::error::*;
+use crate::writer::{class, cpool, encoding::*, ClassWriter};
+
+pub struct InterfaceWriter<'a, State: InterfaceWriterState::State> {
+    class_writer: &'a mut ClassWriter<class::ClassWriterState::Interfaces>,
+    _marker: PhantomData<State>,
 }
 
-impl<'a> InterfaceWriter<'a> {
+impl<'a> InterfaceWriter<'a, InterfaceWriterState::End> {
     /// Writes the index to an interface implemented by this class.
-    pub fn write_interface<I>(&mut self, name: I) -> Result<&mut Self, EncodeError>
+    pub fn write_interface<I>(mut self, name: I) -> Result<InterfaceWriter<'a, InterfaceWriterState::End>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        if self.finished {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::CantChangeAnymore,
-                Context::Interfaces,
-            ))
-        } else {
-            let index = name.insert(&mut self.class_writer)?;
-            self.class_writer.encoder.write(index)?;
-            self.finished = true;
-            Ok(self)
-        }
+        let index = name.insert(&mut self.class_writer)?;
+        self.class_writer.encoder.write(index)?;
+        Ok(InterfaceWriter {
+            class_writer: self.class_writer,
+            _marker: PhantomData,
+        })
     }
 }
 
-impl<'a> WriteBuilder<'a> for InterfaceWriter<'a> {
-    type Context = ClassWriter;
+impl<'a> WriteAssembler<'a> for InterfaceWriter<'a, InterfaceWriterState::Start> {
+    type Context = ClassWriter<class::ClassWriterState::Interfaces>;
+    type Disassembler = InterfaceWriter<'a, InterfaceWriterState::End>;
 
     fn new(class_writer: &'a mut Self::Context) -> Result<Self, EncodeError> {
         Ok(InterfaceWriter {
             class_writer,
-            finished: false,
+            _marker: PhantomData,
         })
     }
+}
+
+impl<'a> WriteDisassembler<'a> for InterfaceWriter<'a, InterfaceWriterState::End> {
+    type Context = ClassWriter<class::ClassWriterState::Interfaces>;
 
     fn finish(self) -> Result<&'a mut Self::Context, EncodeError> {
-        if self.finished {
-            Ok(self.class_writer)
-        } else {
-            Err(EncodeError::with_context(
-                EncodeErrorKind::ValuesMissing,
-                Context::Interfaces,
-            ))
-        }
+        Ok(self.class_writer)
     }
 }
 
-impl<'a, I> WriteSimple<'a, I> for InterfaceWriter<'a>
-where
-    I: cpool::Insertable<cpool::Class>,
-{
-    fn write_simple(
-        class_writer: &'a mut ClassWriter,
-        interface: I,
-    ) -> Result<&'a mut ClassWriter, EncodeError> {
-        let mut writer = InterfaceWriter::new(class_writer)?;
-        writer.write_interface(interface)?;
-        writer.finish()
-    }
-}
+crate::__enc_state!(pub mod InterfaceWriterState: Start, End);
