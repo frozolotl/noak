@@ -61,10 +61,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         })
     }
 
-    pub fn signature<I>(
-        mut self,
-        signature: I,
-    ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
+    pub fn signature<I>(mut self, signature: I) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
         I: cpool::Insertable<cpool::Utf8>,
     {

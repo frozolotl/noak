@@ -8,10 +8,7 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn constant_value<I>(
-        mut self,
-        value: I,
-    ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
+    pub fn constant_value<I>(mut self, value: I) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
         I: Insertable<cpool::Item>,
     {

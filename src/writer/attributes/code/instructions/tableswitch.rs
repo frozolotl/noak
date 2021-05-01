@@ -25,10 +25,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 }
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Low> {
-    pub fn low(
-        mut self,
-        low: i32,
-    ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High>, EncodeError> {
+    pub fn low(mut self, low: i32) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High>, EncodeError> {
         self.context.class_writer_mut().encoder.write(low)?;
         self.remaining = low as u32;
 
@@ -41,10 +38,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 }
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High> {
-    pub fn high(
-        mut self,
-        high: i32,
-    ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps>, EncodeError> {
+    pub fn high(mut self, high: i32) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps>, EncodeError> {
         self.context.class_writer_mut().encoder.write(high)?;
 
         let low = self.remaining as i32;

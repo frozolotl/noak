@@ -296,7 +296,7 @@ where
 {
     pub fn begin<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: FnOnce(W) -> Result<W::Disassembler, EncodeError>
+        F: FnOnce(W) -> Result<W::Disassembler, EncodeError>,
     {
         let context = self
             .context
