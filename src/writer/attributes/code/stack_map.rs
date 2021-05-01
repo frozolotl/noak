@@ -201,7 +201,6 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
 
 pub struct VerificationTypeWriter<Ctx, State: VerificationTypeWriterState::State> {
     context: CodeWriter<Ctx, CodeWriterState::Attributes>,
-    length: u16,
     _marker: PhantomData<State>,
 }
 
@@ -211,7 +210,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 1,
             _marker: PhantomData,
         })
     }
@@ -221,7 +219,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 1,
             _marker: PhantomData,
         })
     }
@@ -231,7 +228,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 1,
             _marker: PhantomData,
         })
     }
@@ -241,7 +237,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 2,
             _marker: PhantomData,
         })
     }
@@ -251,7 +246,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 2,
             _marker: PhantomData,
         })
     }
@@ -261,7 +255,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 1,
             _marker: PhantomData,
         })
     }
@@ -273,7 +266,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 1,
             _marker: PhantomData,
         })
     }
@@ -290,7 +282,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 1,
             _marker: PhantomData,
         })
     }
@@ -304,7 +295,6 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
 
         Ok(VerificationTypeWriter {
             context: self.context,
-            length: 1,
             _marker: PhantomData,
         })
     }
@@ -317,7 +307,6 @@ impl<Ctx: EncoderContext> WriteAssembler for VerificationTypeWriter<Ctx, Verific
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(VerificationTypeWriter {
             context,
-            length: 1, // unused at that point
             _marker: PhantomData,
         })
     }
