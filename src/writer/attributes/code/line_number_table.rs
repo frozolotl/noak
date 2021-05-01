@@ -10,11 +10,13 @@ impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attri
         f: F,
     ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
     where
-        F: for<'g> CountedWrite<LineNumberWriter<Ctx, LineNumberWriterState::Start>, u16>,
+        F: for<'g> FnOnce(
+            &mut CountedWriter<LineNumberWriter<Ctx, LineNumberWriterState::Start>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("LineNumberTable")?;
         let mut builder = CountedWriter::new(self.context)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.context = builder.finish()?;
         length_writer.finish(&mut self.context)?;
 

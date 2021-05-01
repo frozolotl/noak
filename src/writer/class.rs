@@ -20,17 +20,18 @@ const EMPTY_POOL_END: Offset = POOL_START.offset(2);
 /// # Examples
 /// ```
 /// use noak::writer::ClassWriter;
-/// use noak::AccessFlags;
+/// use noak::{AccessFlags, Version};
 ///
 /// let buf = ClassWriter::new()
+///     .version(Version::latest())?
 ///     .access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
 ///     .this_class("com/example/Example")?
 ///     .super_class("java/lang/Object")?
-///     .attributes(|writer| {
-///         writer.write(|writer| {
-///             writer.source_file("Example.java")?;
-///             Ok(())
-///         })?;
+///     .interfaces(|_interfaces| Ok(()))?
+///     .fields(|_fields| Ok(()))?
+///     .methods(|_methods| Ok(()))?
+///     .attributes(|attributes| {
+///         attributes.begin(|attribute| attribute.source_file("Example.java"))?;
 ///         Ok(())
 ///     })?
 ///     .finish()?;
@@ -169,10 +170,10 @@ impl ClassWriter<ClassWriterState::SuperClass> {
 impl ClassWriter<ClassWriterState::Interfaces> {
     pub fn interfaces<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Fields>, EncodeError>
     where
-        F: CountedWrite<InterfaceWriter<InterfaceWriterState::Start>, u16>,
+        F: FnOnce(&mut CountedWriter<InterfaceWriter<InterfaceWriterState::Start>, u16>) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self = builder.finish()?;
 
         Ok(ClassWriter {
@@ -187,10 +188,10 @@ impl ClassWriter<ClassWriterState::Interfaces> {
 impl ClassWriter<ClassWriterState::Fields> {
     pub fn fields<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Methods>, EncodeError>
     where
-        F: CountedWrite<FieldWriter<FieldWriterState::AccessFlags>, u16>,
+        F: FnOnce(&mut CountedWriter<FieldWriter<FieldWriterState::AccessFlags>, u16>) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self = builder.finish()?;
 
         Ok(ClassWriter {
@@ -205,10 +206,10 @@ impl ClassWriter<ClassWriterState::Fields> {
 impl ClassWriter<ClassWriterState::Methods> {
     pub fn methods<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Attributes>, EncodeError>
     where
-        F: CountedWrite<MethodWriter<MethodWriterState::AccessFlags>, u16>,
+        F: FnOnce(&mut CountedWriter<MethodWriter<MethodWriterState::AccessFlags>, u16>) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self = builder.finish()?;
 
         Ok(ClassWriter {
@@ -223,10 +224,15 @@ impl ClassWriter<ClassWriterState::Methods> {
 impl ClassWriter<ClassWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::End>, EncodeError>
     where
-        F: CountedWrite<AttributeWriter<ClassWriter<ClassWriterState::Attributes>, AttributeWriterState::Start>, u16>,
+        F: FnOnce(
+            &mut CountedWriter<
+                AttributeWriter<ClassWriter<ClassWriterState::Attributes>, AttributeWriterState::Start>,
+                u16,
+            >,
+        ) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self = builder.finish()?;
 
         Ok(ClassWriter {

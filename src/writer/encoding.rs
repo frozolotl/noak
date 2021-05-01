@@ -294,14 +294,17 @@ where
     W: WriteAssembler,
     Count: Encode + Counter,
 {
-    pub fn begin<F: WriteOnce<W>>(&mut self, f: F) -> Result<&mut Self, EncodeError> {
+    pub fn begin<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+    where
+        F: FnOnce(W) -> Result<W::Disassembler, EncodeError>
+    {
         let context = self
             .context
             .take()
             .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None))?;
         self.count.check()?;
 
-        let mut context = f.write_once(W::new(context)?)?.finish()?;
+        let mut context = f(W::new(context)?)?.finish()?;
 
         self.count.increment()?;
         let position = self.count_offset.add(context.class_writer().pool_end);
@@ -380,30 +383,4 @@ macro_rules! __enc_state {
             }
         }
     };
-}
-
-pub trait WriteOnce<W: WriteAssembler> {
-    fn write_once(self, writer: W) -> Result<W::Disassembler, EncodeError>;
-}
-
-impl<W: WriteAssembler, F> WriteOnce<W> for F
-where
-    F: FnOnce(W) -> Result<W::Disassembler, EncodeError>,
-{
-    fn write_once(self, writer: W) -> Result<W::Disassembler, EncodeError> {
-        self(writer)
-    }
-}
-
-pub trait CountedWrite<W: WriteAssembler, N> {
-    fn write_to(self, writer: &mut CountedWriter<W, N>) -> Result<(), EncodeError>;
-}
-
-impl<W: WriteAssembler, N, F> CountedWrite<W, N> for F
-where
-    F: FnOnce(&mut CountedWriter<W, N>) -> Result<(), EncodeError>,
-{
-    fn write_to(self, writer: &mut CountedWriter<W, N>) -> Result<(), EncodeError> {
-        self(writer)
-    }
 }

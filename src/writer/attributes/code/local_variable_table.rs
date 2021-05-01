@@ -11,11 +11,13 @@ impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attri
         f: F,
     ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
     where
-        F: for<'g> CountedWrite<LocalVariableWriter<Ctx, LocalVariableWriterState::Start>, u16>,
+        F: for<'g> FnOnce(
+            &mut CountedWriter<LocalVariableWriter<Ctx, LocalVariableWriterState::Start>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("LocalVariableTable")?;
         let mut builder = CountedWriter::new(self.context)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.context = builder.finish()?;
         length_writer.finish(&mut self.context)?;
 
@@ -115,10 +117,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Des
 }
 
 impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Index> {
-    pub fn index(
-        mut self,
-        index: u16,
-    ) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::End>, EncodeError> {
+    pub fn index(mut self, index: u16) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::End>, EncodeError> {
         self.context.class_writer_mut().encoder.write(index)?;
 
         Ok(LocalVariableWriter {

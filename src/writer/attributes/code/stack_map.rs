@@ -76,7 +76,9 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
 
     pub fn same1<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
     where
-        F: WriteOnce<Same1Writer<Ctx, Same1WriterState::Start>>,
+        F: FnOnce(
+            Same1Writer<Ctx, Same1WriterState::Start>,
+        ) -> Result<Same1Writer<Ctx, Same1WriterState::End>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         if offset >= 64 {
@@ -86,20 +88,22 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
         self.increment_counter()?;
         self.context.class_writer_mut().encoder.write(64 + offset as u8)?;
 
-        self.context = f.write_once(Same1Writer::new(self.context)?)?.finish()?;
+        self.context = f(Same1Writer::new(self.context)?)?.finish()?;
 
         Ok(self)
     }
 
     pub fn same1_extended<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
     where
-        F: WriteOnce<Same1Writer<Ctx, Same1WriterState::Start>>,
+        F: FnOnce(
+            Same1Writer<Ctx, Same1WriterState::Start>,
+        ) -> Result<Same1Writer<Ctx, Same1WriterState::End>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
         self.context.class_writer_mut().encoder.write(247)?.write(offset)?;
 
-        self.context = f.write_once(Same1Writer::new(self.context)?)?.finish()?;
+        self.context = f(Same1Writer::new(self.context)?)?.finish()?;
 
         Ok(self)
     }
@@ -125,7 +129,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
 
     pub fn append<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
     where
-        F: WriteOnce<AppendWriter<Ctx>>,
+        F: FnOnce(AppendWriter<Ctx>) -> Result<AppendWriter<Ctx>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
@@ -143,7 +147,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
             .write(0)? // placeholder
             .write(offset)?;
 
-        let append_writer = f.write_once(AppendWriter::new(self.context)?)?;
+        let append_writer = f(AppendWriter::new(self.context)?)?;
         let count = append_writer.count;
         self.context = append_writer.finish()?;
 
@@ -159,13 +163,15 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
 
     pub fn full<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
     where
-        F: WriteOnce<FullWriter<Ctx, FullWriterState::Locals>>,
+        F: FnOnce(
+            FullWriter<Ctx, FullWriterState::Locals>,
+        ) -> Result<FullWriter<Ctx, FullWriterState::End>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
         self.context.class_writer_mut().encoder.write(255)?.write(offset)?;
 
-        self.context = f.write_once(FullWriter::new(self.context)?)?.finish()?;
+        self.context = f(FullWriter::new(self.context)?)?.finish()?;
 
         Ok(self)
     }
@@ -210,9 +216,7 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
         })
     }
 
-    pub fn integer(
-        mut self,
-    ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    pub fn integer(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.class_writer_mut().encoder.write(1u8)?;
 
         Ok(VerificationTypeWriter {
@@ -232,9 +236,7 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
         })
     }
 
-    pub fn double(
-        mut self,
-    ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    pub fn double(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.class_writer_mut().encoder.write(3u8)?;
 
         Ok(VerificationTypeWriter {
@@ -339,9 +341,11 @@ pub struct Same1Writer<Ctx: EncoderContext, State: Same1WriterState::State> {
 impl<Ctx: EncoderContext> Same1Writer<Ctx, Same1WriterState::Start> {
     pub fn stack_item<F>(mut self, f: F) -> Result<Same1Writer<Ctx, Same1WriterState::End>, EncodeError>
     where
-        F: WriteOnce<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>>,
+        F: FnOnce(
+            VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>,
+        ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError>,
     {
-        self.context = f.write_once(VerificationTypeWriter::new(self.context)?)?.finish()?;
+        self.context = f(VerificationTypeWriter::new(self.context)?)?.finish()?;
 
         Ok(Same1Writer {
             context: self.context,
@@ -380,7 +384,9 @@ pub struct AppendWriter<Ctx> {
 impl<Ctx: EncoderContext> AppendWriter<Ctx> {
     pub fn local<F>(mut self, f: F) -> Result<Self, EncodeError>
     where
-        F: WriteOnce<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>>,
+        F: FnOnce(
+            VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>,
+        ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError>,
     {
         if self.count >= 3 {
             return Err(EncodeError::with_context(
@@ -389,7 +395,7 @@ impl<Ctx: EncoderContext> AppendWriter<Ctx> {
             ));
         }
 
-        self.context = f.write_once(VerificationTypeWriter::new(self.context)?)?.finish()?;
+        self.context = f(VerificationTypeWriter::new(self.context)?)?.finish()?;
         self.count += 1;
 
         Ok(self)
@@ -428,10 +434,12 @@ pub struct FullWriter<Ctx, State: FullWriterState::State> {
 impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Locals> {
     pub fn locals<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::Locals>, EncodeError>
     where
-        F: CountedWrite<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+        F: FnOnce(
+            &mut CountedWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self.context)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.context = builder.finish()?;
 
         Ok(FullWriter {
@@ -444,10 +452,12 @@ impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Locals> {
 impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Stack> {
     pub fn stack<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::End>, EncodeError>
     where
-        F: CountedWrite<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+        F: FnOnce(
+            &mut CountedWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self.context)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.context = builder.finish()?;
 
         Ok(FullWriter {

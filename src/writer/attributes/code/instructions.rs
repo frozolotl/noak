@@ -1225,9 +1225,11 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
 
     pub fn lookupswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> WriteOnce<LookupSwitchWriter<'f, Ctx, LookupSwitchWriterState::Default>>,
+        F: for<'f> FnOnce(
+            LookupSwitchWriter<'f, Ctx, LookupSwitchWriterState::Default>,
+        ) -> Result<LookupSwitchWriter<'f, Ctx, LookupSwitchWriterState::Jumps>, EncodeError>,
     {
-        f.write_once(LookupSwitchWriter::new(self)?)?.finish()?;
+        f(LookupSwitchWriter::new(self)?)?.finish()?;
 
         Ok(self)
     }
@@ -1447,9 +1449,11 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
 
     pub fn tableswitch<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: for<'f> WriteOnce<TableSwitchWriter<'f, Ctx, TableSwitchWriterState::Default>>,
+        F: for<'f> FnOnce(
+            TableSwitchWriter<'f, Ctx, TableSwitchWriterState::Default>,
+        ) -> Result<TableSwitchWriter<'f, Ctx, TableSwitchWriterState::Jumps>, EncodeError>,
     {
-        f.write_once(TableSwitchWriter::new(self)?)?.finish()?;
+        f(TableSwitchWriter::new(self)?)?.finish()?;
 
         Ok(self)
     }

@@ -55,13 +55,15 @@ impl MethodWriter<MethodWriterState::Descriptor> {
 impl MethodWriter<MethodWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<MethodWriter<MethodWriterState::End>, EncodeError>
     where
-        F: CountedWrite<
-            AttributeWriter<ClassWriter<class::ClassWriterState::Methods>, AttributeWriterState::Start>,
-            u16,
-        >,
+        F: FnOnce(
+            &mut CountedWriter<
+                AttributeWriter<ClassWriter<class::ClassWriterState::Methods>, AttributeWriterState::Start>,
+                u16,
+            >,
+        ) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self.class_writer)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.class_writer = builder.finish()?;
 
         Ok(MethodWriter {

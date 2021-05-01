@@ -8,16 +8,15 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn enclosing_method<F>(
-        mut self,
-        f: F,
-    ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
+    pub fn enclosing_method<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
-        F: CountedWrite<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class>, u16>,
+        F: FnOnce(
+            &mut CountedWriter<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("EnclosingMethod")?;
         let mut builder = CountedWriter::new(self.context)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.context = builder.finish()?;
         length_writer.finish(&mut self.context)?;
 

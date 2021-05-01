@@ -8,7 +8,7 @@ pub struct InterfaceWriter<State: InterfaceWriterState::State> {
     _marker: PhantomData<State>,
 }
 
-impl InterfaceWriter<InterfaceWriterState::End> {
+impl InterfaceWriter<InterfaceWriterState::Start> {
     /// Writes the index to an interface implemented by this class.
     pub fn interface<I>(mut self, name: I) -> Result<InterfaceWriter<InterfaceWriterState::End>, EncodeError>
     where

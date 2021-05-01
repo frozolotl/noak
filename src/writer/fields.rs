@@ -55,13 +55,15 @@ impl FieldWriter<FieldWriterState::Descriptor> {
 impl FieldWriter<FieldWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<FieldWriter<FieldWriterState::End>, EncodeError>
     where
-        F: CountedWrite<
-            AttributeWriter<ClassWriter<class::ClassWriterState::Fields>, AttributeWriterState::Start>,
-            u16,
-        >,
+        F: FnOnce(
+            &mut CountedWriter<
+                AttributeWriter<ClassWriter<class::ClassWriterState::Fields>, AttributeWriterState::Start>,
+                u16,
+            >,
+        ) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self.class_writer)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.class_writer = builder.finish()?;
 
         Ok(FieldWriter {

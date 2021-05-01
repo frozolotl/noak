@@ -9,16 +9,15 @@ use crate::writer::{
 };
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
-    pub fn inner_classes<F>(
-        mut self,
-        f: F,
-    ) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
+    pub fn inner_classes<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
-        F: CountedWrite<InnerClassWriter<Ctx, InnerClassWriterState::InnerClass>, u16>,
+        F: FnOnce(
+            &mut CountedWriter<InnerClassWriter<Ctx, InnerClassWriterState::InnerClass>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("InnerClasses")?;
         let mut builder = CountedWriter::new(self.context)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.context = builder.finish()?;
         length_writer.finish(&mut self.context)?;
 
@@ -69,9 +68,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::OuterClas
         })
     }
 
-    pub fn no_outer_class<I>(
-        mut self,
-    ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::InnerName>, EncodeError>
+    pub fn no_outer_class<I>(mut self) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::InnerName>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {

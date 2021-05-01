@@ -24,10 +24,12 @@ use std::{fmt, marker::PhantomData};
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     pub fn code<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
-        F: WriteOnce<CodeWriter<Ctx, CodeWriterState::MaxStack>>,
+        F: FnOnce(
+            CodeWriter<Ctx, CodeWriterState::MaxStack>,
+        ) -> Result<CodeWriter<Ctx, CodeWriterState::End>, EncodeError>,
     {
         let length_writer = self.attribute_writer("Code")?;
-        self.context = f.write_once(CodeWriter::new(self.context)?)?.finish()?;
+        self.context = f(CodeWriter::new(self.context)?)?.finish()?;
         length_writer.finish(&mut self.context)?;
 
         Ok(AttributeWriter {
@@ -44,10 +46,7 @@ pub struct CodeWriter<Ctx, State: CodeWriterState::State> {
 }
 
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::MaxStack> {
-    pub fn max_stack(
-        mut self,
-        max_stack: u16,
-    ) -> Result<CodeWriter<Ctx, CodeWriterState::MaxLocals>, EncodeError> {
+    pub fn max_stack(mut self, max_stack: u16) -> Result<CodeWriter<Ctx, CodeWriterState::MaxLocals>, EncodeError> {
         self.context.class_writer_mut().encoder.write(max_stack)?;
         Ok(CodeWriter {
             context: self.context,
@@ -72,15 +71,14 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::MaxLocals> {
 }
 
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Instructions> {
-    pub fn instructions<F>(
-        mut self,
-        f: F,
-    ) -> Result<CodeWriter<Ctx, CodeWriterState::ExceptionTable>, EncodeError>
+    pub fn instructions<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::ExceptionTable>, EncodeError>
     where
-        F: for<'g> WriteOnce<InstructionWriter<Ctx>>,
+        F: for<'f> FnOnce(&'f mut InstructionWriter<Ctx>) -> Result<(), EncodeError>,
     {
         let length_writer = LengthWriter::new(&mut self.context)?;
-        self = f.write_once(<InstructionWriter<Ctx> as WriteAssembler>::new(self)?)?.finish()?;
+        let mut writer = <InstructionWriter<Ctx> as WriteAssembler>::new(self)?;
+        f(&mut writer)?;
+        self = writer.finish()?;
         length_writer.finish(&mut self.context)?;
 
         Ok(CodeWriter {
@@ -94,10 +92,12 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Instructions> {
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
     pub fn exceptions<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::Attributes>, EncodeError>
     where
-        F: for<'g> CountedWrite<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>,
+        F: FnOnce(
+            &mut CountedWriter<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self = builder.finish()?;
         Ok(CodeWriter {
             context: self.context,
@@ -110,10 +110,12 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::End>, EncodeError>
     where
-        F: CountedWrite<AttributeWriter<Ctx, AttributeWriterState::Start>, u16>,
+        F: FnOnce(
+            &mut CountedWriter<AttributeWriter<Ctx, AttributeWriterState::Start>, u16>,
+        ) -> Result<(), EncodeError>,
     {
         let mut builder = CountedWriter::new(self.context)?;
-        f.write_to(&mut builder)?;
+        f(&mut builder)?;
         self.context = builder.finish()?;
 
         Ok(CodeWriter {
