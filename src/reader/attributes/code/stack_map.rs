@@ -87,40 +87,47 @@ fn decode_stack_map_frame<'a>(
     current_offset: u32,
 ) -> Result<(code::Index, StackMapFrame<'a>), DecodeError> {
     let frame_type: u8 = decoder.read()?;
-    if frame_type < 64 {
-        let index = code::Index::new(frame_type.into());
-        Ok((index, StackMapFrame::Same))
-    } else if frame_type == 251 {
-        let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
-        Ok((index, StackMapFrame::SameExtended))
-    } else if frame_type >= 64 && frame_type < 128 {
-        let index = code::Index::new(u32::from(frame_type - 64) + current_offset);
-        let stack = decode_verification_type(decoder, current_offset)?;
-        Ok((index, StackMapFrame::Same1 { stack }))
-    } else if frame_type == 247 {
-        let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
-        let stack = decode_verification_type(decoder, current_offset)?;
-        Ok((index, StackMapFrame::Same1 { stack }))
-    } else if frame_type >= 248 && frame_type <= 250 {
-        let to_chop = 251 - frame_type;
-        let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
-        Ok((index, StackMapFrame::Chop { to_chop }))
-    } else if frame_type >= 252 && frame_type <= 254 {
-        let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
-        let locals = VerificationTypeIter::new(decoder, (frame_type - 251).into(), current_offset)?;
-        Ok((index, StackMapFrame::Append { locals }))
-    } else if frame_type == 255 {
-        let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
+    match frame_type {
+        0..=63 => {
+            let index = code::Index::new(frame_type.into());
+            Ok((index, StackMapFrame::Same))
+        }
+        64..=127 => {
+            let index = code::Index::new(u32::from(frame_type - 64) + current_offset);
+            let stack = decode_verification_type(decoder, current_offset)?;
+            Ok((index, StackMapFrame::Same1 { stack }))
+        }
+        247 => {
+            let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
+            let stack = decode_verification_type(decoder, current_offset)?;
+            Ok((index, StackMapFrame::Same1 { stack }))
+        }
+        248..=250 => {
+            let to_chop = 251 - frame_type;
+            let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
+            Ok((index, StackMapFrame::Chop { to_chop }))
+        }
+        251 => {
+            let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
+            Ok((index, StackMapFrame::SameExtended))
+        }
+        252..=254 => {
+            let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
+            let locals = VerificationTypeIter::new(decoder, (frame_type - 251).into(), current_offset)?;
+            Ok((index, StackMapFrame::Append { locals }))
+        }
+        255 => {
+            let index = code::Index::new(u32::from(decoder.read::<u16>()?) + current_offset);
 
-        let local_count = decoder.read()?;
-        let locals = VerificationTypeIter::new(decoder, local_count, current_offset)?;
+            let local_count = decoder.read()?;
+            let locals = VerificationTypeIter::new(decoder, local_count, current_offset)?;
 
-        let stack_count = decoder.read()?;
-        let stack = VerificationTypeIter::new(decoder, stack_count, current_offset)?;
+            let stack_count = decoder.read()?;
+            let stack = VerificationTypeIter::new(decoder, stack_count, current_offset)?;
 
-        Ok((index, StackMapFrame::Full { locals, stack }))
-    } else {
-        Err(DecodeError::from_decoder(DecodeErrorKind::TagReserved, decoder))
+            Ok((index, StackMapFrame::Full { locals, stack }))
+        }
+        _ => Err(DecodeError::from_decoder(DecodeErrorKind::TagReserved, decoder)),
     }
 }
 

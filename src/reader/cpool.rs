@@ -58,11 +58,7 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
         let mut content = Vec::with_capacity(length);
         while content.len() < length {
             let item = decoder.read()?;
-            let push_extra = if let Item::Long(_) | Item::Double(_) = item {
-                true
-            } else {
-                false
-            };
+            let push_extra = matches!(item, Item::Long(_) | Item::Double(_));
 
             content.push(Some(item));
             if push_extra {
