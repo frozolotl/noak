@@ -90,7 +90,7 @@ pub struct ExceptionHandlers<'a> {
 }
 
 impl<'a> Iterator for ExceptionHandlers<'a> {
-    type Item = ExceptionHandler<'a>;
+    type Item = ExceptionHandler;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.decoder.read().ok()
@@ -103,12 +103,50 @@ impl<'a> fmt::Debug for ExceptionHandlers<'a> {
     }
 }
 
-crate::__dec_structure! {
-    pub struct ExceptionHandler<'a> {
-        start: Index,
-        end: Index,
-        handler: Index,
-        catch_type: cpool::Index<cpool::Class>,
+pub struct ExceptionHandler {
+    start: Index,
+    end: Index,
+    handler: Index,
+    catch_type: Option<cpool::Index<cpool::Class>>,
+}
+
+impl ExceptionHandler {
+    pub fn start(&self) -> Index {
+        self.start
+    }
+
+    pub fn end(&self) -> Index {
+        self.end
+    }
+
+    pub fn handler(&self) -> Index {
+        self.handler
+    }
+
+    pub fn catch_type(&self) -> Option<cpool::Index<cpool::Class>> {
+        self.catch_type
+    }
+}
+
+impl<'a> Decode<'a> for ExceptionHandler {
+    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+        let start: u16 = decoder.read()?;
+        let end: u16 = decoder.read()?;
+        let handler: u16 = decoder.read()?;
+        let catch_type = decoder.read()?;
+
+        Ok(ExceptionHandler {
+            start: Index::new(start.into()),
+            end: Index::new(end.into()),
+            handler: Index::new(handler.into()),
+            catch_type,
+        })
+    }
+}
+
+impl fmt::Debug for ExceptionHandler {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ExceptionHandler").finish()
     }
 }
 
