@@ -1,5 +1,8 @@
 use crate::reader::decoding::*;
-use crate::{header::AccessFlags, reader::cpool};
+use crate::{
+    header::AccessFlags,
+    reader::{cpool, AttributeIter},
+};
 
 crate::__dec_structure! {
     pub struct EnclosingMethod<'a> into {
@@ -41,3 +44,20 @@ crate::__dec_structure! {
 
 pub type BootstrapArguments<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::MethodHandle>, u16>;
 pub type BootstrapArgumentIter<'a> = DecodeCounted<'a, cpool::Index<cpool::MethodHandle>, u16>;
+
+crate::__dec_structure! {
+    pub struct Record<'a> into {
+        components: RecordComponents<'a>,
+    }
+}
+
+crate::__dec_structure! {
+    pub struct RecordComponent<'a> {
+        name: cpool::Index<cpool::Utf8<'static>>,
+        descriptor: cpool::Index<cpool::Utf8<'static>>,
+        attributes: AttributeIter<'a>,
+    }
+}
+
+pub type RecordComponents<'a> = DecodeCountedCopy<'a, RecordComponent<'a>, u16>;
+pub type RecordComponentIter<'a> = DecodeCounted<'a, RecordComponent<'a>, u16>;
