@@ -61,7 +61,7 @@ impl<'a> Decoder<'a> {
     /// Creates a new decoder with its own context.
     pub fn with_context(&self, ctx: Context) -> Decoder<'a> {
         Decoder {
-            buf: &self.buf,
+            buf: self.buf,
             file_position: self.file_position,
             ctx,
         }

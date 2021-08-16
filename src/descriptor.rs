@@ -67,7 +67,7 @@ impl<'a> TypeDescriptor<'a> {
                     'C' => Char,
                     'L' => {
                         let mut valid = false;
-                        while let Some((_, ch)) = chars.next() {
+                        for (_, ch) in &mut chars {
                             if ch == ';' {
                                 valid = true;
                                 break;
@@ -246,7 +246,7 @@ fn read_type<'a>(mut ch: char, chars: &mut CharsLossy<'a>) -> Option<TypeDescrip
         'C' => Char,
         'L' => {
             let input = chars.as_mstr();
-            while let Some(ch) = chars.next() {
+            for ch in chars.by_ref() {
                 if ch == ';' {
                     break;
                 }
