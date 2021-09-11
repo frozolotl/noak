@@ -388,9 +388,7 @@ impl Countdown for u16 {
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __dec_structure {
+macro_rules! dec_structure {
     (
         $(#[$meta:meta])*
         $vis:vis struct $struct_name:ident<'a> $($into:ident)? {
@@ -419,7 +417,7 @@ macro_rules! __dec_structure {
             )*
         }
 
-        $crate::__dec_structure!(@decode $($into)? => $struct_name; $($field_name),*);
+        $crate::reader::decoding::dec_structure!(@decode $($into)? => $struct_name; $($field_name),*);
 
         impl<'a> std::fmt::Debug for $struct_name<'a> {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -448,3 +446,6 @@ macro_rules! __dec_structure {
         }
     };
 }
+
+#[allow(unused_imports)]
+pub(crate) use dec_structure;

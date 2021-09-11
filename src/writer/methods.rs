@@ -93,4 +93,4 @@ impl WriteDisassembler for MethodWriter<MethodWriterState::End> {
     }
 }
 
-crate::__enc_state!(pub mod MethodWriterState: AccessFlags, Name, Descriptor, Attributes, End);
+enc_state!(pub mod MethodWriterState: AccessFlags, Name, Descriptor, Attributes, End);

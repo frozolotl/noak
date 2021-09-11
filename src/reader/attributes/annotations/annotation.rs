@@ -8,7 +8,7 @@ pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>, u16>;
 pub type ParameterAnnotations<'a> = DecodeCountedCopy<'a, Annotations<'a>, u8>;
 pub type ParameterAnnotationIter<'a> = DecodeCounted<'a, Annotations<'a>, u8>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Annotation<'a> {
         type_: cpool::Index<cpool::Utf8<'a>>,
         pairs: ElementValuePairIter<'a>,
@@ -17,7 +17,7 @@ crate::__dec_structure! {
 
 pub type ElementValuePairIter<'a> = DecodeCounted<'a, ElementValuePair<'a>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct ElementValuePair<'a> {
         name: cpool::Index<cpool::Utf8<'a>>,
         value: ElementValue<'a>,

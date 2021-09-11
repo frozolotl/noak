@@ -74,4 +74,4 @@ impl<Ctx: EncoderContext> WriteDisassembler for AttributeWriter<Ctx, AttributeWr
     }
 }
 
-crate::__enc_state!(pub mod AttributeWriterState: Start, End);
+enc_state!(pub mod AttributeWriterState: Start, End);

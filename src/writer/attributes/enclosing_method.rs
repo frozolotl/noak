@@ -90,4 +90,4 @@ impl<Ctx: EncoderContext> WriteDisassembler for EnclosingMethodWriter<Ctx, Enclo
     }
 }
 
-crate::__enc_state!(pub mod EnclosingMethodWriterState: Class, Method, End);
+enc_state!(pub mod EnclosingMethodWriterState: Class, Method, End);

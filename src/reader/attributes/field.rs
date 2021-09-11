@@ -1,6 +1,6 @@
-use crate::reader::cpool;
+use crate::reader::{cpool, decoding::*};
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct ConstantValue<'a> into {
         value: cpool::Index<cpool::Item<'static>>,
     }

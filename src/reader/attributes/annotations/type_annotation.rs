@@ -248,7 +248,7 @@ impl fmt::Debug for LocalVariable {
 pub type TypePath<'a> = DecodeCountedCopy<'a, TypePathSegment<'a>, u8>;
 pub type TypePathSegmentIter<'a> = DecodeCounted<'a, TypePathSegment<'a>, u8>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct TypePathSegment<'a> {
         kind: TypePathSegmentKind,
         type_argument_index: u8,

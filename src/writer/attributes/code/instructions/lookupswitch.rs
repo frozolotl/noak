@@ -104,4 +104,4 @@ impl<'a, Ctx: EncoderContext> WriteDisassembler for LookupSwitchWriter<'a, Ctx, 
     }
 }
 
-crate::__enc_state!(pub mod LookupSwitchWriterState: Default, Jumps);
+enc_state!(pub mod LookupSwitchWriterState: Default, Jumps);

@@ -361,9 +361,7 @@ macro_rules! impl_counter {
 impl_counter!(u8);
 impl_counter!(u16);
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __enc_state {
+macro_rules! enc_state {
     ($vis:vis mod $mod:ident : $($state:ident),* $(,)?) => {
         #[allow(non_snake_case)]
         #[doc(hidden)]
@@ -384,3 +382,6 @@ macro_rules! __enc_state {
         }
     };
 }
+
+#[allow(unused_imports)]
+pub(crate) use enc_state;

@@ -181,7 +181,7 @@ impl fmt::Debug for Index {
 pub type LineNumberTable<'a> = DecodeCountedCopy<'a, Line<'a>, u16>;
 pub type LineNumberIter<'a> = DecodeCounted<'a, Line<'a>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Line<'a> {
         start: Index,
         line_number: u16,

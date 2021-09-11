@@ -147,4 +147,4 @@ impl<Ctx: EncoderContext> WriteDisassembler for InnerClassWriter<Ctx, InnerClass
     }
 }
 
-crate::__enc_state!(pub mod InnerClassWriterState: InnerClass, OuterClass, InnerName, InnerAccessFlags, End);
+enc_state!(pub mod InnerClassWriterState: InnerClass, OuterClass, InnerName, InnerAccessFlags, End);

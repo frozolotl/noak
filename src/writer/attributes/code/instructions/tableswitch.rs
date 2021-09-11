@@ -108,4 +108,4 @@ impl<'a, Ctx: EncoderContext> WriteDisassembler for TableSwitchWriter<'a, Ctx, T
     }
 }
 
-crate::__enc_state!(pub mod TableSwitchWriterState: Default, Low, High, Jumps);
+enc_state!(pub mod TableSwitchWriterState: Default, Low, High, Jumps);

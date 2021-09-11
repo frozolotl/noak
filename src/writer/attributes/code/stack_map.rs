@@ -320,7 +320,7 @@ impl<Ctx: EncoderContext> WriteDisassembler for VerificationTypeWriter<Ctx, Veri
     }
 }
 
-crate::__enc_state!(pub mod VerificationTypeWriterState: Start, End);
+enc_state!(pub mod VerificationTypeWriterState: Start, End);
 
 pub struct Same1Writer<Ctx: EncoderContext, State: Same1WriterState::State> {
     context: CodeWriter<Ctx, CodeWriterState::Attributes>,
@@ -363,7 +363,7 @@ impl<Ctx: EncoderContext> WriteDisassembler for Same1Writer<Ctx, Same1WriterStat
     }
 }
 
-crate::__enc_state!(pub mod Same1WriterState: Start, End);
+enc_state!(pub mod Same1WriterState: Start, End);
 
 pub struct AppendWriter<Ctx> {
     context: CodeWriter<Ctx, CodeWriterState::Attributes>,
@@ -476,4 +476,4 @@ impl<Ctx: EncoderContext> WriteDisassembler for FullWriter<Ctx, FullWriterState:
     }
 }
 
-crate::__enc_state!(pub mod FullWriterState: Locals, Stack, End);
+enc_state!(pub mod FullWriterState: Locals, Stack, End);

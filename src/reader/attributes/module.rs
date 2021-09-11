@@ -5,13 +5,13 @@ use crate::reader::decoding::*;
 pub type ModulePackages<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Package>, u16>;
 pub type ModulePackageIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Package>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct ModuleMainClass<'a> into {
         main_class: cpool::Index<cpool::Class>,
     }
 }
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Module<'a> into {
         name: cpool::Index<cpool::Module>,
         flags: AccessFlags,
@@ -27,7 +27,7 @@ crate::__dec_structure! {
 pub type Requires<'a> = DecodeCountedCopy<'a, Require<'a>, u16>;
 pub type RequireIter<'a> = DecodeCounted<'a, Require<'a>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Require<'a> {
         index: cpool::Index<cpool::Module>,
         flags: AccessFlags,
@@ -40,7 +40,7 @@ pub type ExportIter<'a> = DecodeCounted<'a, Export<'a>, u16>;
 
 pub type ExportsToIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Module>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Export<'a> {
         index: cpool::Index<cpool::Package>,
         flags: AccessFlags,
@@ -53,7 +53,7 @@ pub type OpenIter<'a> = DecodeCounted<'a, Open<'a>, u16>;
 
 pub type OpensToIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Module>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Open<'a> {
         index: cpool::Index<cpool::Package>,
         flags: AccessFlags,
@@ -69,7 +69,7 @@ pub type ProvideIter<'a> = DecodeCounted<'a, Provide<'a>, u16>;
 
 pub type ProvidesWithIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Provide<'a> {
         index: cpool::Index<cpool::Class>,
         provides_with: ProvidesWithIter<'a>,

@@ -4,7 +4,7 @@ use crate::reader::{cpool, AttributeIter};
 
 pub type FieldIter<'a> = DecodeCounted<'a, Field<'a>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Field<'a> {
         access_flags: AccessFlags,
         name: cpool::Index<cpool::Utf8<'a>>,
@@ -15,7 +15,7 @@ crate::__dec_structure! {
 
 pub type MethodIter<'a> = DecodeCounted<'a, Method<'a>, u16>;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct Method<'a> {
         access_flags: AccessFlags,
         name: cpool::Index<cpool::Utf8<'a>>,

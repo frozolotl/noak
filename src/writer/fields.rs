@@ -93,4 +93,4 @@ impl WriteDisassembler for FieldWriter<FieldWriterState::End> {
     }
 }
 
-crate::__enc_state!(pub mod FieldWriterState: AccessFlags, Name, Descriptor, Attributes, End);
+enc_state!(pub mod FieldWriterState: AccessFlags, Name, Descriptor, Attributes, End);

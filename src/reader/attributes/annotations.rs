@@ -5,8 +5,9 @@ pub use annotation::*;
 pub use type_annotation::*;
 
 use crate::reader::attributes::annotations::ElementValue;
+use crate::reader::decoding::*;
 
-crate::__dec_structure! {
+dec_structure! {
     pub struct AnnotationDefault<'a> into {
         value: ElementValue<'a>,
     }

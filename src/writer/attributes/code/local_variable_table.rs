@@ -149,4 +149,4 @@ impl<Ctx: EncoderContext> WriteDisassembler for LocalVariableWriter<Ctx, LocalVa
     }
 }
 
-crate::__enc_state!(pub mod LocalVariableWriterState: Start, Length, Name, Descriptor, Index, End);
+enc_state!(pub mod LocalVariableWriterState: Start, Length, Name, Descriptor, Index, End);

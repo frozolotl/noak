@@ -94,4 +94,4 @@ impl<Ctx: EncoderContext> WriteDisassembler for ExceptionWriter<Ctx, ExceptionWr
     }
 }
 
-crate::__enc_state!(pub mod ExceptionWriterState: Start, Length, Handler, CatchType, End);
+enc_state!(pub mod ExceptionWriterState: Start, Length, Handler, CatchType, End);

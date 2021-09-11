@@ -197,7 +197,7 @@ impl<Ctx: EncoderContext> WriteDisassembler for CodeWriter<Ctx, CodeWriterState:
     }
 }
 
-crate::__enc_state!(pub mod CodeWriterState: MaxStack, MaxLocals, Instructions, ExceptionTable, Attributes, End);
+enc_state!(pub mod CodeWriterState: MaxStack, MaxLocals, Instructions, ExceptionTable, Attributes, End);
 
 pub struct Label(u32);
 

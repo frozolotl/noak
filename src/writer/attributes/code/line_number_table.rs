@@ -83,4 +83,4 @@ impl<Ctx: EncoderContext> WriteDisassembler for LineNumberWriter<Ctx, LineNumber
     }
 }
 
-crate::__enc_state!(pub mod LineNumberWriterState: Start, LineNumber, End);
+enc_state!(pub mod LineNumberWriterState: Start, LineNumber, End);

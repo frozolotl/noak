@@ -262,4 +262,4 @@ impl<State: ClassWriterState::State> EncoderContext for ClassWriter<State> {
     }
 }
 
-crate::__enc_state!(pub mod ClassWriterState: Start, AccessFlags, ThisClass, SuperClass, Interfaces, Fields, Methods, Attributes, End);
+enc_state!(pub mod ClassWriterState: Start, AccessFlags, ThisClass, SuperClass, Interfaces, Fields, Methods, Attributes, End);

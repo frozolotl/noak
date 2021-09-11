@@ -43,4 +43,4 @@ impl WriteDisassembler for InterfaceWriter<InterfaceWriterState::End> {
     }
 }
 
-crate::__enc_state!(pub mod InterfaceWriterState: Start, End);
+enc_state!(pub mod InterfaceWriterState: Start, End);
