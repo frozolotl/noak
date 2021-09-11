@@ -1,5 +1,5 @@
 use crate::reader::decoding::Decoder;
-use std::fmt;
+use std::{error::Error, fmt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecodeErrorKind {
@@ -90,7 +90,7 @@ impl DecodeError {
     }
 }
 
-impl std::error::Error for DecodeError {}
+impl Error for DecodeError {}
 
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -102,7 +102,7 @@ impl fmt::Display for DecodeError {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum EncodeErrorKind {
     TooManyItems,
     TooManyBytes,
@@ -116,13 +116,14 @@ pub enum EncodeErrorKind {
     NegativeOffset,
     IncorrectBounds,
     InvalidKeyOrder,
+    Other(Box<dyn Error + 'static>),
 }
 
 impl fmt::Display for EncodeErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use EncodeErrorKind::*;
 
-        match *self {
+        match self {
             TooManyItems => write!(f, "too many items"),
             TooManyBytes => write!(f, "too many bytes"),
             StringTooLong => write!(f, "string is too long"),
@@ -138,23 +139,31 @@ impl fmt::Display for EncodeErrorKind {
                 f,
                 "the keys in the lookupswitch instruction must be in an increasing numerical order"
             ),
+            Other(err) => write!(f, "other: {}", err),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct EncodeError {
     kind: EncodeErrorKind,
     context: Context,
 }
 
 impl EncodeError {
+    pub fn from_err<E: Error + 'static>(err: E, context: Context) -> EncodeError {
+        EncodeError {
+            kind: EncodeErrorKind::Other(Box::new(err)),
+            context,
+        }
+    }
+
     pub(crate) fn with_context(kind: EncodeErrorKind, context: Context) -> EncodeError {
         EncodeError { kind, context }
     }
 
-    pub fn kind(&self) -> EncodeErrorKind {
-        self.kind
+    pub fn kind(&self) -> &EncodeErrorKind {
+        &self.kind
     }
 
     pub fn context(&self) -> Context {
@@ -162,7 +171,15 @@ impl EncodeError {
     }
 }
 
-impl std::error::Error for EncodeError {}
+impl Error for EncodeError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        if let EncodeErrorKind::Other(err) = self.kind() {
+            Some(&**err)
+        } else {
+            None
+        }
+    }
+}
 
 impl fmt::Display for EncodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
