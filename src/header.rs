@@ -27,11 +27,13 @@ impl Version {
     pub const V14: Version = Version { major: 58, minor: 0 };
     pub const V15: Version = Version { major: 59, minor: 0 };
     pub const V16: Version = Version { major: 60, minor: 0 };
+    pub const V17: Version = Version { major: 61, minor: 0 };
+    pub const V18: Version = Version { major: 62, minor: 0 };
 
     /// The latest version which is guaranteed to work with this library.
     /// Changes of this value are not considered breaking changes.
     pub const fn latest() -> Version {
-        Version::V16
+        Version::V18
     }
 
     pub fn is_preview(self) -> bool {

@@ -70,6 +70,7 @@ impl<'a> Attribute<'a> {
             b"ModulePackages" => Ok(AttributeContent::ModulePackages(decoder.read_into()?)),
             b"NestMembers" => Ok(AttributeContent::NestMembers(decoder.read_into()?)),
             b"NestHost" => Ok(AttributeContent::NestHost(decoder.read_into()?)),
+            b"PermittedSubclasses" => Ok(AttributeContent::PermittedSubclasses(decoder.read_into()?)),
             b"Record" => Ok(AttributeContent::Record(decoder.read_into()?)),
             b"RuntimeInvisibleAnnotations" => Ok(AttributeContent::RuntimeInvisibleAnnotations(decoder.read_into()?)),
             b"RuntimeInvisibleParameterAnnotations" => Ok(AttributeContent::RuntimeInvisibleParameterAnnotations(
@@ -120,6 +121,7 @@ pub enum AttributeContent<'a> {
     ModulePackages(ModulePackages<'a>),
     NestHost(NestHost<'a>),
     NestMembers(NestMembers<'a>),
+    PermittedSubclasses(PermittedSubclasses<'a>),
     Record(Record<'a>),
     RuntimeInvisibleAnnotations(Annotations<'a>),
     RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'a>),

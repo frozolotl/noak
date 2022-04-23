@@ -61,3 +61,6 @@ dec_structure! {
 
 pub type RecordComponents<'a> = DecodeCountedCopy<'a, RecordComponent<'a>, u16>;
 pub type RecordComponentIter<'a> = DecodeCounted<'a, RecordComponent<'a>, u16>;
+
+pub type PermittedSubclasses<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Class>, u16>;
+pub type PermittedSubclassesIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
