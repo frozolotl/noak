@@ -21,12 +21,17 @@ impl MStr {
     /// Creates a new string from a modified UTF-8 byte slice.
     pub fn from_bytes(v: &[u8]) -> Result<&MStr, DecodeError> {
         if is_mutf8_valid(v) {
+            // This is safe because the byte slice is guaranteed to be valid.
             Ok(unsafe { MStr::from_mutf8_unchecked(v) })
         } else {
             Err(DecodeError::new(DecodeErrorKind::InvalidMutf8))
         }
     }
 
+    // Creates a string from a modified UTF-8 byte slice without checking its contents.
+    //
+    // # Safety
+    // This slice may not contain bytes that do not make up a modified UTF-8 string.
     unsafe fn from_mutf8_unchecked(v: &[u8]) -> &MStr {
         &*(v as *const [u8] as *const MStr)
     }
@@ -81,6 +86,7 @@ impl MStr {
 
 impl Default for &'static MStr {
     fn default() -> &'static MStr {
+        // This is safe because an empty slice is always valid.
         unsafe { MStr::from_mutf8_unchecked(&[]) }
     }
 }
@@ -100,6 +106,7 @@ impl ops::Index<ops::Range<usize>> for MStr {
     #[inline]
     fn index(&self, index: ops::Range<usize>) -> &MStr {
         if index.start <= index.end && self.is_char_boundary(index.start) && self.is_char_boundary(index.end) {
+            // This is safe because the underlying buffer is guaranteed to be valid.
             unsafe { MStr::from_mutf8_unchecked(self.inner.get_unchecked(index)) }
         } else {
             panic!("MUtf8 index out of bounds");
@@ -127,6 +134,7 @@ impl ops::Index<ops::RangeTo<usize>> for MStr {
     #[inline]
     fn index(&self, index: ops::RangeTo<usize>) -> &MStr {
         if self.is_char_boundary(index.end) {
+            // This is safe because the underlying buffer is guaranteed to be valid.
             unsafe { MStr::from_mutf8_unchecked(self.inner.get_unchecked(index)) }
         } else {
             panic!("MUtf8 index out of bounds");
@@ -154,6 +162,7 @@ impl ops::Index<ops::RangeFrom<usize>> for MStr {
     #[inline]
     fn index(&self, index: ops::RangeFrom<usize>) -> &MStr {
         if self.is_char_boundary(index.start) {
+            // This is safe because the underlying buffer is guaranteed to be valid.
             unsafe { MStr::from_mutf8_unchecked(self.inner.get_unchecked(index)) }
         } else {
             panic!("MUtf8 index out of bounds");
@@ -205,6 +214,7 @@ impl Deref for MString {
 
     #[inline]
     fn deref(&self) -> &MStr {
+        // This is safe because the underlying buffer is guaranteed to be valid.
         unsafe { MStr::from_mutf8_unchecked(&self.buf) }
     }
 }
@@ -258,7 +268,7 @@ impl<'a> fmt::Display for Display<'a> {
                 i += 1;
             } else {
                 if i != start {
-                    // safe since everything from start to i is non-zero ascii
+                    // This is safe because everything from start to i are non-zero ascii bytes.
                     f.write_str(unsafe { str::from_utf8_unchecked(&self.inner[start..i]) })?;
                 }
 
@@ -271,7 +281,7 @@ impl<'a> fmt::Display for Display<'a> {
         }
 
         if i != start {
-            // safe since everything from start to i is non-zero ascii
+            // This is safe because everything from start to i are non-zero ascii bytes.
             f.write_str(unsafe { str::from_utf8_unchecked(&self.inner[start..i]) })?;
         }
 
@@ -291,7 +301,7 @@ pub struct Chars<'a> {
 
 impl<'a> Chars<'a> {
     pub fn as_mstr(&self) -> &'a MStr {
-        // safe because the underlying buffer is guaranteed to be valid
+        // This is safe because the underlying buffer is guaranteed to be valid.
         unsafe { MStr::from_mutf8_unchecked(self.inner) }
     }
 }
@@ -303,6 +313,7 @@ impl<'a> Iterator for Chars<'a> {
         if self.inner.is_empty() {
             None
         } else {
+            // This is safe because the underlying buffer is guaranteed to be valid.
             let (size, ch) = unsafe { decode_mutf8_char(self.inner) };
             self.inner = &self.inner[size..];
             Some(ch)
@@ -315,6 +326,7 @@ impl<'a> DoubleEndedIterator for Chars<'a> {
         if self.inner.is_empty() {
             None
         } else {
+            // This is safe because the underlying buffer is guaranteed to be valid.
             let (size, ch) = unsafe { decode_mutf8_char_reversed(self.inner) };
             self.inner = &self.inner[..self.inner.len() - size];
             Some(ch)
@@ -324,6 +336,7 @@ impl<'a> DoubleEndedIterator for Chars<'a> {
 
 impl<'a> fmt::Debug for Chars<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // This is safe because the underlying buffer is guaranteed to be valid.
         let s = unsafe { MStr::from_mutf8_unchecked(self.inner) };
         f.debug_struct("Chars").field("remaining", &s).finish()
     }
@@ -335,7 +348,7 @@ pub struct CharsLossy<'a> {
 
 impl<'a> CharsLossy<'a> {
     pub fn as_mstr(&self) -> &'a MStr {
-        // safe because the underlying buffer is guaranteed to be valid
+        // This is safe because the underlying buffer is guaranteed to be valid.
         unsafe { MStr::from_mutf8_unchecked(self.inner) }
     }
 }
@@ -347,6 +360,7 @@ impl<'a> Iterator for CharsLossy<'a> {
         if self.inner.is_empty() {
             None
         } else {
+            // This is safe because the underlying buffer is guaranteed to be valid.
             let (size, ch) = unsafe { decode_mutf8_char(self.inner) };
             self.inner = &self.inner[size..];
             Some(ch.unwrap_or(char::REPLACEMENT_CHARACTER))
@@ -359,6 +373,7 @@ impl<'a> DoubleEndedIterator for CharsLossy<'a> {
         if self.inner.is_empty() {
             None
         } else {
+            // This is safe because the underlying buffer is guaranteed to be valid.
             let (size, ch) = unsafe { decode_mutf8_char_reversed(self.inner) };
             self.inner = &self.inner[..self.inner.len() - size];
             Some(ch.unwrap_or(char::REPLACEMENT_CHARACTER))
@@ -368,6 +383,7 @@ impl<'a> DoubleEndedIterator for CharsLossy<'a> {
 
 impl<'a> fmt::Debug for CharsLossy<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // This is safe because the underlying buffer is guaranteed to be valid.
         let s = unsafe { MStr::from_mutf8_unchecked(self.inner) };
         f.debug_struct("CharsLossy").field("remaining", &s).finish()
     }
@@ -441,6 +457,8 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
 }
 
 /// Decodes a character and returns its size.
+///
+/// # Safety
 /// The input bytes **must** be valid modified utf-8
 unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Option<char>) {
     if v[0] & 0b1000_0000 == 0b0000_0000 {
@@ -480,6 +498,8 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Option<char>) {
 }
 
 /// Decodes a character from back to front and returns its size.
+///
+/// # Safety
 /// The input bytes **must** be valid modified utf-8
 unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Option<char>) {
     let b1 = v[v.len() - 1];
