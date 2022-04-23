@@ -139,7 +139,7 @@ pub struct ReplacingEncoder<'a> {
 impl<'a> Encoder for ReplacingEncoder<'a> {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         assert!(bytes.len() <= self.buf.len(), "cannot replace bytes which do not exist");
-        let (a, b) = std::mem::replace(&mut self.buf, &mut []).split_at_mut(bytes.len());
+        let (a, b) = std::mem::take(&mut self.buf).split_at_mut(bytes.len());
         a.copy_from_slice(bytes);
         self.buf = b;
         Ok(())
