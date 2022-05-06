@@ -401,7 +401,7 @@ mod tests {
             // length
             0x00, 0x01
         ], Context::ConstantPool);
-        let pool: ConstantPool = decoder.read().unwrap();
+        let pool: ConstantPool<'_> = decoder.read().unwrap();
         assert_eq!(pool.iter().count(), 0);
     }
 
@@ -412,7 +412,7 @@ mod tests {
             // length
             0x00, 0x00
         ], Context::ConstantPool);
-        assert!(decoder.read::<ConstantPool>().is_err());
+        assert!(decoder.read::<ConstantPool<'_>>().is_err());
     }
 
     #[test]
@@ -437,7 +437,7 @@ mod tests {
             // random bytes which should not be read
             0xAB, 0xC4, 0x12, 0x4B, 0xFF, 0x00,
         ], Context::ConstantPool);
-        let pool: ConstantPool = decoder.read().unwrap();
+        let pool: ConstantPool<'_> = decoder.read().unwrap();
         let mut iter = pool.iter();
         assert_eq!(iter.next(), Some(&Item::Integer(Integer { value: 5 })));
         assert_eq!(
@@ -486,8 +486,8 @@ mod tests {
         );
 
         assert!(pool.get::<Double>(Index::new(4).unwrap()).is_err());
-        assert!(pool.get::<Item>(Index::new(3).unwrap()).is_err());
-        assert!(pool.get::<Item>(Index::new(7).unwrap()).is_err());
-        assert!(Index::<Item>::new(0).is_err());
+        assert!(pool.get::<Item<'_>>(Index::new(3).unwrap()).is_err());
+        assert!(pool.get::<Item<'_>>(Index::new(7).unwrap()).is_err());
+        assert!(Index::<Item<'_>>::new(0).is_err());
     }
 }
