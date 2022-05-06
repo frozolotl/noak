@@ -255,7 +255,7 @@ fn read_header(decoder: &mut Decoder<'_>) -> Result<Version, DecodeError> {
     }
 }
 
-pub type InterfaceIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
+pub type InterfaceIter<'a> = DecodeManyIter<'a, cpool::Index<cpool::Class>, u16>;
 
 #[cfg(test)]
 mod tests {

@@ -2,6 +2,7 @@ use crate::error::*;
 use std::fmt;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
+use std::ops::ControlFlow;
 
 #[derive(Clone)]
 pub struct Decoder<'a> {
@@ -206,15 +207,15 @@ impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
     }
 }
 
-pub struct DecodeCounted<'a, T, Count> {
+pub struct DecodeManyIter<'a, T, Count> {
     decoder: Decoder<'a>,
     remaining: Count,
     marker: PhantomData<T>,
 }
 
-impl<'a, T, Count: 'a> DecodeCounted<'a, T, Count> {
-    pub fn new(decoder: Decoder<'a>, count: Count) -> DecodeCounted<'a, T, Count> {
-        DecodeCounted {
+impl<'a, T, Count: 'a> DecodeManyIter<'a, T, Count> {
+    pub fn new(decoder: Decoder<'a>, count: Count) -> DecodeManyIter<'a, T, Count> {
+        DecodeManyIter {
             decoder,
             remaining: count,
             marker: PhantomData,
@@ -222,7 +223,7 @@ impl<'a, T, Count: 'a> DecodeCounted<'a, T, Count> {
     }
 }
 
-impl<'a, T, Count> Decode<'a> for DecodeCounted<'a, T, Count>
+impl<'a, T, Count> Decode<'a> for DecodeManyIter<'a, T, Count>
 where
     T: Decode<'a>,
     Count: Decode<'a> + Countdown,
@@ -232,11 +233,11 @@ where
         let old_decoder = decoder.clone();
 
         let mut remaining = count;
-        while let CountState::Continue = remaining.decrement() {
+        while remaining.decrement().is_continue() {
             decoder.read::<T>()?;
         }
 
-        Ok(DecodeCounted {
+        Ok(DecodeManyIter {
             decoder: old_decoder,
             remaining: count,
             marker: PhantomData,
@@ -244,14 +245,14 @@ where
     }
 }
 
-impl<'a, T, Count> DecodeInto<'a> for DecodeCounted<'a, T, Count>
+impl<'a, T, Count> DecodeInto<'a> for DecodeManyIter<'a, T, Count>
 where
     T: Decode<'a>,
     Count: Decode<'a>,
 {
     fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
         let remaining = decoder.read()?;
-        Ok(DecodeCounted {
+        Ok(DecodeManyIter {
             decoder,
             remaining,
             marker: PhantomData,
@@ -259,7 +260,7 @@ where
     }
 }
 
-impl<'a, T, Count> Iterator for DecodeCounted<'a, T, Count>
+impl<'a, T, Count> Iterator for DecodeManyIter<'a, T, Count>
 where
     T: Decode<'a>,
     Count: Decode<'a> + Countdown,
@@ -268,8 +269,8 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.remaining.decrement() {
-            CountState::Continue => Some(self.decoder.read()),
-            CountState::Break => None,
+            ControlFlow::Continue(()) => Some(self.decoder.read()),
+            ControlFlow::Break(()) => None,
         }
     }
 
@@ -278,16 +279,16 @@ where
     }
 }
 
-impl<'a, T, Count> FusedIterator for DecodeCounted<'a, T, Count>
+impl<'a, T, Count> FusedIterator for DecodeManyIter<'a, T, Count>
 where
     T: Decode<'a>,
     Count: Decode<'a> + Countdown,
 {
 }
 
-impl<'a, T, Count: Countdown> Clone for DecodeCounted<'a, T, Count> {
+impl<'a, T, Count: Countdown> Clone for DecodeManyIter<'a, T, Count> {
     fn clone(&self) -> Self {
-        DecodeCounted {
+        DecodeManyIter {
             decoder: self.decoder.clone(),
             remaining: self.remaining,
             marker: PhantomData,
@@ -295,95 +296,89 @@ impl<'a, T, Count: Countdown> Clone for DecodeCounted<'a, T, Count> {
     }
 }
 
-impl<'a, T, Count> fmt::Debug for DecodeCounted<'a, T, Count>
+impl<'a, T, Count> fmt::Debug for DecodeManyIter<'a, T, Count>
 where
     T: Decode<'a>,
     Count: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("DecodeCounted")
+        f.debug_struct("DecodeManyIter")
             .field("remaining", &self.remaining)
             .finish()
     }
 }
 
-pub struct DecodeCountedCopy<'a, T, Count> {
-    iter: DecodeCounted<'a, T, Count>,
+pub struct DecodeMany<'a, T, Count> {
+    iter: DecodeManyIter<'a, T, Count>,
 }
 
-impl<'a, T, Count: Countdown> DecodeCountedCopy<'a, T, Count> {
-    pub fn iter(&self) -> DecodeCounted<'a, T, Count> {
+impl<'a, T, Count: Countdown> DecodeMany<'a, T, Count> {
+    pub fn iter(&self) -> DecodeManyIter<'a, T, Count> {
         self.iter.clone()
     }
 }
 
-impl<'a, T, Count> Decode<'a> for DecodeCountedCopy<'a, T, Count>
+impl<'a, T, Count> Decode<'a> for DecodeMany<'a, T, Count>
 where
     T: Decode<'a>,
     Count: Decode<'a> + Countdown,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(DecodeCountedCopy { iter: decoder.read()? })
+        Ok(DecodeMany { iter: decoder.read()? })
     }
 }
 
-impl<'a, T, Count> DecodeInto<'a> for DecodeCountedCopy<'a, T, Count>
+impl<'a, T, Count> DecodeInto<'a> for DecodeMany<'a, T, Count>
 where
     T: Decode<'a>,
     Count: Decode<'a>,
 {
     fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
-        Ok(DecodeCountedCopy {
+        Ok(DecodeMany {
             iter: decoder.read_into()?,
         })
     }
 }
 
-impl<'a, T, Count: Countdown> Clone for DecodeCountedCopy<'a, T, Count> {
+impl<'a, T, Count: Countdown> Clone for DecodeMany<'a, T, Count> {
     fn clone(&self) -> Self {
-        DecodeCountedCopy {
+        DecodeMany {
             iter: self.iter.clone(),
         }
     }
 }
 
-impl<'a, T, Count> fmt::Debug for DecodeCountedCopy<'a, T, Count> {
+impl<'a, T, Count> fmt::Debug for DecodeMany<'a, T, Count> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("DecodeCountedCopy").finish()
+        f.debug_struct("DecodeMany").finish()
     }
 }
 
 pub trait Countdown: Copy + Into<usize> {
     /// Decrements the counter and returns whether it can continue.
-    fn decrement(&mut self) -> CountState;
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CountState {
-    Continue,
-    Break,
+    fn decrement(&mut self) -> ControlFlow<()>;
 }
 
 impl Countdown for u8 {
-    fn decrement(&mut self) -> CountState {
+    fn decrement(&mut self) -> ControlFlow<()> {
         match self.checked_sub(1) {
             Some(i) => {
                 *self = i;
-                CountState::Continue
+                ControlFlow::Continue(())
             }
-            None => CountState::Break,
+            None => ControlFlow::Break(()),
         }
     }
 }
 
 impl Countdown for u16 {
-    fn decrement(&mut self) -> CountState {
+    fn decrement(&mut self) -> ControlFlow<()> {
         match self.checked_sub(1) {
             Some(i) => {
                 *self = i;
-                CountState::Continue
+                ControlFlow::Continue(())
             }
-            None => CountState::Break,
+            None => ControlFlow::Break(()),
         }
     }
 }

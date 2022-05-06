@@ -5,8 +5,8 @@ use crate::reader::decoding::*;
 use std::fmt;
 use std::ops::Range;
 
-pub type LocalVariableTable<'a> = DecodeCountedCopy<'a, LocalVariable, u16>;
-pub type LocalVariableIter<'a> = DecodeCounted<'a, LocalVariable, u16>;
+pub type LocalVariableTable<'a> = DecodeMany<'a, LocalVariable, u16>;
+pub type LocalVariableIter<'a> = DecodeManyIter<'a, LocalVariable, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariable {
@@ -62,8 +62,8 @@ impl fmt::Debug for LocalVariable {
     }
 }
 
-pub type LocalVariableTypeTable<'a> = DecodeCountedCopy<'a, LocalVariableType, u16>;
-pub type LocalVariableTypeIter<'a> = DecodeCounted<'a, LocalVariableType, u16>;
+pub type LocalVariableTypeTable<'a> = DecodeMany<'a, LocalVariableType, u16>;
+pub type LocalVariableTypeIter<'a> = DecodeManyIter<'a, LocalVariableType, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariableType {

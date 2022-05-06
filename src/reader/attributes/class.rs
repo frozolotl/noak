@@ -17,11 +17,11 @@ dec_structure! {
     }
 }
 
-pub type NestMembers<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Class>, u16>;
-pub type NestMemberIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
+pub type NestMembers<'a> = DecodeMany<'a, cpool::Index<cpool::Class>, u16>;
+pub type NestMemberIter<'a> = DecodeManyIter<'a, cpool::Index<cpool::Class>, u16>;
 
-pub type InnerClasses<'a> = DecodeCountedCopy<'a, InnerClass<'a>, u16>;
-pub type InnerClassIter<'a> = DecodeCounted<'a, InnerClass<'a>, u16>;
+pub type InnerClasses<'a> = DecodeMany<'a, InnerClass<'a>, u16>;
+pub type InnerClassIter<'a> = DecodeManyIter<'a, InnerClass<'a>, u16>;
 
 dec_structure! {
     pub struct InnerClass<'a> {
@@ -32,8 +32,8 @@ dec_structure! {
     }
 }
 
-pub type BootstrapMethods<'a> = DecodeCountedCopy<'a, BootstrapMethod<'a>, u16>;
-pub type BootstrapMethodIter<'a> = DecodeCounted<'a, BootstrapMethod<'a>, u16>;
+pub type BootstrapMethods<'a> = DecodeMany<'a, BootstrapMethod<'a>, u16>;
+pub type BootstrapMethodIter<'a> = DecodeManyIter<'a, BootstrapMethod<'a>, u16>;
 
 dec_structure! {
     pub struct BootstrapMethod<'a> {
@@ -42,8 +42,8 @@ dec_structure! {
     }
 }
 
-pub type BootstrapArguments<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::MethodHandle>, u16>;
-pub type BootstrapArgumentIter<'a> = DecodeCounted<'a, cpool::Index<cpool::MethodHandle>, u16>;
+pub type BootstrapArguments<'a> = DecodeMany<'a, cpool::Index<cpool::MethodHandle>, u16>;
+pub type BootstrapArgumentIter<'a> = DecodeManyIter<'a, cpool::Index<cpool::MethodHandle>, u16>;
 
 dec_structure! {
     pub struct Record<'a> into {
@@ -59,8 +59,8 @@ dec_structure! {
     }
 }
 
-pub type RecordComponents<'a> = DecodeCountedCopy<'a, RecordComponent<'a>, u16>;
-pub type RecordComponentIter<'a> = DecodeCounted<'a, RecordComponent<'a>, u16>;
+pub type RecordComponents<'a> = DecodeMany<'a, RecordComponent<'a>, u16>;
+pub type RecordComponentIter<'a> = DecodeManyIter<'a, RecordComponent<'a>, u16>;
 
-pub type PermittedSubclasses<'a> = DecodeCountedCopy<'a, cpool::Index<cpool::Class>, u16>;
-pub type PermittedSubclassesIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
+pub type PermittedSubclasses<'a> = DecodeMany<'a, cpool::Index<cpool::Class>, u16>;
+pub type PermittedSubclassesIter<'a> = DecodeManyIter<'a, cpool::Index<cpool::Class>, u16>;

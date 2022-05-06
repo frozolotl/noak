@@ -8,10 +8,10 @@ dec_structure! {
     }
 }
 
-pub type ExceptionIter<'a> = DecodeCounted<'a, cpool::Index<cpool::Class>, u16>;
+pub type ExceptionIter<'a> = DecodeManyIter<'a, cpool::Index<cpool::Class>, u16>;
 
-pub type MethodParameters<'a> = DecodeCountedCopy<'a, MethodParameter<'a>, u8>;
-pub type MethodParameterIter<'a> = DecodeCounted<'a, MethodParameter<'a>, u8>;
+pub type MethodParameters<'a> = DecodeMany<'a, MethodParameter<'a>, u8>;
+pub type MethodParameterIter<'a> = DecodeManyIter<'a, MethodParameter<'a>, u8>;
 
 dec_structure! {
     pub struct MethodParameter<'a> {

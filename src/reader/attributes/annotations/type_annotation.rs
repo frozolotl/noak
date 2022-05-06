@@ -5,8 +5,8 @@ use crate::reader::{attributes::code, cpool};
 use std::fmt;
 use std::ops::Range;
 
-pub type TypeAnnotations<'a> = DecodeCountedCopy<'a, TypeAnnotation<'a>, u16>;
-pub type TypeAnnotationIter<'a> = DecodeCounted<'a, TypeAnnotation<'a>, u16>;
+pub type TypeAnnotations<'a> = DecodeMany<'a, TypeAnnotation<'a>, u16>;
+pub type TypeAnnotationIter<'a> = DecodeManyIter<'a, TypeAnnotation<'a>, u16>;
 
 #[derive(Clone)]
 pub struct TypeAnnotation<'a> {
@@ -213,8 +213,8 @@ impl<'a> Decode<'a> for SuperTypeIndex {
     }
 }
 
-pub type LocalVariableTargetTable<'a> = DecodeCountedCopy<'a, LocalVariable, u16>;
-pub type LocalVariableTargetIter<'a> = DecodeCounted<'a, LocalVariable, u16>;
+pub type LocalVariableTargetTable<'a> = DecodeMany<'a, LocalVariable, u16>;
+pub type LocalVariableTargetIter<'a> = DecodeManyIter<'a, LocalVariable, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariable {
@@ -251,8 +251,8 @@ impl fmt::Debug for LocalVariable {
     }
 }
 
-pub type TypePath<'a> = DecodeCountedCopy<'a, TypePathSegment<'a>, u8>;
-pub type TypePathSegmentIter<'a> = DecodeCounted<'a, TypePathSegment<'a>, u8>;
+pub type TypePath<'a> = DecodeMany<'a, TypePathSegment<'a>, u8>;
+pub type TypePathSegmentIter<'a> = DecodeManyIter<'a, TypePathSegment<'a>, u8>;
 
 dec_structure! {
     pub struct TypePathSegment<'a> {

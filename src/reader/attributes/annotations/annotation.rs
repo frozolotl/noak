@@ -2,11 +2,11 @@ use crate::error::*;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
 
-pub type Annotations<'a> = DecodeCountedCopy<'a, Annotation<'a>, u16>;
-pub type AnnotationIter<'a> = DecodeCounted<'a, Annotation<'a>, u16>;
+pub type Annotations<'a> = DecodeMany<'a, Annotation<'a>, u16>;
+pub type AnnotationIter<'a> = DecodeManyIter<'a, Annotation<'a>, u16>;
 
-pub type ParameterAnnotations<'a> = DecodeCountedCopy<'a, Annotations<'a>, u8>;
-pub type ParameterAnnotationIter<'a> = DecodeCounted<'a, Annotations<'a>, u8>;
+pub type ParameterAnnotations<'a> = DecodeMany<'a, Annotations<'a>, u8>;
+pub type ParameterAnnotationIter<'a> = DecodeManyIter<'a, Annotations<'a>, u8>;
 
 dec_structure! {
     pub struct Annotation<'a> {
@@ -15,7 +15,7 @@ dec_structure! {
     }
 }
 
-pub type ElementValuePairIter<'a> = DecodeCounted<'a, ElementValuePair<'a>, u16>;
+pub type ElementValuePairIter<'a> = DecodeManyIter<'a, ElementValuePair<'a>, u16>;
 
 dec_structure! {
     pub struct ElementValuePair<'a> {
@@ -72,5 +72,5 @@ impl<'a> Decode<'a> for ElementValue<'a> {
     }
 }
 
-pub type ElementArray<'a> = DecodeCountedCopy<'a, ElementValue<'a>, u16>;
-pub type ElementArrayIter<'a> = DecodeCounted<'a, ElementValue<'a>, u16>;
+pub type ElementArray<'a> = DecodeMany<'a, ElementValue<'a>, u16>;
+pub type ElementArrayIter<'a> = DecodeManyIter<'a, ElementValue<'a>, u16>;

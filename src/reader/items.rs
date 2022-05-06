@@ -2,7 +2,7 @@ use crate::header::AccessFlags;
 use crate::reader::decoding::*;
 use crate::reader::{cpool, AttributeIter};
 
-pub type FieldIter<'a> = DecodeCounted<'a, Field<'a>, u16>;
+pub type FieldIter<'a> = DecodeManyIter<'a, Field<'a>, u16>;
 
 dec_structure! {
     pub struct Field<'a> {
@@ -13,7 +13,7 @@ dec_structure! {
     }
 }
 
-pub type MethodIter<'a> = DecodeCounted<'a, Method<'a>, u16>;
+pub type MethodIter<'a> = DecodeManyIter<'a, Method<'a>, u16>;
 
 dec_structure! {
     pub struct Method<'a> {
