@@ -34,9 +34,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         I: Into<MString>,
     {
         let length_writer = self.attribute_writer("SourceDebugExtension")?;
-        self.context
-            .encoder()
-            .write(debug_extension.into().as_bytes())?;
+        self.context.encoder().write(debug_extension.into().as_bytes())?;
         length_writer.finish(&mut self.context)?;
         Ok(AttributeWriter {
             context: self.context,

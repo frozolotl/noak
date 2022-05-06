@@ -1,5 +1,5 @@
-use std::{fmt, io};
 use std::marker::PhantomData;
+use std::{fmt, io};
 
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
@@ -233,7 +233,9 @@ impl<State: ClassWriterState::State> InternalEncoderContext for ClassWriter<Stat
 
     fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
         let index = self.pool.insert(item, &mut self.start_encoder)?;
-        self.start_encoder.replacing(Offset::new(4 + 2 + 2)).write(self.pool.len())?;
+        self.start_encoder
+            .replacing(Offset::new(4 + 2 + 2))
+            .write(self.pool.len())?;
         Ok(index)
     }
 }

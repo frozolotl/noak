@@ -108,10 +108,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
 
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
-        self.context
-            .encoder()
-            .write(251 - count)?
-            .write(offset)?;
+        self.context.encoder().write(251 - count)?.write(offset)?;
 
         Ok(self)
     }
@@ -123,10 +120,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
 
-        let type_offset = self
-            .context
-            .encoder()
-            .position();
+        let type_offset = self.context.encoder().position();
 
         self.context
             .encoder()
@@ -137,10 +131,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
         let count = append_writer.count;
         self.context = append_writer.finish()?;
 
-        self.context
-            .encoder()
-            .replacing(type_offset)
-            .write(251 + count)?;
+        self.context.encoder().replacing(type_offset).write(251 + count)?;
 
         Ok(self)
     }

@@ -11,9 +11,7 @@ use crate::writer::{
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     pub fn exceptions<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
-        F: FnOnce(
-            &mut ManyWriter<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>,
-        ) -> Result<(), EncodeError>,
+        F: FnOnce(&mut ManyWriter<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("Exceptions")?;
         let mut builder = ManyWriter::new(self.context)?;

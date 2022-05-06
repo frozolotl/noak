@@ -86,8 +86,7 @@ impl Offset {
     }
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VecEncoder {
     buf: Vec<u8>,
 }
@@ -160,11 +159,7 @@ impl<Ctx: EncoderContext> LengthWriter<Ctx> {
     }
 
     pub fn finish(self, context: &mut Ctx) -> Result<(), EncodeError> {
-        let length = context
-            .encoder()
-            .position()
-            .sub(self.length_offset)
-            .sub(Offset(4)); // subtract the amount of bytes the length takes up
+        let length = context.encoder().position().sub(self.length_offset).sub(Offset(4)); // subtract the amount of bytes the length takes up
         let length = u32::try_from(length.0)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))?;
         context.encoder().replacing(self.length_offset).write(length)?;
@@ -228,9 +223,7 @@ where
     type Disassembler = Self;
 
     fn new(mut context: Self::Context) -> Result<Self, EncodeError> {
-        let count_offset = context
-            .encoder()
-            .position();
+        let count_offset = context.encoder().position();
         let count = Count::zero();
         context.encoder().write(&count)?;
         Ok(ManyWriter {
@@ -274,10 +267,7 @@ where
         let mut context = f(W::new(context)?)?.finish()?;
 
         self.count.increment()?;
-        context
-            .encoder()
-            .replacing(self.count_offset)
-            .write(&self.count)?;
+        context.encoder().replacing(self.count_offset).write(&self.count)?;
         self.context = Some(context);
         Ok(self)
     }

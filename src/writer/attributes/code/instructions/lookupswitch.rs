@@ -45,10 +45,7 @@ impl<'a, Ctx: EncoderContext> LookupSwitchWriter<'a, Ctx, LookupSwitchWriterStat
         if self.count == 1 {
             self.context.encoder().write(self.count)?;
         } else {
-            self.context
-                .encoder()
-                .replacing(self.count_offset)
-                .write(self.count)?;
+            self.context.encoder().replacing(self.count_offset).write(self.count)?;
         }
 
         self.context.encoder().write(key)?.write(label.0)?;
@@ -77,10 +74,7 @@ impl<'a, Ctx: EncoderContext> WriteAssembler for LookupSwitchWriter<'a, Ctx, Loo
             context.encoder().write(0u8)?;
         }
 
-        let count_offset = context
-            .encoder()
-            .position()
-            .offset(4);
+        let count_offset = context.encoder().position().offset(4);
 
         Ok(LookupSwitchWriter {
             context,

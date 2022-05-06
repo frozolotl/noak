@@ -400,19 +400,12 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn fload(&mut self, index: u8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x17u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x17u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn fload_wide(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc4u8)?
-            .write(0x17u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc4u8)?.write(0x17u8)?.write(index)?;
         Ok(self)
     }
 
@@ -457,19 +450,12 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn fstore(&mut self, index: u8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x38u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x38u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn fstore_wide(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc4u8)?
-            .write(0x38u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc4u8)?.write(0x38u8)?.write(index)?;
         Ok(self)
     }
 
@@ -503,10 +489,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::FieldRef>,
     {
         let index = field.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xb4u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xb4u8)?.write(index)?;
         Ok(self)
     }
 
@@ -515,10 +498,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::FieldRef>,
     {
         let index = field.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xb2u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xb2u8)?.write(index)?;
         Ok(self)
     }
 
@@ -532,10 +512,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn gotow(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc8u8)?
-            .write(label.0)?;
+        self.code_writer.encoder().write(0xc8u8)?.write(label.0)?;
         Ok(self)
     }
 
@@ -774,11 +751,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn iinc(&mut self, index: u8, value: i8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x84u8)?
-            .write(index)?
-            .write(value)?;
+        self.code_writer.encoder().write(0x84u8)?.write(index)?.write(value)?;
         Ok(self)
     }
 
@@ -793,19 +766,12 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn iload(&mut self, index: u8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x15u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x15u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn iload_wide(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc4u8)?
-            .write(0x15u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc4u8)?.write(0x15u8)?.write(index)?;
         Ok(self)
     }
 
@@ -844,10 +810,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::Class>,
     {
         let index = type_.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xc1u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc1u8)?.write(index)?;
         Ok(self)
     }
 
@@ -884,10 +847,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::Item>,
     {
         let index = method.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xb7u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xb7u8)?.write(index)?;
         Ok(self)
     }
 
@@ -896,10 +856,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::Item>,
     {
         let index = method.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xb8u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xb8u8)?.write(index)?;
         Ok(self)
     }
 
@@ -908,10 +865,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::MethodRef>,
     {
         let index = method.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xb6u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xb6u8)?.write(index)?;
         Ok(self)
     }
 
@@ -941,19 +895,12 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn istore(&mut self, index: u8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x36u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x36u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn istore_wide(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc4u8)?
-            .write(0x36u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc4u8)?.write(0x36u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1002,10 +949,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn jsrw(&mut self, label: LabelRef) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc9u8)?
-            .write(label.0)?;
+        self.code_writer.encoder().write(0xc9u8)?.write(label.0)?;
         Ok(self)
     }
 
@@ -1066,10 +1010,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         let index = constant.insert(&mut self.code_writer)?.as_u16();
         let index = u8::try_from(index)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::IndexNotFitting, Context::Code))?;
-        self.code_writer
-            .encoder()
-            .write(0x12u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x12u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1078,10 +1019,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::Item>,
     {
         let index = constant.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0x13u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x13u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1090,10 +1028,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::Item>,
     {
         let index = constant.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0x14u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x14u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1103,19 +1038,12 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn lload(&mut self, index: u8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x16u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x16u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn lload_wide(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc4u8)?
-            .write(0x16u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc4u8)?.write(0x16u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1186,19 +1114,12 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn lstore(&mut self, index: u8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x37u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0x37u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn lstore_wide(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc4u8)?
-            .write(0x37u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc4u8)?.write(0x37u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1265,10 +1186,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::Class>,
     {
         let index = class.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xbbu8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xbbu8)?.write(index)?;
         Ok(self)
     }
 
@@ -1277,10 +1195,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::Class>,
     {
         let index = array_type.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xbcu8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xbcu8)?.write(index)?;
         Ok(self)
     }
 
@@ -1304,10 +1219,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::FieldRef>,
     {
         let index = field.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xb5u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xb5u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1316,27 +1228,17 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
         I: cpool::Insertable<cpool::FieldRef>,
     {
         let index = field.insert(&mut self.code_writer)?;
-        self.code_writer
-            .encoder()
-            .write(0xb3u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xb3u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn ret<I>(&mut self, index: u8) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xa9u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xa9u8)?.write(index)?;
         Ok(self)
     }
 
     pub fn ret_wide<I>(&mut self, index: u16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0xc4u8)?
-            .write(0xa9u8)?
-            .write(index)?;
+        self.code_writer.encoder().write(0xc4u8)?.write(0xa9u8)?.write(index)?;
         Ok(self)
     }
 
@@ -1356,10 +1258,7 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
     }
 
     pub fn sipush(&mut self, value: i16) -> Result<&mut Self, EncodeError> {
-        self.code_writer
-            .encoder()
-            .write(0x11u8)?
-            .write(value)?;
+        self.code_writer.encoder().write(0x11u8)?.write(value)?;
         Ok(self)
     }
 
