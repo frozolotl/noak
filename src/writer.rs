@@ -9,7 +9,7 @@ mod methods;
 pub use attributes::{AttributeWriter, AttributeWriterState};
 pub use class::{ClassWriter, ClassWriterState};
 pub use cpool::*;
-pub use encoding::CountedWriter;
+pub use encoding::ManyWriter;
 pub use fields::*;
 pub use interfaces::*;
 pub use methods::*;

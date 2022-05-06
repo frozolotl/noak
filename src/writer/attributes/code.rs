@@ -93,10 +93,10 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
     pub fn exceptions<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::Attributes>, EncodeError>
     where
         F: FnOnce(
-            &mut CountedWriter<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>,
+            &mut ManyWriter<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>,
         ) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self)?;
+        let mut builder = ManyWriter::new(self)?;
         f(&mut builder)?;
         self = builder.finish()?;
         Ok(CodeWriter {
@@ -111,10 +111,10 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::End>, EncodeError>
     where
         F: FnOnce(
-            &mut CountedWriter<AttributeWriter<Ctx, AttributeWriterState::Start>, u16>,
+            &mut ManyWriter<AttributeWriter<Ctx, AttributeWriterState::Start>, u16>,
         ) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self.context)?;
+        let mut builder = ManyWriter::new(self.context)?;
         f(&mut builder)?;
         self.context = builder.finish()?;
 

@@ -448,10 +448,10 @@ impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Locals> {
     pub fn locals<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::Locals>, EncodeError>
     where
         F: FnOnce(
-            &mut CountedWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+            &mut ManyWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
         ) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self.context)?;
+        let mut builder = ManyWriter::new(self.context)?;
         f(&mut builder)?;
         self.context = builder.finish()?;
 
@@ -466,10 +466,10 @@ impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Stack> {
     pub fn stack<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::End>, EncodeError>
     where
         F: FnOnce(
-            &mut CountedWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+            &mut ManyWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
         ) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self.context)?;
+        let mut builder = ManyWriter::new(self.context)?;
         f(&mut builder)?;
         self.context = builder.finish()?;
 

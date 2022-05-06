@@ -12,11 +12,11 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     pub fn enclosing_method<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
         F: FnOnce(
-            &mut CountedWriter<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class>, u16>,
+            &mut ManyWriter<EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class>, u16>,
         ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("EnclosingMethod")?;
-        let mut builder = CountedWriter::new(self.context)?;
+        let mut builder = ManyWriter::new(self.context)?;
         f(&mut builder)?;
         self.context = builder.finish()?;
         length_writer.finish(&mut self.context)?;

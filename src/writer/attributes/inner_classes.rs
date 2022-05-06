@@ -13,11 +13,11 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     pub fn inner_classes<F>(mut self, f: F) -> Result<AttributeWriter<Ctx, AttributeWriterState::End>, EncodeError>
     where
         F: FnOnce(
-            &mut CountedWriter<InnerClassWriter<Ctx, InnerClassWriterState::InnerClass>, u16>,
+            &mut ManyWriter<InnerClassWriter<Ctx, InnerClassWriterState::InnerClass>, u16>,
         ) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("InnerClasses")?;
-        let mut builder = CountedWriter::new(self.context)?;
+        let mut builder = ManyWriter::new(self.context)?;
         f(&mut builder)?;
         self.context = builder.finish()?;
         length_writer.finish(&mut self.context)?;

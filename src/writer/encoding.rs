@@ -242,7 +242,7 @@ pub trait WriteDisassembler {
     fn finish(self) -> Result<Self::Context, EncodeError>;
 }
 
-pub struct CountedWriter<W: WriteAssembler, Count> {
+pub struct ManyWriter<W: WriteAssembler, Count> {
     /// The offset of the counter starting at the pool end.
     count_offset: Offset,
     context: Option<W::Context>,
@@ -250,7 +250,7 @@ pub struct CountedWriter<W: WriteAssembler, Count> {
     marker: PhantomData<W>,
 }
 
-impl<W, Count> WriteAssembler for CountedWriter<W, Count>
+impl<W, Count> WriteAssembler for ManyWriter<W, Count>
 where
     W: WriteAssembler,
     Count: Encode + Counter,
@@ -266,7 +266,7 @@ where
             .sub(context.class_writer().pool_end);
         let count = Count::zero();
         context.class_writer_mut().encoder.write(&count)?;
-        Ok(CountedWriter {
+        Ok(ManyWriter {
             context: Some(context),
             count_offset,
             count,
@@ -275,7 +275,7 @@ where
     }
 }
 
-impl<W, Count> WriteDisassembler for CountedWriter<W, Count>
+impl<W, Count> WriteDisassembler for ManyWriter<W, Count>
 where
     W: WriteAssembler,
     Count: Encode + Counter,
@@ -289,7 +289,7 @@ where
     }
 }
 
-impl<W, Count> CountedWriter<W, Count>
+impl<W, Count> ManyWriter<W, Count>
 where
     W: WriteAssembler,
     Count: Encode + Counter,
@@ -318,9 +318,9 @@ where
     }
 }
 
-impl<W: WriteAssembler, Count> fmt::Debug for CountedWriter<W, Count> {
+impl<W: WriteAssembler, Count> fmt::Debug for ManyWriter<W, Count> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CountedWriter").finish()
+        f.debug_struct("ManyWriter").finish()
     }
 }
 

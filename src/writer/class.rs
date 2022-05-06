@@ -171,9 +171,9 @@ impl ClassWriter<ClassWriterState::SuperClass> {
 impl ClassWriter<ClassWriterState::Interfaces> {
     pub fn interfaces<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Fields>, EncodeError>
     where
-        F: FnOnce(&mut CountedWriter<InterfaceWriter<InterfaceWriterState::Start>, u16>) -> Result<(), EncodeError>,
+        F: FnOnce(&mut ManyWriter<InterfaceWriter<InterfaceWriterState::Start>, u16>) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self)?;
+        let mut builder = ManyWriter::new(self)?;
         f(&mut builder)?;
         self = builder.finish()?;
 
@@ -189,9 +189,9 @@ impl ClassWriter<ClassWriterState::Interfaces> {
 impl ClassWriter<ClassWriterState::Fields> {
     pub fn fields<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Methods>, EncodeError>
     where
-        F: FnOnce(&mut CountedWriter<FieldWriter<FieldWriterState::AccessFlags>, u16>) -> Result<(), EncodeError>,
+        F: FnOnce(&mut ManyWriter<FieldWriter<FieldWriterState::AccessFlags>, u16>) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self)?;
+        let mut builder = ManyWriter::new(self)?;
         f(&mut builder)?;
         self = builder.finish()?;
 
@@ -207,9 +207,9 @@ impl ClassWriter<ClassWriterState::Fields> {
 impl ClassWriter<ClassWriterState::Methods> {
     pub fn methods<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::Attributes>, EncodeError>
     where
-        F: FnOnce(&mut CountedWriter<MethodWriter<MethodWriterState::AccessFlags>, u16>) -> Result<(), EncodeError>,
+        F: FnOnce(&mut ManyWriter<MethodWriter<MethodWriterState::AccessFlags>, u16>) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self)?;
+        let mut builder = ManyWriter::new(self)?;
         f(&mut builder)?;
         self = builder.finish()?;
 
@@ -226,13 +226,13 @@ impl ClassWriter<ClassWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<ClassWriter<ClassWriterState::End>, EncodeError>
     where
         F: FnOnce(
-            &mut CountedWriter<
+            &mut ManyWriter<
                 AttributeWriter<ClassWriter<ClassWriterState::Attributes>, AttributeWriterState::Start>,
                 u16,
             >,
         ) -> Result<(), EncodeError>,
     {
-        let mut builder = CountedWriter::new(self)?;
+        let mut builder = ManyWriter::new(self)?;
         f(&mut builder)?;
         self = builder.finish()?;
 
