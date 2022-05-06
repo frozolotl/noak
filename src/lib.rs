@@ -3,7 +3,7 @@
     missing_debug_implementations,
     rust_2018_idioms,
     trivial_casts,
-    unused_qualifications,
+    unused_qualifications
 )]
 
 pub mod descriptor;
