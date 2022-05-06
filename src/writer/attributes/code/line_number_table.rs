@@ -40,7 +40,7 @@ impl<Ctx: EncoderContext> LineNumberWriter<Ctx, LineNumberWriterState::Start> {
         let offset = self.context.get_label_position(label)?;
         let offset = u16::try_from(offset)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
-        self.context.class_writer_mut().encoder.write(offset)?;
+        self.context.encoder().write(offset)?;
 
         Ok(LineNumberWriter {
             context: self.context,
@@ -54,7 +54,7 @@ impl<Ctx: EncoderContext> LineNumberWriter<Ctx, LineNumberWriterState::LineNumbe
         mut self,
         line_number: u16,
     ) -> Result<LineNumberWriter<Ctx, LineNumberWriterState::End>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(line_number)?;
+        self.context.encoder().write(line_number)?;
 
         Ok(LineNumberWriter {
             context: self.context,

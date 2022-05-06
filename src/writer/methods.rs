@@ -17,7 +17,7 @@ pub struct MethodWriter<State: MethodWriterState::State> {
 
 impl MethodWriter<MethodWriterState::AccessFlags> {
     pub fn access_flags(mut self, flags: AccessFlags) -> Result<MethodWriter<MethodWriterState::Name>, EncodeError> {
-        self.class_writer.encoder.write(flags)?;
+        self.class_writer.encoder().write(flags)?;
         Ok(MethodWriter {
             class_writer: self.class_writer,
             _marker: PhantomData,
@@ -31,7 +31,7 @@ impl MethodWriter<MethodWriterState::Name> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = name.insert(&mut self.class_writer)?;
-        self.class_writer.encoder.write(index)?;
+        self.class_writer.encoder().write(index)?;
         Ok(MethodWriter {
             class_writer: self.class_writer,
             _marker: PhantomData,
@@ -45,7 +45,7 @@ impl MethodWriter<MethodWriterState::Descriptor> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = descriptor.insert(&mut self.class_writer)?;
-        self.class_writer.encoder.write(index)?;
+        self.class_writer.encoder().write(index)?;
         Ok(MethodWriter {
             class_writer: self.class_writer,
             _marker: PhantomData,

@@ -27,7 +27,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = name.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         LengthWriter::new(&mut self.context)
     }
@@ -42,8 +42,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     {
         let index = name.insert(&mut self.context)?;
         self.context
-            .class_writer_mut()
-            .encoder
+            .encoder()
             .write(index)?
             .write(bytes.len() as u32)?
             .write(bytes)?;

@@ -16,7 +16,7 @@ impl InterfaceWriter<InterfaceWriterState::Start> {
         I: cpool::Insertable<cpool::Class>,
     {
         let index = name.insert(&mut self.class_writer)?;
-        self.class_writer.encoder.write(index)?;
+        self.class_writer.encoder().write(index)?;
         Ok(InterfaceWriter {
             class_writer: self.class_writer,
             _marker: PhantomData,

@@ -43,7 +43,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerClas
         I: cpool::Insertable<cpool::Class>,
     {
         let index = class.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(InnerClassWriter {
             context: self.context,
@@ -61,7 +61,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::OuterClas
         I: cpool::Insertable<cpool::Class>,
     {
         let index = class.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(InnerClassWriter {
             context: self.context,
@@ -73,7 +73,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::OuterClas
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        self.context.class_writer_mut().encoder.write(0u16)?;
+        self.context.encoder().write(0u16)?;
 
         Ok(InnerClassWriter {
             context: self.context,
@@ -91,7 +91,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerName
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = name.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(InnerClassWriter {
             context: self.context,
@@ -105,7 +105,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerName
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
-        self.context.class_writer_mut().encoder.write(0u16)?;
+        self.context.encoder().write(0u16)?;
 
         Ok(InnerClassWriter {
             context: self.context,
@@ -119,7 +119,7 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerAcce
         mut self,
         flags: AccessFlags,
     ) -> Result<InnerClassWriter<Ctx, InnerClassWriterState::End>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(flags)?;
+        self.context.encoder().write(flags)?;
 
         Ok(InnerClassWriter {
             context: self.context,

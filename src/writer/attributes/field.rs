@@ -14,7 +14,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     {
         let length_writer = self.attribute_writer("ConstantValue")?;
         let value_index = value.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(value_index)?;
+        self.context.encoder().write(value_index)?;
         length_writer.finish(&mut self.context)?;
         Ok(AttributeWriter {
             context: self.context,

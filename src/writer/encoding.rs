@@ -1,7 +1,8 @@
 use crate::error::*;
-use crate::writer::class::{ClassWriter, ClassWriterState};
 use std::fmt;
 use std::marker::PhantomData;
+
+use super::cpool;
 
 pub trait Encoder: Sized {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
@@ -80,16 +81,13 @@ impl Offset {
         Offset(self.0 + by)
     }
 
-    pub const fn add(self, by: Offset) -> Offset {
-        Offset(self.0 + by.0)
-    }
-
     pub const fn sub(self, by: Offset) -> Offset {
         Offset(self.0 - by.0)
     }
 }
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct VecEncoder {
     buf: Vec<u8>,
 }
@@ -103,19 +101,16 @@ impl VecEncoder {
         Offset::new(self.buf.len())
     }
 
+    pub fn inner(&self) -> &[u8] {
+        &self.buf
+    }
+
     pub fn into_inner(self) -> Vec<u8> {
         self.buf
     }
 
     pub fn buf(&self) -> &[u8] {
         &self.buf
-    }
-
-    pub fn inserting(&mut self, at: Offset) -> InsertingEncoder<'_> {
-        InsertingEncoder {
-            buf: &mut self.buf,
-            cursor: at.0,
-        }
     }
 
     pub fn replacing(&mut self, at: Offset) -> ReplacingEncoder<'_> {
@@ -132,6 +127,7 @@ impl Encoder for VecEncoder {
     }
 }
 
+#[derive(Debug)]
 pub struct ReplacingEncoder<'a> {
     buf: &'a mut [u8],
 }
@@ -146,41 +142,17 @@ impl<'a> Encoder for ReplacingEncoder<'a> {
     }
 }
 
-pub struct InsertingEncoder<'a> {
-    buf: &'a mut Vec<u8>,
-    cursor: usize,
-}
-
-impl<'a> InsertingEncoder<'a> {
-    pub fn position(&self) -> Offset {
-        Offset::new(self.cursor)
-    }
-}
-
-impl<'a> Encoder for InsertingEncoder<'a> {
-    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        let mut v = self.buf.split_off(self.cursor);
-        self.buf.extend_from_slice(bytes);
-        self.buf.append(&mut v);
-
-        self.cursor += bytes.len();
-        Ok(())
-    }
-}
-
-/// An encoder writing the count of bytes to the front.
+/// An encoder writing the amount of bytes written since its creation to the front.
 pub struct LengthWriter<Ctx> {
-    /// The offset of the byte counter starting at the pool end.
+    /// The offset of the byte counter.
     length_offset: Offset,
     marker: PhantomData<Ctx>,
 }
 
 impl<Ctx: EncoderContext> LengthWriter<Ctx> {
     pub fn new(context: &mut Ctx) -> Result<Self, EncodeError> {
-        let pool_end = context.class_writer().pool_end;
-        let encoder = &mut context.class_writer_mut().encoder;
-        let length_offset = encoder.position().sub(pool_end);
-        encoder.write(0u32)?;
+        let length_offset = context.encoder().position();
+        context.encoder().write(0u32)?;
         Ok(LengthWriter {
             length_offset,
             marker: PhantomData,
@@ -189,16 +161,13 @@ impl<Ctx: EncoderContext> LengthWriter<Ctx> {
 
     pub fn finish(self, context: &mut Ctx) -> Result<(), EncodeError> {
         let length = context
-            .class_writer_mut()
-            .encoder
+            .encoder()
             .position()
-            .sub(context.class_writer().pool_end)
             .sub(self.length_offset)
-            .sub(Offset(4));
+            .sub(Offset(4)); // subtract the amount of bytes the length takes up
         let length = u32::try_from(length.0)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))?;
-        let position = self.length_offset.add(context.class_writer().pool_end);
-        context.class_writer_mut().encoder.replacing(position).write(length)?;
+        context.encoder().replacing(self.length_offset).write(length)?;
         Ok(())
     }
 }
@@ -209,25 +178,25 @@ impl<E: Encoder> Encoder for &mut E {
     }
 }
 
-#[doc(hidden)]
-pub trait EncoderContext {
-    type State: ClassWriterState::State;
+pub trait InternalEncoderContext {
+    fn encoder(&mut self) -> &mut VecEncoder;
 
-    fn class_writer(&self) -> &ClassWriter<Self::State>;
-    fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State>;
+    fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError>;
 }
 
-impl<'a, Ctx: EncoderContext> EncoderContext for &'a mut Ctx {
-    type State = Ctx::State;
-
-    fn class_writer(&self) -> &ClassWriter<Self::State> {
-        Ctx::class_writer(self)
+impl<'a, Ctx: InternalEncoderContext> InternalEncoderContext for &'a mut Ctx {
+    fn encoder(&mut self) -> &mut VecEncoder {
+        (**self).encoder()
     }
 
-    fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State> {
-        Ctx::class_writer_mut(self)
+    fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
+        (**self).insert_constant(item)
     }
 }
+
+pub trait EncoderContext: InternalEncoderContext {}
+
+impl<Ctx: InternalEncoderContext> EncoderContext for Ctx {}
 
 pub trait WriteAssembler: Sized {
     type Context: EncoderContext;
@@ -260,12 +229,10 @@ where
 
     fn new(mut context: Self::Context) -> Result<Self, EncodeError> {
         let count_offset = context
-            .class_writer_mut()
-            .encoder
-            .position()
-            .sub(context.class_writer().pool_end);
+            .encoder()
+            .position();
         let count = Count::zero();
-        context.class_writer_mut().encoder.write(&count)?;
+        context.encoder().write(&count)?;
         Ok(ManyWriter {
             context: Some(context),
             count_offset,
@@ -307,11 +274,9 @@ where
         let mut context = f(W::new(context)?)?.finish()?;
 
         self.count.increment()?;
-        let position = self.count_offset.add(context.class_writer().pool_end);
         context
-            .class_writer_mut()
-            .encoder
-            .replacing(position)
+            .encoder()
+            .replacing(self.count_offset)
             .write(&self.count)?;
         self.context = Some(context);
         Ok(self)

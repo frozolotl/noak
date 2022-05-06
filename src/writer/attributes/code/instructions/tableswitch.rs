@@ -14,7 +14,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
         self,
         label: LabelRef,
     ) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Low>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(label.0)?;
+        self.context.encoder().write(label.0)?;
 
         Ok(TableSwitchWriter {
             context: self.context,
@@ -26,7 +26,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Low> {
     pub fn low(mut self, low: i32) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(low)?;
+        self.context.encoder().write(low)?;
         self.remaining = low as u32;
 
         Ok(TableSwitchWriter {
@@ -39,7 +39,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 
 impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState::High> {
     pub fn high(mut self, high: i32) -> Result<TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(high)?;
+        self.context.encoder().write(high)?;
 
         let low = self.remaining as i32;
         if low > high {
@@ -66,7 +66,7 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
         }
 
         self.remaining -= 1;
-        self.context.class_writer_mut().encoder.write(label.0)?;
+        self.context.encoder().write(label.0)?;
 
         Ok(TableSwitchWriter {
             context: self.context,
@@ -83,9 +83,9 @@ impl<'a, Ctx: EncoderContext> WriteAssembler for TableSwitchWriter<'a, Ctx, Tabl
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         let offset = context.current_offset();
 
-        context.class_writer_mut().encoder.write(0xaau8)?;
+        context.encoder().write(0xaau8)?;
         for _ in 0..3 - (offset.get() & 3) {
-            context.class_writer_mut().encoder.write(0u8)?;
+            context.encoder().write(0u8)?;
         }
 
         Ok(TableSwitchWriter {

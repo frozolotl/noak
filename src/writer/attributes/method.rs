@@ -40,7 +40,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
         I: cpool::Insertable<cpool::Class>,
     {
         let index = name.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
         Ok(self)
     }
 }

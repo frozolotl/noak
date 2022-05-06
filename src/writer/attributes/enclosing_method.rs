@@ -42,7 +42,7 @@ impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState:
         I: cpool::Insertable<cpool::Class>,
     {
         let index = class.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(EnclosingMethodWriter {
             context: self.context,
@@ -62,7 +62,7 @@ impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState:
         let index = class
             .map(|class| Ok(Some(class.insert(&mut self.context)?)))
             .unwrap_or(Ok(None))?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(EnclosingMethodWriter {
             context: self.context,

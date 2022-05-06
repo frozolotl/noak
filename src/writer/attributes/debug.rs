@@ -18,7 +18,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     {
         let length_writer = self.attribute_writer("SourceFile")?;
         let file_name_index = file_name.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(file_name_index)?;
+        self.context.encoder().write(file_name_index)?;
         length_writer.finish(&mut self.context)?;
         Ok(AttributeWriter {
             context: self.context,
@@ -35,8 +35,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     {
         let length_writer = self.attribute_writer("SourceDebugExtension")?;
         self.context
-            .class_writer_mut()
-            .encoder
+            .encoder()
             .write(debug_extension.into().as_bytes())?;
         length_writer.finish(&mut self.context)?;
         Ok(AttributeWriter {
@@ -67,7 +66,7 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     {
         let length_writer = self.attribute_writer("Signature")?;
         let signature_index = signature.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(signature_index)?;
+        self.context.encoder().write(signature_index)?;
         length_writer.finish(&mut self.context)?;
         Ok(AttributeWriter {
             context: self.context,

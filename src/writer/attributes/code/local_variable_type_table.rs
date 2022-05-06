@@ -41,7 +41,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
         let offset = self.context.get_label_position(label)?;
         let offset_u16 = u16::try_from(offset)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
-        self.context.class_writer_mut().encoder.write(offset_u16)?;
+        self.context.encoder().write(offset_u16)?;
 
         Ok(LocalVariableTypeWriter {
             context: self.context,
@@ -67,7 +67,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
 
         let length = u16::try_from(offset - self.start)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
-        self.context.class_writer_mut().encoder.write(length)?;
+        self.context.encoder().write(length)?;
 
         Ok(LocalVariableTypeWriter {
             context: self.context,
@@ -86,7 +86,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = name.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(LocalVariableTypeWriter {
             context: self.context,
@@ -105,7 +105,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = signature.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(LocalVariableTypeWriter {
             context: self.context,
@@ -120,7 +120,7 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
         mut self,
         index: u16,
     ) -> Result<LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::End>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(LocalVariableTypeWriter {
             context: self.context,

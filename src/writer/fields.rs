@@ -17,7 +17,7 @@ pub struct FieldWriter<State: FieldWriterState::State> {
 
 impl FieldWriter<FieldWriterState::AccessFlags> {
     pub fn access_flags(mut self, flags: AccessFlags) -> Result<FieldWriter<FieldWriterState::Name>, EncodeError> {
-        self.class_writer.encoder.write(flags)?;
+        self.class_writer.encoder().write(flags)?;
         Ok(FieldWriter {
             class_writer: self.class_writer,
             _marker: PhantomData,
@@ -31,7 +31,7 @@ impl FieldWriter<FieldWriterState::Name> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = name.insert(&mut self.class_writer)?;
-        self.class_writer.encoder.write(index)?;
+        self.class_writer.encoder().write(index)?;
         Ok(FieldWriter {
             class_writer: self.class_writer,
             _marker: PhantomData,
@@ -45,7 +45,7 @@ impl FieldWriter<FieldWriterState::Descriptor> {
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = descriptor.insert(&mut self.class_writer)?;
-        self.class_writer.encoder.write(index)?;
+        self.class_writer.encoder().write(index)?;
         Ok(FieldWriter {
             class_writer: self.class_writer,
             _marker: PhantomData,

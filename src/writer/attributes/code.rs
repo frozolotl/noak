@@ -13,10 +13,10 @@ pub use local_variable_type_table::{LocalVariableTypeWriter, LocalVariableTypeWr
 pub use stack_map::StackMapTableWriter;
 
 use crate::error::*;
+use crate::writer::cpool;
 use crate::writer::{
     attributes::{AttributeWriter, AttributeWriterState},
     encoding::*,
-    ClassWriter,
 };
 use std::num::NonZeroU32;
 use std::{fmt, marker::PhantomData};
@@ -47,7 +47,7 @@ pub struct CodeWriter<Ctx, State: CodeWriterState::State> {
 
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::MaxStack> {
     pub fn max_stack(mut self, max_stack: u16) -> Result<CodeWriter<Ctx, CodeWriterState::MaxLocals>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(max_stack)?;
+        self.context.encoder().write(max_stack)?;
         Ok(CodeWriter {
             context: self.context,
             label_positions: self.label_positions,
@@ -61,7 +61,7 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::MaxLocals> {
         mut self,
         max_locals: u16,
     ) -> Result<CodeWriter<Ctx, CodeWriterState::Instructions>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(max_locals)?;
+        self.context.encoder().write(max_locals)?;
         Ok(CodeWriter {
             context: self.context,
             label_positions: self.label_positions,
@@ -92,9 +92,7 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Instructions> {
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
     pub fn exceptions<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::Attributes>, EncodeError>
     where
-        F: FnOnce(
-            &mut ManyWriter<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>,
-        ) -> Result<(), EncodeError>,
+        F: FnOnce(&mut ManyWriter<ExceptionWriter<Ctx, ExceptionWriterState::Start>, u16>) -> Result<(), EncodeError>,
     {
         let mut builder = ManyWriter::new(self)?;
         f(&mut builder)?;
@@ -110,9 +108,7 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::End>, EncodeError>
     where
-        F: FnOnce(
-            &mut ManyWriter<AttributeWriter<Ctx, AttributeWriterState::Start>, u16>,
-        ) -> Result<(), EncodeError>,
+        F: FnOnce(&mut ManyWriter<AttributeWriter<Ctx, AttributeWriterState::Start>, u16>) -> Result<(), EncodeError>,
     {
         let mut builder = ManyWriter::new(self.context)?;
         f(&mut builder)?;
@@ -143,15 +139,13 @@ impl<Ctx: EncoderContext, State: CodeWriterState::State> CodeWriter<Ctx, State> 
     }
 }
 
-impl<Ctx: EncoderContext, State: CodeWriterState::State> EncoderContext for CodeWriter<Ctx, State> {
-    type State = Ctx::State;
-
-    fn class_writer(&self) -> &ClassWriter<Self::State> {
-        self.context.class_writer()
+impl<Ctx: EncoderContext, State: CodeWriterState::State> InternalEncoderContext for CodeWriter<Ctx, State> {
+    fn encoder(&mut self) -> &mut VecEncoder {
+        self.context.encoder()
     }
 
-    fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State> {
-        self.context.class_writer_mut()
+    fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
+        self.context.insert_constant(item)
     }
 }
 

@@ -14,7 +14,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
         if position >= u16::max_value() as u32 {
             return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
-        self.context.class_writer_mut().encoder.write(position as u16)?;
+        self.context.encoder().write(position as u16)?;
 
         Ok(ExceptionWriter {
             context: self.context,
@@ -29,7 +29,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Length> {
         if position > u16::max_value() as u32 {
             return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
-        self.context.class_writer_mut().encoder.write(position as u16)?;
+        self.context.encoder().write(position as u16)?;
 
         Ok(ExceptionWriter {
             context: self.context,
@@ -47,7 +47,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Handler> {
         if position > u16::max_value() as u32 {
             return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
-        self.context.class_writer_mut().encoder.write(position as u16)?;
+        self.context.encoder().write(position as u16)?;
 
         Ok(ExceptionWriter {
             context: self.context,
@@ -65,7 +65,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::CatchType> 
         I: cpool::Insertable<cpool::Class>,
     {
         let index = catch_type.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(ExceptionWriter {
             context: self.context,

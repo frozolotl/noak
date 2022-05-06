@@ -42,7 +42,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Sta
         let offset = self.context.get_label_position(label)?;
         let offset_u16 = u16::try_from(offset)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
-        self.context.class_writer_mut().encoder.write(offset_u16)?;
+        self.context.encoder().write(offset_u16)?;
 
         Ok(LocalVariableWriter {
             context: self.context,
@@ -68,7 +68,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Len
 
         let length = u16::try_from(offset - self.start)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::AttributeContent))?;
-        self.context.class_writer_mut().encoder.write(length)?;
+        self.context.encoder().write(length)?;
 
         Ok(LocalVariableWriter {
             context: self.context,
@@ -87,7 +87,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Nam
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = name.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(LocalVariableWriter {
             context: self.context,
@@ -106,7 +106,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Des
         I: cpool::Insertable<cpool::Utf8>,
     {
         let index = descriptor.insert(&mut self.context)?;
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(LocalVariableWriter {
             context: self.context,
@@ -118,7 +118,7 @@ impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Des
 
 impl<Ctx: EncoderContext> LocalVariableWriter<Ctx, LocalVariableWriterState::Index> {
     pub fn index(mut self, index: u16) -> Result<LocalVariableWriter<Ctx, LocalVariableWriterState::End>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(index)?;
+        self.context.encoder().write(index)?;
 
         Ok(LocalVariableWriter {
             context: self.context,

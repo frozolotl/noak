@@ -545,7 +545,7 @@ macro_rules! impl_insertable {
         $(
             impl Insertable<$name> for $name {
                 fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<$name>, EncodeError> {
-                    context.class_writer_mut().insert_constant(self)
+                    context.insert_constant(self)
                 }
             }
 
@@ -586,29 +586,27 @@ impl Insertable<Item> for Index<Item> {
 
 impl<I: Into<MString>> Insertable<Utf8> for I {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Utf8>, EncodeError> {
-        context
-            .class_writer_mut()
-            .insert_constant(Utf8 { content: self.into() })
+        context.insert_constant(Utf8 { content: self.into() })
     }
 }
 
 impl<I: Insertable<Utf8>> Insertable<String> for I {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<String>, EncodeError> {
         let string = self.insert(context)?;
-        context.class_writer_mut().insert_constant(String { string })
+        context.insert_constant(String { string })
     }
 }
 
 impl<I: Insertable<Utf8>> Insertable<Class> for I {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Class>, EncodeError> {
         let name = self.insert(context)?;
-        context.class_writer_mut().insert_constant(Class { name })
+        context.insert_constant(Class { name })
     }
 }
 
 impl Insertable<Integer> for i32 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Integer>, EncodeError> {
-        context.class_writer_mut().insert_constant(Integer { value: self })
+        context.insert_constant(Integer { value: self })
     }
 }
 
@@ -620,7 +618,7 @@ impl Insertable<Item> for i32 {
 
 impl Insertable<Long> for i64 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Long>, EncodeError> {
-        context.class_writer_mut().insert_constant(Long { value: self })
+        context.insert_constant(Long { value: self })
     }
 }
 
@@ -632,7 +630,7 @@ impl Insertable<Item> for i64 {
 
 impl Insertable<Float> for f32 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Float>, EncodeError> {
-        context.class_writer_mut().insert_constant(Float { value: self })
+        context.insert_constant(Float { value: self })
     }
 }
 
@@ -644,7 +642,7 @@ impl Insertable<Item> for f32 {
 
 impl Insertable<Double> for f64 {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Double>, EncodeError> {
-        context.class_writer_mut().insert_constant(Double { value: self })
+        context.insert_constant(Double { value: self })
     }
 }
 
@@ -684,7 +682,7 @@ pub struct MethodHandleInserter<I> {
 impl<I: Insertable<Item>> Insertable<MethodHandle> for MethodHandleInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<MethodHandle>, EncodeError> {
         let reference = self.reference.insert(context)?;
-        context.class_writer_mut().insert_constant(MethodHandle {
+        context.insert_constant(MethodHandle {
             kind: self.kind,
             reference,
         })
@@ -710,7 +708,7 @@ pub struct MethodTypeInserter<I> {
 impl<I: Insertable<Utf8>> Insertable<MethodType> for MethodTypeInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<MethodType>, EncodeError> {
         let descriptor = self.descriptor.insert(context)?;
-        context.class_writer_mut().insert_constant(MethodType { descriptor })
+        context.insert_constant(MethodType { descriptor })
     }
 }
 
@@ -734,7 +732,7 @@ pub struct DynamicInserter<I> {
 impl<I: Insertable<NameAndType>> Insertable<Dynamic> for DynamicInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Dynamic>, EncodeError> {
         let name_and_type = self.name_and_type.insert(context)?;
-        context.class_writer_mut().insert_constant(Dynamic {
+        context.insert_constant(Dynamic {
             bootstrap_method_attr: self.bootstrap_method_attr,
             name_and_type,
         })
@@ -761,7 +759,7 @@ pub struct InvokeDynamicInserter<I> {
 impl<I: Insertable<NameAndType>> Insertable<InvokeDynamic> for InvokeDynamicInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<InvokeDynamic>, EncodeError> {
         let name_and_type = self.name_and_type.insert(context)?;
-        context.class_writer_mut().insert_constant(InvokeDynamic {
+        context.insert_constant(InvokeDynamic {
             bootstrap_method_attr: self.bootstrap_method_attr,
             name_and_type,
         })
@@ -787,7 +785,7 @@ pub struct ModuleInserter<I> {
 impl<I: Insertable<Utf8>> Insertable<Module> for ModuleInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Module>, EncodeError> {
         let name = self.name.insert(context)?;
-        context.class_writer_mut().insert_constant(Module { name })
+        context.insert_constant(Module { name })
     }
 }
 
@@ -810,7 +808,7 @@ pub struct PackageInserter<I> {
 impl<I: Insertable<Utf8>> Insertable<Package> for PackageInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Package>, EncodeError> {
         let name = self.name.insert(context)?;
-        context.class_writer_mut().insert_constant(Package { name })
+        context.insert_constant(Package { name })
     }
 }
 
@@ -878,9 +876,7 @@ where
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<NameAndType>, EncodeError> {
         let name = self.0.insert(context)?;
         let descriptor = self.1.insert(context)?;
-        context
-            .class_writer_mut()
-            .insert_constant(NameAndType { name, descriptor })
+        context.insert_constant(NameAndType { name, descriptor })
     }
 }
 
@@ -909,9 +905,7 @@ macro_rules! ref_inserter {
             fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<$out>, EncodeError> {
                 let class = self.class.insert(context)?;
                 let name_and_type = self.name_and_type.insert(context)?;
-                context
-                    .class_writer_mut()
-                    .insert_constant($out { class, name_and_type })
+                context.insert_constant($out { class, name_and_type })
             }
         }
 

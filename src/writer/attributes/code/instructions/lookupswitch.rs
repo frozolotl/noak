@@ -16,7 +16,7 @@ impl<'a, Ctx: EncoderContext> LookupSwitchWriter<'a, Ctx, LookupSwitchWriterStat
         self,
         label: LabelRef,
     ) -> Result<LookupSwitchWriter<'a, Ctx, LookupSwitchWriterState::Jumps>, EncodeError> {
-        self.context.class_writer_mut().encoder.write(label.0)?;
+        self.context.encoder().write(label.0)?;
 
         Ok(LookupSwitchWriter {
             context: self.context,
@@ -43,17 +43,15 @@ impl<'a, Ctx: EncoderContext> LookupSwitchWriter<'a, Ctx, LookupSwitchWriterStat
             .checked_add(1)
             .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code))?;
         if self.count == 1 {
-            self.context.class_writer_mut().encoder.write(self.count)?;
+            self.context.encoder().write(self.count)?;
         } else {
-            let count_offset = self.count_offset.add(self.context.class_writer_mut().pool_end);
             self.context
-                .class_writer_mut()
-                .encoder
-                .replacing(count_offset)
+                .encoder()
+                .replacing(self.count_offset)
                 .write(self.count)?;
         }
 
-        self.context.class_writer_mut().encoder.write(key)?.write(label.0)?;
+        self.context.encoder().write(key)?.write(label.0)?;
 
         self.last_key = Some(key);
 
@@ -74,16 +72,14 @@ impl<'a, Ctx: EncoderContext> WriteAssembler for LookupSwitchWriter<'a, Ctx, Loo
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         let offset = context.current_offset();
 
-        context.class_writer_mut().encoder.write(0xabu8)?;
+        context.encoder().write(0xabu8)?;
         for _ in 0..3 - (offset.get() & 3) {
-            context.class_writer_mut().encoder.write(0u8)?;
+            context.encoder().write(0u8)?;
         }
 
         let count_offset = context
-            .class_writer()
-            .encoder
+            .encoder()
             .position()
-            .sub(context.class_writer_mut().pool_end)
             .offset(4);
 
         Ok(LookupSwitchWriter {
