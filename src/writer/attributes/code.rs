@@ -174,27 +174,6 @@ impl<Ctx, State: CodeWriterState::State> fmt::Debug for CodeWriter<Ctx, State> {
     }
 }
 
-// TODO: find a way to allow this kind of thing
-// impl<Ctx: EncoderContext> WriteDisassembler for CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
-//     type Context = Ctx;
-
-//     fn finish(mut self) -> Result<Self::Context, EncodeError> {
-//         let w = self.write_exceptions(|_| Ok(()))?;
-//         let w = w.write_attributes(|_| Ok(()))?;
-
-//         Ok(w.context)
-//     }
-// }
-
-// impl<Ctx: EncoderContext> WriteDisassembler for CodeWriter<Ctx, CodeWriterState::Attributes> {
-//     type Context = Ctx;
-
-//     fn finish(mut self) -> Result<Self::Context, EncodeError> {
-//         let w = self.write_attributes(|w| Ok(()))?;
-//         Ok(w.context)
-//     }
-// }
-
 impl<Ctx: EncoderContext> WriteDisassembler for CodeWriter<Ctx, CodeWriterState::End> {
     type Context = Ctx;
 
