@@ -1,12 +1,15 @@
 //! This example writes an example class.
 
+use std::fs::File;
+
 use noak::writer::{cpool, ClassWriter};
 use noak::AccessFlags;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args().nth(1).expect("usage: `class_writer Output.class`");
 
-    let bytes = ClassWriter::new()
+    let mut file = File::create(path)?;
+    ClassWriter::new()
         .version(noak::Version::V8)?
         .access_flags(AccessFlags::PUBLIC | AccessFlags::SUPER)?
         .this_class("Test")?
@@ -63,9 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             attributes.begin(|attribute| attribute.source_file("Test.java"))?;
             Ok(())
         })?
-        .finish()?;
-
-    std::fs::write(path, &bytes)?;
+        .write_bytes_to(&mut file)?;
 
     Ok(())
 }
