@@ -71,7 +71,7 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
 }
 
 impl<'a> fmt::Debug for ConstantPool<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ConstantPool").finish()
     }
 }
@@ -118,14 +118,14 @@ impl<I> fmt::Debug for Index<I> {
 }
 
 impl<'a, I: 'a> Decode<'a> for Index<I> {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let index = Index::new(decoder.read()?).map_err(|err| DecodeError::from_decoder(err.kind(), decoder))?;
         Ok(index)
     }
 }
 
 impl<'a, I: 'a> Decode<'a> for Option<Index<I>> {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         Ok(Index::new(decoder.read()?).ok())
     }
 }
@@ -371,7 +371,7 @@ pub enum MethodKind {
 }
 
 impl<'a> Decode<'a> for MethodKind {
-    fn decode(decoder: &mut Decoder) -> Result<MethodKind, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<MethodKind, DecodeError> {
         let tag: u8 = decoder.read()?;
         use MethodKind::*;
 

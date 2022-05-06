@@ -199,6 +199,12 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
     }
 }
 
+impl<Ctx> fmt::Debug for StackMapTableWriter<Ctx> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("StackMapTableWriter").finish()
+    }
+}
+
 pub struct VerificationTypeWriter<Ctx, State: VerificationTypeWriterState::State> {
     context: CodeWriter<Ctx, CodeWriterState::Attributes>,
     _marker: PhantomData<State>,
@@ -320,9 +326,15 @@ impl<Ctx: EncoderContext> WriteDisassembler for VerificationTypeWriter<Ctx, Veri
     }
 }
 
+impl<Ctx, State: VerificationTypeWriterState::State> fmt::Debug for VerificationTypeWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("VerificationTypeWriter").finish()
+    }
+}
+
 enc_state!(pub mod VerificationTypeWriterState: Start, End);
 
-pub struct Same1Writer<Ctx: EncoderContext, State: Same1WriterState::State> {
+pub struct Same1Writer<Ctx, State: Same1WriterState::State> {
     context: CodeWriter<Ctx, CodeWriterState::Attributes>,
     _marker: PhantomData<State>,
 }
@@ -360,6 +372,12 @@ impl<Ctx: EncoderContext> WriteDisassembler for Same1Writer<Ctx, Same1WriterStat
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
+    }
+}
+
+impl<Ctx, State: Same1WriterState::State> fmt::Debug for Same1Writer<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Same1Writer").finish()
     }
 }
 
@@ -412,6 +430,12 @@ impl<Ctx: EncoderContext> WriteDisassembler for AppendWriter<Ctx> {
                 Context::AttributeContent,
             ))
         }
+    }
+}
+
+impl<Ctx> fmt::Debug for AppendWriter<Ctx> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AppendWriter").finish()
     }
 }
 
@@ -473,6 +497,12 @@ impl<Ctx: EncoderContext> WriteDisassembler for FullWriter<Ctx, FullWriterState:
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
+    }
+}
+
+impl<Ctx, State: FullWriterState::State> fmt::Debug for FullWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FullWriter").finish()
     }
 }
 

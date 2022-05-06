@@ -1,6 +1,7 @@
 use crate::error::*;
 use crate::writer::class::{ClassWriter, ClassWriterState};
 use std::convert::TryFrom;
+use std::fmt;
 use std::marker::PhantomData;
 
 pub trait Encoder: Sized {
@@ -111,14 +112,14 @@ impl VecEncoder {
         &self.buf
     }
 
-    pub fn inserting(&mut self, at: Offset) -> InsertingEncoder {
+    pub fn inserting(&mut self, at: Offset) -> InsertingEncoder<'_> {
         InsertingEncoder {
             buf: &mut self.buf,
             cursor: at.0,
         }
     }
 
-    pub fn replacing(&mut self, at: Offset) -> ReplacingEncoder {
+    pub fn replacing(&mut self, at: Offset) -> ReplacingEncoder<'_> {
         ReplacingEncoder {
             buf: &mut self.buf[at.0..],
         }
@@ -318,6 +319,13 @@ where
     }
 }
 
+
+impl<W: WriteAssembler, Count> fmt::Debug for CountedWriter<W, Count> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CountedWriter").finish()
+    }
+}
+
 pub trait Counter: Copy {
     fn zero() -> Self;
     fn check(self) -> Result<(), EncodeError>;
@@ -369,6 +377,7 @@ macro_rules! enc_state {
             pub trait State: sealed::Sealed {}
 
             $(
+                #[derive(Debug)]
                 pub struct $state(std::convert::Infallible);
                 impl State for $state {}
             )*

@@ -33,7 +33,8 @@ impl MStr {
     // # Safety
     // This slice may not contain bytes that do not make up a modified UTF-8 string.
     unsafe fn from_mutf8_unchecked(v: &[u8]) -> &MStr {
-        &*(v as *const [u8] as *const MStr)
+        // SAFETY: Relies on &MStr and &[u8] having the same layout
+        std::mem::transmute(v)
     }
 
     #[inline]
@@ -69,17 +70,17 @@ impl MStr {
     }
 
     #[inline]
-    pub fn chars(&self) -> Chars {
+    pub fn chars(&self) -> Chars<'_> {
         Chars { inner: &self.inner }
     }
 
     #[inline]
-    pub fn chars_lossy(&self) -> CharsLossy {
+    pub fn chars_lossy(&self) -> CharsLossy<'_> {
         CharsLossy { inner: &self.inner }
     }
 
     #[inline]
-    pub fn display(&self) -> Display {
+    pub fn display(&self) -> Display<'_> {
         Display { inner: &self.inner }
     }
 }
@@ -260,7 +261,7 @@ pub struct Display<'a> {
 }
 
 impl<'a> fmt::Display for Display<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut start = 0;
         let mut i = 0;
         while i < self.inner.len() {

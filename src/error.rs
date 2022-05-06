@@ -17,7 +17,7 @@ pub enum DecodeErrorKind {
 }
 
 impl fmt::Display for DecodeErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use DecodeErrorKind::*;
 
         match *self {
@@ -68,7 +68,7 @@ impl DecodeError {
         }
     }
 
-    pub(crate) fn from_decoder(kind: DecodeErrorKind, decoder: &Decoder) -> DecodeError {
+    pub(crate) fn from_decoder(kind: DecodeErrorKind, decoder: &Decoder<'_>) -> DecodeError {
         DecodeError {
             kind,
             position: Some(decoder.file_position()),
@@ -93,7 +93,7 @@ impl DecodeError {
 impl Error for DecodeError {}
 
 impl fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(pos) = self.position() {
             write!(f, "{} at {} in {}", self.kind(), pos, self.context())
         } else {
@@ -120,7 +120,7 @@ pub enum EncodeErrorKind {
 }
 
 impl fmt::Display for EncodeErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use EncodeErrorKind::*;
 
         match self {
@@ -182,7 +182,7 @@ impl Error for EncodeError {
 }
 
 impl fmt::Display for EncodeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} in {}", self.kind(), self.context())
     }
 }
@@ -205,7 +205,7 @@ pub enum Context {
 }
 
 impl fmt::Display for Context {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use Context::*;
 
         match *self {

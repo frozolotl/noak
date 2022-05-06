@@ -28,7 +28,7 @@ impl<'a> Iterator for RawInstructions<'a> {
 }
 
 impl<'a> fmt::Debug for RawInstructions<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RawInstructions").finish()
     }
 }
@@ -411,7 +411,7 @@ impl<'a> LookupSwitch<'a> {
 }
 
 impl<'a> fmt::Debug for LookupSwitch<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LookupSwitch").finish()
     }
 }
@@ -445,7 +445,7 @@ impl<'a> Iterator for LookupPairs<'a> {
 }
 
 impl<'a> fmt::Debug for LookupPairs<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LookupPairs").finish()
     }
 }
@@ -491,7 +491,7 @@ impl<'a> TableSwitch<'a> {
 }
 
 impl<'a> fmt::Debug for TableSwitch<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TableSwitch").finish()
     }
 }
@@ -521,7 +521,7 @@ impl<'a> Iterator for TablePairs<'a> {
 }
 
 impl<'a> fmt::Debug for TablePairs<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TablePairs").finish()
     }
 }
@@ -543,7 +543,7 @@ impl TablePair {
 }
 
 impl fmt::Debug for TablePair {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TablePair").finish()
     }
 }
@@ -861,7 +861,7 @@ impl<'a> RawInstruction<'a> {
 }
 
 impl<'a> Decode<'a> for ArrayType {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         use ArrayType::*;
 
         let tag: u8 = decoder.read()?;

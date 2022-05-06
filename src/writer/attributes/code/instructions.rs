@@ -1648,3 +1648,9 @@ impl<Ctx: EncoderContext> EncoderContext for InstructionWriter<Ctx> {
         self.code_writer.class_writer_mut()
     }
 }
+
+impl<Ctx> fmt::Debug for InstructionWriter<Ctx> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InstructionWriter").finish()
+    }
+}

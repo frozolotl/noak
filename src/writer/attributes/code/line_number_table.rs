@@ -83,4 +83,10 @@ impl<Ctx: EncoderContext> WriteDisassembler for LineNumberWriter<Ctx, LineNumber
     }
 }
 
+impl<Ctx, State: LineNumberWriterState::State> fmt::Debug for LineNumberWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LineNumberWriter").finish()
+    }
+}
+
 enc_state!(pub mod LineNumberWriterState: Start, LineNumber, End);

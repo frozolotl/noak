@@ -99,6 +99,12 @@ impl<'a> Decode<'a> for TypeAnnotation<'a> {
     }
 }
 
+impl<'a> fmt::Debug for TypeAnnotation<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TypeAnnotation").finish()
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum TargetType {
     ClassTypeParameter,
@@ -240,7 +246,7 @@ impl<'a> Decode<'a> for LocalVariable {
 }
 
 impl fmt::Debug for LocalVariable {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LocalVariable").finish()
     }
 }

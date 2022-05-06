@@ -108,4 +108,10 @@ impl<'a, Ctx: EncoderContext> WriteDisassembler for TableSwitchWriter<'a, Ctx, T
     }
 }
 
+impl<'a, Ctx, State: TableSwitchWriterState::State> fmt::Debug for TableSwitchWriter<'a, Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TableSwitchWriter").finish()
+    }
+}
+
 enc_state!(pub mod TableSwitchWriterState: Default, Low, High, Jumps);

@@ -6,6 +6,8 @@ mod field;
 mod method;
 mod module;
 
+use std::fmt;
+
 pub use annotations::{AnnotationDefault, Annotations, ParameterAnnotations, TypeAnnotations};
 pub use class::*;
 pub use code::*;
@@ -102,7 +104,13 @@ impl<'a> Attribute<'a> {
     }
 }
 
-#[derive(Clone)]
+impl<'a> fmt::Debug for Attribute<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Attribute").finish()
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum AttributeContent<'a> {
     AnnotationDefault(AnnotationDefault<'a>),
     BootstrapMethods(BootstrapMethods<'a>),

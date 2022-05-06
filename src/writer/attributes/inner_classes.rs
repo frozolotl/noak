@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::error::*;
@@ -144,6 +145,12 @@ impl<Ctx: EncoderContext> WriteDisassembler for InnerClassWriter<Ctx, InnerClass
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
+    }
+}
+
+impl<Ctx, State: InnerClassWriterState::State> fmt::Debug for InnerClassWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InnerClassWriter").finish()
     }
 }
 

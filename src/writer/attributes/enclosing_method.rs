@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::error::*;
@@ -87,6 +88,12 @@ impl<Ctx: EncoderContext> WriteDisassembler for EnclosingMethodWriter<Ctx, Enclo
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
+    }
+}
+
+impl<Ctx, State: EnclosingMethodWriterState::State> fmt::Debug for EnclosingMethodWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EnclosingMethodWriter").finish()
     }
 }
 

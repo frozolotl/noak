@@ -39,7 +39,7 @@ impl LocalVariable {
 }
 
 impl<'a> Decode<'a> for LocalVariable {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
         let name = decoder.read()?;
@@ -57,7 +57,7 @@ impl<'a> Decode<'a> for LocalVariable {
 }
 
 impl fmt::Debug for LocalVariable {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LocalVariable").finish()
     }
 }
@@ -96,7 +96,7 @@ impl LocalVariableType {
 }
 
 impl<'a> Decode<'a> for LocalVariableType {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
         let name = decoder.read()?;
@@ -114,7 +114,7 @@ impl<'a> Decode<'a> for LocalVariableType {
 }
 
 impl fmt::Debug for LocalVariableType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LocalVariableType").finish()
     }
 }

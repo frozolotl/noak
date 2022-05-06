@@ -65,7 +65,7 @@ impl ConstantPool {
 }
 
 impl fmt::Debug for ConstantPool {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ConstantPool").finish()
     }
 }
@@ -671,6 +671,12 @@ impl<I: Insertable<Utf8>> Insertable<Item> for Utf8Inserter<I> {
     }
 }
 
+impl<I> fmt::Debug for Utf8Inserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Utf8Inserter").finish()
+    }
+}
+
 pub struct MethodHandleInserter<I> {
     kind: MethodKind,
     reference: I,
@@ -692,6 +698,12 @@ impl<I: Insertable<Item>> Insertable<Item> for MethodHandleInserter<I> {
     }
 }
 
+impl<I> fmt::Debug for MethodHandleInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MethodHandleInserter").finish()
+    }
+}
+
 pub struct MethodTypeInserter<I> {
     descriptor: I,
 }
@@ -706,6 +718,12 @@ impl<I: Insertable<Utf8>> Insertable<MethodType> for MethodTypeInserter<I> {
 impl<I: Insertable<Utf8>> Insertable<Item> for MethodTypeInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
         Ok(<Self as Insertable<MethodType>>::insert(self, context)?.as_item())
+    }
+}
+
+impl<I> fmt::Debug for MethodTypeInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MethodTypeInserter").finish()
     }
 }
 
@@ -730,6 +748,12 @@ impl<I: Insertable<NameAndType>> Insertable<Item> for DynamicInserter<I> {
     }
 }
 
+impl<I> fmt::Debug for DynamicInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DynamicInserter").finish()
+    }
+}
+
 pub struct InvokeDynamicInserter<I> {
     bootstrap_method_attr: u16,
     name_and_type: I,
@@ -751,6 +775,12 @@ impl<I: Insertable<NameAndType>> Insertable<Item> for InvokeDynamicInserter<I> {
     }
 }
 
+impl<I> fmt::Debug for InvokeDynamicInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InvokeDynamicInserter").finish()
+    }
+}
+
 pub struct ModuleInserter<I> {
     name: I,
 }
@@ -765,6 +795,12 @@ impl<I: Insertable<Utf8>> Insertable<Module> for ModuleInserter<I> {
 impl<I: Insertable<Utf8>> Insertable<Item> for ModuleInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
         Ok(<Self as Insertable<Module>>::insert(self, context)?.as_item())
+    }
+}
+
+impl<I> fmt::Debug for ModuleInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ModuleInserter").finish()
     }
 }
 
@@ -785,6 +821,12 @@ impl<I: Insertable<Utf8>> Insertable<Item> for PackageInserter<I> {
     }
 }
 
+impl<I> fmt::Debug for PackageInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PackageInserter").finish()
+    }
+}
+
 pub struct StringInserter<I> {
     string: I,
 }
@@ -801,6 +843,12 @@ impl<I: Insertable<String>> Insertable<Item> for StringInserter<I> {
     }
 }
 
+impl<I> fmt::Debug for StringInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("StringInserter").finish()
+    }
+}
+
 pub struct ClassInserter<I> {
     name: I,
 }
@@ -814,6 +862,12 @@ impl<I: Insertable<Class>> Insertable<Class> for ClassInserter<I> {
 impl<I: Insertable<Class>> Insertable<Item> for ClassInserter<I> {
     fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
         Ok(self.name.insert(context)?.as_item())
+    }
+}
+
+impl<I> fmt::Debug for ClassInserter<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ClassInserter").finish()
     }
 }
 
@@ -869,6 +923,12 @@ macro_rules! ref_inserter {
         {
             fn insert<Ctx: EncoderContext>(self, context: &mut Ctx) -> Result<Index<Item>, EncodeError> {
                 Ok(<Self as Insertable<$out>>::insert(self, context)?.as_item())
+            }
+        }
+
+        impl<Class, Nat> fmt::Debug for $name<Class, Nat> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.debug_struct(stringify!($name)).finish()
             }
         }
     };

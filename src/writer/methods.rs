@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::error::*;
@@ -90,6 +91,12 @@ impl WriteDisassembler for MethodWriter<MethodWriterState::End> {
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.class_writer)
+    }
+}
+
+impl<State: MethodWriterState::State> fmt::Debug for MethodWriter<State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MethodWriter").finish()
     }
 }
 

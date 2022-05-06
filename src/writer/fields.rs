@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::error::*;
@@ -90,6 +91,12 @@ impl WriteDisassembler for FieldWriter<FieldWriterState::End> {
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.class_writer)
+    }
+}
+
+impl<State: FieldWriterState::State> fmt::Debug for FieldWriter<State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FieldWriter").finish()
     }
 }
 

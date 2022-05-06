@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::error::*;
@@ -40,6 +41,12 @@ impl WriteDisassembler for InterfaceWriter<InterfaceWriterState::End> {
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.class_writer)
+    }
+}
+
+impl<State: InterfaceWriterState::State> fmt::Debug for InterfaceWriter<State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InterfaceWriter").finish()
     }
 }
 

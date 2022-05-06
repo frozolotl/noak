@@ -149,4 +149,10 @@ impl<Ctx: EncoderContext> WriteDisassembler for LocalVariableWriter<Ctx, LocalVa
     }
 }
 
+impl<Ctx, State: LocalVariableWriterState::State> fmt::Debug for LocalVariableWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LocalVariableWriter").finish()
+    }
+}
+
 enc_state!(pub mod LocalVariableWriterState: Start, Length, Name, Descriptor, Index, End);

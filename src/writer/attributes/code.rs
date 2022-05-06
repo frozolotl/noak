@@ -168,6 +168,12 @@ impl<Ctx: EncoderContext> WriteAssembler for CodeWriter<Ctx, CodeWriterState::Ma
     }
 }
 
+impl<Ctx, State: CodeWriterState::State> fmt::Debug for CodeWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CodeWriter").finish()
+    }
+}
+
 // TODO: find a way to allow this kind of thing
 // impl<Ctx: EncoderContext> WriteDisassembler for CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
 //     type Context = Ctx;
@@ -202,7 +208,7 @@ enc_state!(pub mod CodeWriterState: MaxStack, MaxLocals, Instructions, Exception
 pub struct Label(u32);
 
 impl fmt::Debug for Label {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Label").finish()
     }
 }
@@ -211,7 +217,7 @@ impl fmt::Debug for Label {
 pub struct LabelRef(u32);
 
 impl fmt::Debug for LabelRef {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LabelRef").finish()
     }
 }

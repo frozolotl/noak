@@ -124,7 +124,7 @@ impl<'a> Decoder<'a> {
 }
 
 impl<'a> fmt::Debug for Decoder<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Decoder").finish()
     }
 }
@@ -141,7 +141,7 @@ macro_rules! impl_decode {
     ($($t:ty => $len:expr,)*) => {
         $(
             impl<'a> Decode<'a> for $t {
-                fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+                fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
                     let mut buf = <[u8; $len]>::default();
                     decoder.read_bytes(&mut buf)?;
                     Ok(Self::from_be_bytes(buf))
@@ -161,14 +161,14 @@ impl_decode! {
 }
 
 impl<'a> Decode<'a> for f32 {
-    fn decode(decoder: &mut Decoder) -> Result<f32, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<f32, DecodeError> {
         let bits = decoder.read()?;
         Ok(f32::from_bits(bits))
     }
 }
 
 impl<'a> Decode<'a> for f64 {
-    fn decode(decoder: &mut Decoder) -> Result<f64, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<f64, DecodeError> {
         let bits = decoder.read()?;
         Ok(f64::from_bits(bits))
     }
@@ -300,7 +300,7 @@ where
     T: Decode<'a>,
     Count: fmt::Debug,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("DecodeCounted")
             .field("remaining", &self.remaining)
             .finish()
@@ -348,7 +348,7 @@ impl<'a, T, Count: Countdown> Clone for DecodeCountedCopy<'a, T, Count> {
 }
 
 impl<'a, T, Count> fmt::Debug for DecodeCountedCopy<'a, T, Count> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("DecodeCountedCopy").finish()
     }
 }
@@ -358,7 +358,7 @@ pub trait Countdown: Copy + Into<usize> {
     fn decrement(&mut self) -> CountState;
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CountState {
     Continue,
     Break,
@@ -420,7 +420,7 @@ macro_rules! dec_structure {
         $crate::reader::decoding::dec_structure!(@decode $($into)? => $struct_name; $($field_name),*);
 
         impl<'a> std::fmt::Debug for $struct_name<'a> {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(std::stringify!($struct_name)).finish()
             }
         }

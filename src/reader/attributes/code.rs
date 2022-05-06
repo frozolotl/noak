@@ -79,7 +79,7 @@ impl<'a> DecodeInto<'a> for Code<'a> {
 }
 
 impl<'a> fmt::Debug for Code<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Code").finish()
     }
 }
@@ -98,7 +98,7 @@ impl<'a> Iterator for ExceptionHandlers<'a> {
 }
 
 impl<'a> fmt::Debug for ExceptionHandlers<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExceptionHandlers").finish()
     }
 }
@@ -129,7 +129,7 @@ impl ExceptionHandler {
 }
 
 impl<'a> Decode<'a> for ExceptionHandler {
-    fn decode(decoder: &mut Decoder) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
         let handler: u16 = decoder.read()?;
@@ -145,7 +145,7 @@ impl<'a> Decode<'a> for ExceptionHandler {
 }
 
 impl fmt::Debug for ExceptionHandler {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExceptionHandler").finish()
     }
 }
@@ -167,13 +167,13 @@ impl Index {
 }
 
 impl<'a> Decode<'a> for Index {
-    fn decode(decoder: &mut Decoder) -> Result<Index, DecodeError> {
+    fn decode(decoder: &mut Decoder<'a>) -> Result<Index, DecodeError> {
         Ok(Index::new(decoder.read()?))
     }
 }
 
 impl fmt::Debug for Index {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "code::Index({})", self.index)
     }
 }

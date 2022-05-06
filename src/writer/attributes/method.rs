@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::error::*;
@@ -61,6 +62,12 @@ impl<Ctx: EncoderContext> WriteDisassembler for ExceptionWriter<Ctx, ExceptionWr
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
+    }
+}
+
+impl<Ctx, State: ExceptionWriterState::State> fmt::Debug for ExceptionWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExceptionWriter").finish()
     }
 }
 

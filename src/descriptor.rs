@@ -16,7 +16,7 @@ pub enum BaseType<'a> {
 }
 
 impl<'a> fmt::Display for BaseType<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use BaseType::*;
         match self {
             Boolean => write!(f, "Z"),
@@ -39,7 +39,7 @@ pub struct TypeDescriptor<'a> {
 }
 
 impl<'a> TypeDescriptor<'a> {
-    pub fn new(base: BaseType<'a>, dimensions: u8) -> TypeDescriptor {
+    pub fn new(base: BaseType<'a>, dimensions: u8) -> TypeDescriptor<'a> {
         TypeDescriptor { dimensions, base }
     }
 
@@ -110,7 +110,7 @@ impl<'a> TypeDescriptor<'a> {
 }
 
 impl<'a> fmt::Display for TypeDescriptor<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for _ in 0..self.dimensions {
             write!(f, "[")?;
         }
@@ -125,7 +125,7 @@ pub struct MethodDescriptor<'a> {
 }
 
 impl<'a> MethodDescriptor<'a> {
-    pub fn parse(input: &'a MStr) -> Result<MethodDescriptor, DecodeError> {
+    pub fn parse(input: &'a MStr) -> Result<MethodDescriptor<'a>, DecodeError> {
         if input.len() <= u16::max_value() as usize {
             let mut chars = input.chars_lossy();
             if let Some('(') = chars.next() {
@@ -262,7 +262,7 @@ fn read_type<'a>(mut ch: char, chars: &mut CharsLossy<'a>) -> Option<TypeDescrip
 }
 
 impl<'a> fmt::Debug for MethodDescriptor<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("MethodDescriptor")
             .field("parameters", &self.parameters().collect::<Vec<_>>())
             .field("return_type", &self.return_type())
@@ -277,7 +277,7 @@ mod test {
 
     #[test]
     fn valid_type() {
-        fn eq(s: &str, td: TypeDescriptor) {
+        fn eq(s: &str, td: TypeDescriptor<'_>) {
             let m: MString = s.into();
             assert_eq!(TypeDescriptor::parse(&m).unwrap(), td);
         }
@@ -322,7 +322,7 @@ mod test {
 
     #[test]
     fn valid_method_descriptor() {
-        fn eq(s: &str, parameters: &[TypeDescriptor], return_type: Option<TypeDescriptor>) {
+        fn eq(s: &str, parameters: &[TypeDescriptor<'_>], return_type: Option<TypeDescriptor<'_>>) {
             let m: MString = s.into();
             let desc = MethodDescriptor::parse(&m).unwrap();
 

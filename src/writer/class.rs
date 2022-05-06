@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::error::*;
@@ -259,6 +260,12 @@ impl<State: ClassWriterState::State> EncoderContext for ClassWriter<State> {
 
     fn class_writer_mut(&mut self) -> &mut ClassWriter<Self::State> {
         self
+    }
+}
+
+impl<State: ClassWriterState::State> fmt::Debug for ClassWriter<State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ClassWriter").finish()
     }
 }
 

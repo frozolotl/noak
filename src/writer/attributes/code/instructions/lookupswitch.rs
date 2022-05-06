@@ -104,4 +104,10 @@ impl<'a, Ctx: EncoderContext> WriteDisassembler for LookupSwitchWriter<'a, Ctx, 
     }
 }
 
+impl<'a, Ctx, State: LookupSwitchWriterState::State> fmt::Debug for LookupSwitchWriter<'a, Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LookupSwitchWriter").finish()
+    }
+}
+
 enc_state!(pub mod LookupSwitchWriterState: Default, Jumps);

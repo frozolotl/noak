@@ -5,6 +5,7 @@ mod field;
 mod inner_classes;
 mod method;
 
+use std::fmt;
 use std::marker::PhantomData;
 
 pub use debug::*;
@@ -71,6 +72,12 @@ impl<Ctx: EncoderContext> WriteDisassembler for AttributeWriter<Ctx, AttributeWr
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
+    }
+}
+
+impl<Ctx, State: AttributeWriterState::State> fmt::Debug for AttributeWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AttributeWriter").finish()
     }
 }
 

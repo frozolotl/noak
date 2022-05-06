@@ -29,6 +29,12 @@ impl<'a> DecodeInto<'a> for StackMapTable<'a> {
     }
 }
 
+impl<'a> fmt::Debug for StackMapTable<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("StackMapTable").finish()
+    }
+}
+
 #[derive(Clone)]
 pub struct StackMapIter<'a> {
     decoder: Decoder<'a>,
@@ -55,7 +61,7 @@ impl<'a> Iterator for StackMapIter<'a> {
 impl<'a> FusedIterator for StackMapIter<'a> {}
 
 impl<'a> fmt::Debug for StackMapIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("StackMapIter").finish()
     }
 }
@@ -144,7 +150,7 @@ pub enum VerificationType {
     Double,
 }
 
-fn decode_verification_type(decoder: &mut Decoder, current_offset: u32) -> Result<VerificationType, DecodeError> {
+fn decode_verification_type(decoder: &mut Decoder<'_>, current_offset: u32) -> Result<VerificationType, DecodeError> {
     let tag: u8 = decoder.read()?;
     match tag {
         0x00 => Ok(VerificationType::Top),
@@ -163,7 +169,7 @@ fn decode_verification_type(decoder: &mut Decoder, current_offset: u32) -> Resul
     }
 }
 
-fn skip_verification_type(decoder: &mut Decoder) -> Result<(), DecodeError> {
+fn skip_verification_type(decoder: &mut Decoder<'_>) -> Result<(), DecodeError> {
     let tag: u8 = decoder.read()?;
     match tag {
         0x07 => {
@@ -221,7 +227,7 @@ impl<'a> Iterator for VerificationTypeIter<'a> {
 }
 
 impl<'a> fmt::Debug for VerificationTypeIter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VerificationTypeIter").finish()
     }
 }

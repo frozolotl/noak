@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
 use crate::mutf8::MStr;
@@ -34,7 +36,7 @@ impl<'a> Class<'a> {
     /// let mut class = Class::new(data)?;
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn new(v: &'a [u8]) -> Result<Class, DecodeError> {
+    pub fn new(v: &'a [u8]) -> Result<Class<'a>, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
 
@@ -220,6 +222,12 @@ impl<'a> Class<'a> {
     }
 }
 
+impl<'a> fmt::Debug for Class<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Class").finish()
+    }
+}
+
 /// How much of the class is already read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum ReadLevel {
@@ -236,7 +244,7 @@ enum ReadLevel {
     Attributes,
 }
 
-fn read_header(decoder: &mut Decoder) -> Result<Version, DecodeError> {
+fn read_header(decoder: &mut Decoder<'_>) -> Result<Version, DecodeError> {
     let magic: u32 = decoder.read()?;
     if magic == 0xCAFE_BABE {
         let minor = decoder.read()?;

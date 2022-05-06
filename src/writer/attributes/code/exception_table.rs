@@ -94,4 +94,10 @@ impl<Ctx: EncoderContext> WriteDisassembler for ExceptionWriter<Ctx, ExceptionWr
     }
 }
 
+impl<Ctx, State: ExceptionWriterState::State> fmt::Debug for ExceptionWriter<Ctx, State> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExceptionWriter").finish()
+    }
+}
+
 enc_state!(pub mod ExceptionWriterState: Start, Length, Handler, CatchType, End);
