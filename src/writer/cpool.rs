@@ -102,7 +102,7 @@ impl<I> Copy for Index<I> {}
 
 impl<I> fmt::Debug for Index<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "cpool::Index({})", self.index)
+        f.debug_tuple("cpool::Index").field(&self.index).finish()
     }
 }
 

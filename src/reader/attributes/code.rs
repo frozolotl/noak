@@ -174,7 +174,7 @@ impl<'a> Decode<'a> for Index {
 
 impl fmt::Debug for Index {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "code::Index({})", self.index)
+        f.debug_tuple("code::Index").field(&self.index).finish()
     }
 }
 
