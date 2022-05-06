@@ -1,6 +1,5 @@
 use crate::error::*;
 use crate::writer::class::{ClassWriter, ClassWriterState};
-use std::convert::TryFrom;
 use std::fmt;
 use std::marker::PhantomData;
 

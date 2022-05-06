@@ -3,7 +3,6 @@ use crate::mutf8::MString;
 use crate::writer::encoding::*;
 use indexmap::IndexMap;
 use std::{
-    convert::TryFrom,
     fmt,
     hash::{Hash, Hasher},
     marker::PhantomData,

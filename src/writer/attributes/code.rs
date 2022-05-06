@@ -18,7 +18,7 @@ use crate::writer::{
     encoding::*,
     ClassWriter,
 };
-use std::{convert::TryFrom, num::NonZeroU32};
+use std::num::NonZeroU32;
 use std::{fmt, marker::PhantomData};
 
 impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
