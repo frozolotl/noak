@@ -7,7 +7,7 @@ use crate::{
 dec_structure! {
     pub struct EnclosingMethod<'a> into {
         class: cpool::Index<cpool::Class>,
-        method: cpool::Index<cpool::NameAndType>,
+        method: Option<cpool::Index<cpool::NameAndType>>,
     }
 }
 
