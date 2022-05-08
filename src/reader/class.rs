@@ -205,7 +205,7 @@ impl<'a> Class<'a> {
         Ok(self.methods.clone().unwrap())
     }
 
-    pub fn attribute(&mut self) -> Result<AttributeIter<'a>, DecodeError> {
+    pub fn attributes(&mut self) -> Result<AttributeIter<'a>, DecodeError> {
         if self.read_level < ReadLevel::Attributes {
             self.methods()?;
             self.decoder.set_context(Context::Attributes);
@@ -217,7 +217,7 @@ impl<'a> Class<'a> {
 
     /// The count of bytes used by the class file.
     pub fn buffer_size(&mut self) -> Result<usize, DecodeError> {
-        self.attribute()?;
+        self.attributes()?;
         Ok(self.decoder.file_position())
     }
 }
