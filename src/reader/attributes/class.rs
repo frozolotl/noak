@@ -25,8 +25,8 @@ pub type InnerClassIter<'a> = DecodeManyIter<'a, InnerClass<'a>, u16>;
 
 dec_structure! {
     pub struct InnerClass<'a> {
-        outer_class: Option<cpool::Index<cpool::Class>>,
         inner_class: cpool::Index<cpool::Class>,
+        outer_class: Option<cpool::Index<cpool::Class>>,
         inner_name: Option<cpool::Index<cpool::Utf8<'static>>>,
         inner_access_flags: AccessFlags,
     }
