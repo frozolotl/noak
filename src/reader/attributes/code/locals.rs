@@ -5,8 +5,8 @@ use crate::reader::decoding::*;
 use std::fmt;
 use std::ops::Range;
 
-pub type LocalVariableTable<'a> = DecodeMany<'a, LocalVariable, u16>;
-pub type LocalVariableIter<'a> = DecodeManyIter<'a, LocalVariable, u16>;
+pub type LocalVariableTable<'input> = DecodeMany<'input, LocalVariable, u16>;
+pub type LocalVariableIter<'input> = DecodeManyIter<'input, LocalVariable, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariable {
@@ -38,8 +38,8 @@ impl LocalVariable {
     }
 }
 
-impl<'a> Decode<'a> for LocalVariable {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for LocalVariable {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
         let name = decoder.read()?;
@@ -62,8 +62,8 @@ impl fmt::Debug for LocalVariable {
     }
 }
 
-pub type LocalVariableTypeTable<'a> = DecodeMany<'a, LocalVariableType, u16>;
-pub type LocalVariableTypeIter<'a> = DecodeManyIter<'a, LocalVariableType, u16>;
+pub type LocalVariableTypeTable<'input> = DecodeMany<'input, LocalVariableType, u16>;
+pub type LocalVariableTypeIter<'input> = DecodeManyIter<'input, LocalVariableType, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariableType {
@@ -95,8 +95,8 @@ impl LocalVariableType {
     }
 }
 
-impl<'a> Decode<'a> for LocalVariableType {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for LocalVariableType {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
         let name = decoder.read()?;

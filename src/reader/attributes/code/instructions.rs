@@ -6,13 +6,13 @@ use std::fmt;
 
 /// An iterator over the instructions and their indices into the code table
 #[derive(Clone)]
-pub struct RawInstructions<'a> {
+pub struct RawInstructions<'input> {
     pub(crate) start_position: usize,
-    pub(crate) decoder: Decoder<'a>,
+    pub(crate) decoder: Decoder<'input>,
 }
 
-impl<'a> Iterator for RawInstructions<'a> {
-    type Item = Result<(code::Index, RawInstruction<'a>), DecodeError>;
+impl<'input> Iterator for RawInstructions<'input> {
+    type Item = Result<(code::Index, RawInstruction<'input>), DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.decoder.bytes_remaining() == 0 {
@@ -27,14 +27,14 @@ impl<'a> Iterator for RawInstructions<'a> {
     }
 }
 
-impl<'a> fmt::Debug for RawInstructions<'a> {
+impl<'input> fmt::Debug for RawInstructions<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RawInstructions").finish()
     }
 }
 
 #[derive(Debug)]
-pub enum RawInstruction<'a> {
+pub enum RawInstruction<'input> {
     AALoad,
     AAStore,
     AConstNull,
@@ -262,10 +262,10 @@ pub enum RawInstruction<'a> {
         count: u8,
     },
     InvokeSpecial {
-        index: cpool::Index<cpool::Item<'a>>,
+        index: cpool::Index<cpool::Item<'input>>,
     },
     InvokeStatic {
-        index: cpool::Index<cpool::Item<'a>>,
+        index: cpool::Index<cpool::Item<'input>>,
     },
     InvokeVirtual {
         index: cpool::Index<cpool::MethodRef>,
@@ -305,13 +305,13 @@ pub enum RawInstruction<'a> {
     LConst0,
     LConst1,
     LdC {
-        index: cpool::Index<cpool::Item<'a>>,
+        index: cpool::Index<cpool::Item<'input>>,
     },
     LdCW {
-        index: cpool::Index<cpool::Item<'a>>,
+        index: cpool::Index<cpool::Item<'input>>,
     },
     LdC2W {
-        index: cpool::Index<cpool::Item<'a>>,
+        index: cpool::Index<cpool::Item<'input>>,
     },
     LDiv,
     LLoad {
@@ -326,7 +326,7 @@ pub enum RawInstruction<'a> {
     LLoad3,
     LMul,
     LNeg,
-    LookupSwitch(LookupSwitch<'a>),
+    LookupSwitch(LookupSwitch<'input>),
     LOr,
     LRem,
     LReturn,
@@ -379,7 +379,7 @@ pub enum RawInstruction<'a> {
         value: i16,
     },
     Swap,
-    TableSwitch(TableSwitch<'a>),
+    TableSwitch(TableSwitch<'input>),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -395,34 +395,34 @@ pub enum ArrayType {
 }
 
 #[derive(Clone)]
-pub struct LookupSwitch<'a> {
+pub struct LookupSwitch<'input> {
     default_offset: i32,
-    pairs: LookupPairs<'a>,
+    pairs: LookupPairs<'input>,
 }
 
-impl<'a> LookupSwitch<'a> {
+impl<'input> LookupSwitch<'input> {
     pub fn default_offset(&self) -> i32 {
         self.default_offset
     }
 
-    pub fn pairs(&self) -> LookupPairs<'a> {
+    pub fn pairs(&self) -> LookupPairs<'input> {
         self.pairs.clone()
     }
 }
 
-impl<'a> fmt::Debug for LookupSwitch<'a> {
+impl<'input> fmt::Debug for LookupSwitch<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LookupSwitch").finish()
     }
 }
 
 #[derive(Clone)]
-pub struct LookupPairs<'a> {
-    decoder: Decoder<'a>,
+pub struct LookupPairs<'input> {
+    decoder: Decoder<'input>,
     remaining: u32,
 }
 
-impl<'a> Iterator for LookupPairs<'a> {
+impl<'input> Iterator for LookupPairs<'input> {
     type Item = LookupPair;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -444,7 +444,7 @@ impl<'a> Iterator for LookupPairs<'a> {
     }
 }
 
-impl<'a> fmt::Debug for LookupPairs<'a> {
+impl<'input> fmt::Debug for LookupPairs<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LookupPairs").finish()
     }
@@ -467,12 +467,12 @@ impl LookupPair {
 }
 
 #[derive(Clone)]
-pub struct TableSwitch<'a> {
+pub struct TableSwitch<'input> {
     default_offset: i32,
-    pairs: TablePairs<'a>,
+    pairs: TablePairs<'input>,
 }
 
-impl<'a> TableSwitch<'a> {
+impl<'input> TableSwitch<'input> {
     pub fn default_offset(&self) -> i32 {
         self.default_offset
     }
@@ -485,25 +485,25 @@ impl<'a> TableSwitch<'a> {
         self.pairs.high
     }
 
-    pub fn pairs(&self) -> TablePairs<'a> {
+    pub fn pairs(&self) -> TablePairs<'input> {
         self.pairs.clone()
     }
 }
 
-impl<'a> fmt::Debug for TableSwitch<'a> {
+impl<'input> fmt::Debug for TableSwitch<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TableSwitch").finish()
     }
 }
 
 #[derive(Clone)]
-pub struct TablePairs<'a> {
-    decoder: Decoder<'a>,
+pub struct TablePairs<'input> {
+    decoder: Decoder<'input>,
     key: i32,
     high: i32,
 }
 
-impl<'a> Iterator for TablePairs<'a> {
+impl<'input> Iterator for TablePairs<'input> {
     type Item = TablePair;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -520,7 +520,7 @@ impl<'a> Iterator for TablePairs<'a> {
     }
 }
 
-impl<'a> fmt::Debug for TablePairs<'a> {
+impl<'input> fmt::Debug for TablePairs<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TablePairs").finish()
     }
@@ -548,8 +548,8 @@ impl fmt::Debug for TablePair {
     }
 }
 
-impl<'a> RawInstruction<'a> {
-    pub(crate) fn decode(decoder: &mut Decoder<'a>, instruction_start: usize) -> Result<Self, DecodeError> {
+impl<'input> RawInstruction<'input> {
+    pub(crate) fn decode(decoder: &mut Decoder<'input>, instruction_start: usize) -> Result<Self, DecodeError> {
         use RawInstruction::*;
         let opcode: u8 = decoder.read()?;
         let instruction = match opcode {
@@ -860,8 +860,8 @@ impl<'a> RawInstruction<'a> {
     }
 }
 
-impl<'a> Decode<'a> for ArrayType {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for ArrayType {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         use ArrayType::*;
 
         let tag: u8 = decoder.read()?;
@@ -879,8 +879,8 @@ impl<'a> Decode<'a> for ArrayType {
     }
 }
 
-impl<'a> Decode<'a> for TablePairs<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for TablePairs<'input> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let low: i32 = decoder.read()?;
         let high: i32 = decoder.read()?;
         let count = (i64::from(high) - i64::from(low) + 1) * 4;
@@ -899,8 +899,8 @@ impl<'a> Decode<'a> for TablePairs<'a> {
     }
 }
 
-impl<'a> Decode<'a> for LookupPairs<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for LookupPairs<'input> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let count = decoder.read::<i32>()?;
         if count < 0 {
             return Err(DecodeError::from_decoder(DecodeErrorKind::InvalidInstruction, decoder));

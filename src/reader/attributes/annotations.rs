@@ -8,7 +8,7 @@ use crate::reader::attributes::annotations::ElementValue;
 use crate::reader::decoding::*;
 
 dec_structure! {
-    pub struct AnnotationDefault<'a> into {
-        value: ElementValue<'a>,
+    pub struct AnnotationDefault<'input> into {
+        value: ElementValue<'input>,
     }
 }

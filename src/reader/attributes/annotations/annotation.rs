@@ -2,30 +2,30 @@ use crate::error::*;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
 
-pub type Annotations<'a> = DecodeMany<'a, Annotation<'a>, u16>;
-pub type AnnotationIter<'a> = DecodeManyIter<'a, Annotation<'a>, u16>;
+pub type Annotations<'input> = DecodeMany<'input, Annotation<'input>, u16>;
+pub type AnnotationIter<'input> = DecodeManyIter<'input, Annotation<'input>, u16>;
 
-pub type ParameterAnnotations<'a> = DecodeMany<'a, Annotations<'a>, u8>;
-pub type ParameterAnnotationIter<'a> = DecodeManyIter<'a, Annotations<'a>, u8>;
+pub type ParameterAnnotations<'input> = DecodeMany<'input, Annotations<'input>, u8>;
+pub type ParameterAnnotationIter<'input> = DecodeManyIter<'input, Annotations<'input>, u8>;
 
 dec_structure! {
-    pub struct Annotation<'a> {
-        type_: cpool::Index<cpool::Utf8<'a>>,
-        pairs: ElementValuePairIter<'a>,
+    pub struct Annotation<'input> {
+        type_: cpool::Index<cpool::Utf8<'input>>,
+        pairs: ElementValuePairIter<'input>,
     }
 }
 
-pub type ElementValuePairIter<'a> = DecodeManyIter<'a, ElementValuePair<'a>, u16>;
+pub type ElementValuePairIter<'input> = DecodeManyIter<'input, ElementValuePair<'input>, u16>;
 
 dec_structure! {
-    pub struct ElementValuePair<'a> {
-        name: cpool::Index<cpool::Utf8<'a>>,
-        value: ElementValue<'a>,
+    pub struct ElementValuePair<'input> {
+        name: cpool::Index<cpool::Utf8<'input>>,
+        value: ElementValue<'input>,
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum ElementValue<'a> {
+pub enum ElementValue<'input> {
     Boolean(cpool::Index<cpool::Integer>),
     Byte(cpool::Index<cpool::Integer>),
     Short(cpool::Index<cpool::Integer>),
@@ -34,18 +34,18 @@ pub enum ElementValue<'a> {
     Float(cpool::Index<cpool::Float>),
     Double(cpool::Index<cpool::Double>),
     Char(cpool::Index<cpool::Integer>),
-    String(cpool::Index<cpool::Utf8<'a>>),
-    Class(cpool::Index<cpool::Utf8<'a>>),
+    String(cpool::Index<cpool::Utf8<'input>>),
+    Class(cpool::Index<cpool::Utf8<'input>>),
     Enum {
-        type_name: cpool::Index<cpool::Utf8<'a>>,
-        const_name: cpool::Index<cpool::Utf8<'a>>,
+        type_name: cpool::Index<cpool::Utf8<'input>>,
+        const_name: cpool::Index<cpool::Utf8<'input>>,
     },
-    Annotation(Annotation<'a>),
-    Array(ElementArray<'a>),
+    Annotation(Annotation<'input>),
+    Array(ElementArray<'input>),
 }
 
-impl<'a> Decode<'a> for ElementValue<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for ElementValue<'input> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         use ElementValue::*;
 
         let tag = decoder.read()?;
@@ -72,5 +72,5 @@ impl<'a> Decode<'a> for ElementValue<'a> {
     }
 }
 
-pub type ElementArray<'a> = DecodeMany<'a, ElementValue<'a>, u16>;
-pub type ElementArrayIter<'a> = DecodeManyIter<'a, ElementValue<'a>, u16>;
+pub type ElementArray<'input> = DecodeMany<'input, ElementValue<'input>, u16>;
+pub type ElementArrayIter<'input> = DecodeManyIter<'input, ElementValue<'input>, u16>;

@@ -5,14 +5,14 @@ use std::marker::PhantomData;
 use std::ops::ControlFlow;
 
 #[derive(Clone)]
-pub struct Decoder<'a> {
-    buf: &'a [u8],
+pub struct Decoder<'input> {
+    buf: &'input [u8],
     file_position: usize,
     ctx: Context,
 }
 
-impl<'a> Decoder<'a> {
-    pub fn new(buf: &'a [u8], ctx: Context) -> Decoder<'a> {
+impl<'input> Decoder<'input> {
+    pub fn new(buf: &'input [u8], ctx: Context) -> Decoder<'input> {
         Decoder {
             buf,
             file_position: 0,
@@ -29,7 +29,7 @@ impl<'a> Decoder<'a> {
         self.buf.len()
     }
 
-    pub fn buf(&self) -> &'a [u8] {
+    pub fn buf(&self) -> &'input [u8] {
         self.buf
     }
 
@@ -43,7 +43,7 @@ impl<'a> Decoder<'a> {
 
     /// Creates a new decoder which is limited to the current location and has the length of `count`.
     /// It will have its own context.
-    pub fn limit(&self, count: usize, ctx: Context) -> Result<Decoder<'a>, DecodeError> {
+    pub fn limit(&self, count: usize, ctx: Context) -> Result<Decoder<'input>, DecodeError> {
         if count > self.buf.len() {
             Err(DecodeError::with_info(
                 DecodeErrorKind::UnexpectedEoi,
@@ -60,7 +60,7 @@ impl<'a> Decoder<'a> {
     }
 
     /// Creates a new decoder with its own context.
-    pub fn with_context(&self, ctx: Context) -> Decoder<'a> {
+    pub fn with_context(&self, ctx: Context) -> Decoder<'input> {
         Decoder {
             buf: self.buf,
             file_position: self.file_position,
@@ -100,7 +100,7 @@ impl<'a> Decoder<'a> {
     }
 
     /// Advances by `count` and returns `count` bytes.
-    pub fn split_bytes_off(&mut self, count: usize) -> Result<&'a [u8], DecodeError> {
+    pub fn split_bytes_off(&mut self, count: usize) -> Result<&'input [u8], DecodeError> {
         if count > self.buf.len() {
             Err(DecodeError::with_info(
                 DecodeErrorKind::UnexpectedEoi,
@@ -115,34 +115,34 @@ impl<'a> Decoder<'a> {
         }
     }
 
-    pub fn read<T: Decode<'a>>(&mut self) -> Result<T, DecodeError> {
+    pub fn read<T: Decode<'input>>(&mut self) -> Result<T, DecodeError> {
         T::decode(self)
     }
 
-    pub fn read_into<T: DecodeInto<'a>>(self) -> Result<T, DecodeError> {
+    pub fn read_into<T: DecodeInto<'input>>(self) -> Result<T, DecodeError> {
         T::decode_into(self)
     }
 }
 
-impl<'a> fmt::Debug for Decoder<'a> {
+impl<'input> fmt::Debug for Decoder<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Decoder").finish()
     }
 }
 
-pub trait Decode<'a>: Sized + 'a {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError>;
+pub trait Decode<'input>: Sized + 'input {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError>;
 }
 
-pub trait DecodeInto<'a>: Sized + 'a {
-    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError>;
+pub trait DecodeInto<'input>: Sized + 'input {
+    fn decode_into(decoder: Decoder<'input>) -> Result<Self, DecodeError>;
 }
 
 macro_rules! impl_decode {
     ($($t:ty => $len:expr,)*) => {
         $(
-            impl<'a> Decode<'a> for $t {
-                fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+            impl<'input> Decode<'input> for $t {
+                fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
                     let mut buf = <[u8; $len]>::default();
                     decoder.read_bytes(&mut buf)?;
                     Ok(Self::from_be_bytes(buf))
@@ -161,15 +161,15 @@ impl_decode! {
     u128 => 16, i128 => 16,
 }
 
-impl<'a> Decode<'a> for f32 {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<f32, DecodeError> {
+impl<'input> Decode<'input> for f32 {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<f32, DecodeError> {
         let bits = decoder.read()?;
         Ok(f32::from_bits(bits))
     }
 }
 
-impl<'a> Decode<'a> for f64 {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<f64, DecodeError> {
+impl<'input> Decode<'input> for f64 {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<f64, DecodeError> {
         let bits = decoder.read()?;
         Ok(f64::from_bits(bits))
     }
@@ -182,8 +182,8 @@ pub enum LazyDecodeRef<R> {
     Error(DecodeError),
 }
 
-impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
-    pub fn get(&mut self, decoder: &mut Decoder<'a>) -> Result<&R, DecodeError> {
+impl<'input, R: Decode<'input>> LazyDecodeRef<R> {
+    pub fn get(&mut self, decoder: &mut Decoder<'input>) -> Result<&R, DecodeError> {
         use LazyDecodeRef::*;
 
         match self {
@@ -207,14 +207,14 @@ impl<'a, R: Decode<'a>> LazyDecodeRef<R> {
     }
 }
 
-pub struct DecodeManyIter<'a, T, Count> {
-    decoder: Decoder<'a>,
+pub struct DecodeManyIter<'input, T, Count> {
+    decoder: Decoder<'input>,
     remaining: Count,
     marker: PhantomData<T>,
 }
 
-impl<'a, T, Count: 'a> DecodeManyIter<'a, T, Count> {
-    pub fn new(decoder: Decoder<'a>, count: Count) -> DecodeManyIter<'a, T, Count> {
+impl<'input, T, Count: 'input> DecodeManyIter<'input, T, Count> {
+    pub fn new(decoder: Decoder<'input>, count: Count) -> DecodeManyIter<'input, T, Count> {
         DecodeManyIter {
             decoder,
             remaining: count,
@@ -223,12 +223,12 @@ impl<'a, T, Count: 'a> DecodeManyIter<'a, T, Count> {
     }
 }
 
-impl<'a, T, Count> Decode<'a> for DecodeManyIter<'a, T, Count>
+impl<'input, T, Count> Decode<'input> for DecodeManyIter<'input, T, Count>
 where
-    T: Decode<'a>,
-    Count: Decode<'a> + Countdown,
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
 {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let count: Count = decoder.read()?;
         let old_decoder = decoder.clone();
 
@@ -245,12 +245,12 @@ where
     }
 }
 
-impl<'a, T, Count> DecodeInto<'a> for DecodeManyIter<'a, T, Count>
+impl<'input, T, Count> DecodeInto<'input> for DecodeManyIter<'input, T, Count>
 where
-    T: Decode<'a>,
-    Count: Decode<'a>,
+    T: Decode<'input>,
+    Count: Decode<'input>,
 {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+    fn decode_into(mut decoder: Decoder<'input>) -> Result<Self, DecodeError> {
         let remaining = decoder.read()?;
         Ok(DecodeManyIter {
             decoder,
@@ -260,10 +260,10 @@ where
     }
 }
 
-impl<'a, T, Count> Iterator for DecodeManyIter<'a, T, Count>
+impl<'input, T, Count> Iterator for DecodeManyIter<'input, T, Count>
 where
-    T: Decode<'a>,
-    Count: Decode<'a> + Countdown,
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
 {
     type Item = Result<T, DecodeError>;
 
@@ -279,14 +279,14 @@ where
     }
 }
 
-impl<'a, T, Count> FusedIterator for DecodeManyIter<'a, T, Count>
+impl<'input, T, Count> FusedIterator for DecodeManyIter<'input, T, Count>
 where
-    T: Decode<'a>,
-    Count: Decode<'a> + Countdown,
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
 {
 }
 
-impl<'a, T, Count: Countdown> Clone for DecodeManyIter<'a, T, Count> {
+impl<'input, T, Count: Countdown> Clone for DecodeManyIter<'input, T, Count> {
     fn clone(&self) -> Self {
         DecodeManyIter {
             decoder: self.decoder.clone(),
@@ -296,9 +296,9 @@ impl<'a, T, Count: Countdown> Clone for DecodeManyIter<'a, T, Count> {
     }
 }
 
-impl<'a, T, Count> fmt::Debug for DecodeManyIter<'a, T, Count>
+impl<'input, T, Count> fmt::Debug for DecodeManyIter<'input, T, Count>
 where
-    T: Decode<'a>,
+    T: Decode<'input>,
     Count: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -308,39 +308,39 @@ where
     }
 }
 
-pub struct DecodeMany<'a, T, Count> {
-    iter: DecodeManyIter<'a, T, Count>,
+pub struct DecodeMany<'input, T, Count> {
+    iter: DecodeManyIter<'input, T, Count>,
 }
 
-impl<'a, T, Count: Countdown> DecodeMany<'a, T, Count> {
-    pub fn iter(&self) -> DecodeManyIter<'a, T, Count> {
+impl<'input, T, Count: Countdown> DecodeMany<'input, T, Count> {
+    pub fn iter(&self) -> DecodeManyIter<'input, T, Count> {
         self.iter.clone()
     }
 }
 
-impl<'a, T, Count> Decode<'a> for DecodeMany<'a, T, Count>
+impl<'input, T, Count> Decode<'input> for DecodeMany<'input, T, Count>
 where
-    T: Decode<'a>,
-    Count: Decode<'a> + Countdown,
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
 {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         Ok(DecodeMany { iter: decoder.read()? })
     }
 }
 
-impl<'a, T, Count> DecodeInto<'a> for DecodeMany<'a, T, Count>
+impl<'input, T, Count> DecodeInto<'input> for DecodeMany<'input, T, Count>
 where
-    T: Decode<'a>,
-    Count: Decode<'a>,
+    T: Decode<'input>,
+    Count: Decode<'input>,
 {
-    fn decode_into(decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+    fn decode_into(decoder: Decoder<'input>) -> Result<Self, DecodeError> {
         Ok(DecodeMany {
             iter: decoder.read_into()?,
         })
     }
 }
 
-impl<'a, T, Count: Countdown> Clone for DecodeMany<'a, T, Count> {
+impl<'input, T, Count: Countdown> Clone for DecodeMany<'input, T, Count> {
     fn clone(&self) -> Self {
         DecodeMany {
             iter: self.iter.clone(),
@@ -348,7 +348,7 @@ impl<'a, T, Count: Countdown> Clone for DecodeMany<'a, T, Count> {
     }
 }
 
-impl<'a, T, Count> fmt::Debug for DecodeMany<'a, T, Count> {
+impl<'input, T, Count> fmt::Debug for DecodeMany<'input, T, Count> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("DecodeMany").finish()
     }
@@ -386,7 +386,7 @@ impl Countdown for u16 {
 macro_rules! dec_structure {
     (
         $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident<'a> $($into:ident)? {
+        $vis:vis struct $struct_name:ident<'input> $($into:ident)? {
             $(
                 $(#[doc = $doc_comment:literal])*
                 $field_name:ident : $field_type:ty
@@ -395,15 +395,15 @@ macro_rules! dec_structure {
     ) => {
         $(#[$meta])*
         #[derive(Clone)]
-        $vis struct $struct_name<'a> {
+        $vis struct $struct_name<'input> {
             $(
                 $(#[doc = $doc_comment])*
                 $field_name : $field_type,
             )*
-            _marker: std::marker::PhantomData<&'a ()>,
+            _marker: std::marker::PhantomData<&'input ()>,
         }
 
-        impl<'a> $struct_name<'a> {
+        impl<'input> $struct_name<'input> {
             $(
                 $(#[doc = $doc_comment])*
                 $vis fn $field_name(&self) -> $field_type {
@@ -414,15 +414,15 @@ macro_rules! dec_structure {
 
         $crate::reader::decoding::dec_structure!(@decode $($into)? => $struct_name; $($field_name),*);
 
-        impl<'a> std::fmt::Debug for $struct_name<'a> {
+        impl<'input> std::fmt::Debug for $struct_name<'input> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(std::stringify!($struct_name)).finish()
             }
         }
     };
     (@decode => $struct_name:ident; $($field_name:ident),*) => {
-        impl<'a> $crate::reader::decoding::Decode<'a> for $struct_name<'a> {
-            fn decode(decoder: &mut $crate::reader::decoding::Decoder<'a>) -> Result<Self, $crate::error::DecodeError> {
+        impl<'input> $crate::reader::decoding::Decode<'input> for $struct_name<'input> {
+            fn decode(decoder: &mut $crate::reader::decoding::Decoder<'input>) -> Result<Self, $crate::error::DecodeError> {
                 Ok(Self {
                     $($field_name: decoder.read()?,)*
                     _marker: std::marker::PhantomData,
@@ -431,8 +431,8 @@ macro_rules! dec_structure {
         }
     };
     (@decode into => $struct_name:ident; $($field_name:ident),*) => {
-        impl<'a> $crate::reader::decoding::DecodeInto<'a> for $struct_name<'a> {
-            fn decode_into(mut decoder: $crate::reader::decoding::Decoder<'a>) -> Result<Self, $crate::error::DecodeError> {
+        impl<'input> $crate::reader::decoding::DecodeInto<'input> for $struct_name<'input> {
+            fn decode_into(mut decoder: $crate::reader::decoding::Decoder<'input>) -> Result<Self, $crate::error::DecodeError> {
                 Ok(Self {
                     $($field_name: decoder.read()?,)*
                     _marker: std::marker::PhantomData,

@@ -2,24 +2,24 @@ use crate::header::AccessFlags;
 use crate::reader::decoding::*;
 use crate::reader::{cpool, AttributeIter};
 
-pub type FieldIter<'a> = DecodeManyIter<'a, Field<'a>, u16>;
+pub type FieldIter<'input> = DecodeManyIter<'input, Field<'input>, u16>;
 
 dec_structure! {
-    pub struct Field<'a> {
+    pub struct Field<'input> {
         access_flags: AccessFlags,
-        name: cpool::Index<cpool::Utf8<'a>>,
-        descriptor: cpool::Index<cpool::Utf8<'a>>,
-        attributes: AttributeIter<'a>,
+        name: cpool::Index<cpool::Utf8<'input>>,
+        descriptor: cpool::Index<cpool::Utf8<'input>>,
+        attributes: AttributeIter<'input>,
     }
 }
 
-pub type MethodIter<'a> = DecodeManyIter<'a, Method<'a>, u16>;
+pub type MethodIter<'input> = DecodeManyIter<'input, Method<'input>, u16>;
 
 dec_structure! {
-    pub struct Method<'a> {
+    pub struct Method<'input> {
         access_flags: AccessFlags,
-        name: cpool::Index<cpool::Utf8<'a>>,
-        descriptor: cpool::Index<cpool::Utf8<'a>>,
-        attributes: AttributeIter<'a>,
+        name: cpool::Index<cpool::Utf8<'input>>,
+        descriptor: cpool::Index<cpool::Utf8<'input>>,
+        attributes: AttributeIter<'input>,
     }
 }

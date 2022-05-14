@@ -5,42 +5,42 @@ use crate::reader::{attributes::code, cpool};
 use std::fmt;
 use std::ops::Range;
 
-pub type TypeAnnotations<'a> = DecodeMany<'a, TypeAnnotation<'a>, u16>;
-pub type TypeAnnotationIter<'a> = DecodeManyIter<'a, TypeAnnotation<'a>, u16>;
+pub type TypeAnnotations<'input> = DecodeMany<'input, TypeAnnotation<'input>, u16>;
+pub type TypeAnnotationIter<'input> = DecodeManyIter<'input, TypeAnnotation<'input>, u16>;
 
 #[derive(Clone)]
-pub struct TypeAnnotation<'a> {
+pub struct TypeAnnotation<'input> {
     target_type: TargetType,
-    target_info: TargetInfo<'a>,
-    target_path: TypePath<'a>,
-    type_: cpool::Index<cpool::Utf8<'a>>,
-    pairs: ElementValuePairIter<'a>,
+    target_info: TargetInfo<'input>,
+    target_path: TypePath<'input>,
+    type_: cpool::Index<cpool::Utf8<'input>>,
+    pairs: ElementValuePairIter<'input>,
 }
 
-impl<'a> TypeAnnotation<'a> {
+impl<'input> TypeAnnotation<'input> {
     pub fn target_type(&self) -> TargetType {
         self.target_type
     }
 
-    pub fn target_info(&self) -> &TargetInfo<'a> {
+    pub fn target_info(&self) -> &TargetInfo<'input> {
         &self.target_info
     }
 
-    pub fn target_path(&self) -> &TypePath<'a> {
+    pub fn target_path(&self) -> &TypePath<'input> {
         &self.target_path
     }
 
-    pub fn type_(&self) -> cpool::Index<cpool::Utf8<'a>> {
+    pub fn type_(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.type_
     }
 
-    pub fn pairs(&self) -> ElementValuePairIter<'a> {
+    pub fn pairs(&self) -> ElementValuePairIter<'input> {
         self.pairs.clone()
     }
 }
 
-impl<'a> Decode<'a> for TypeAnnotation<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for TypeAnnotation<'input> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         use TargetInfo as TI;
         use TargetType as TT;
 
@@ -99,7 +99,7 @@ impl<'a> Decode<'a> for TypeAnnotation<'a> {
     }
 }
 
-impl<'a> fmt::Debug for TypeAnnotation<'a> {
+impl<'input> fmt::Debug for TypeAnnotation<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TypeAnnotation").finish()
     }
@@ -131,8 +131,8 @@ pub enum TargetType {
     MethodReferenceTypeArgument,
 }
 
-impl<'a> Decode<'a> for TargetType {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for TargetType {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         use TargetType::*;
 
         let tag: u8 = decoder.read()?;
@@ -165,7 +165,7 @@ impl<'a> Decode<'a> for TargetType {
 }
 
 #[derive(Debug, Clone)]
-pub enum TargetInfo<'a> {
+pub enum TargetInfo<'input> {
     TypeParameter {
         parameter_index: u8,
     },
@@ -183,7 +183,7 @@ pub enum TargetInfo<'a> {
     Throws {
         throws_type_index: u16,
     },
-    LocalVariable(LocalVariableTargetTable<'a>),
+    LocalVariable(LocalVariableTargetTable<'input>),
     Catch {
         exception_table_index: u16,
     },
@@ -202,8 +202,8 @@ pub enum SuperTypeIndex {
     Interface { index: u16 },
 }
 
-impl<'a> Decode<'a> for SuperTypeIndex {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for SuperTypeIndex {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let index = decoder.read()?;
         if index == u16::max_value() {
             Ok(SuperTypeIndex::Class)
@@ -213,8 +213,8 @@ impl<'a> Decode<'a> for SuperTypeIndex {
     }
 }
 
-pub type LocalVariableTargetTable<'a> = DecodeMany<'a, LocalVariable, u16>;
-pub type LocalVariableTargetIter<'a> = DecodeManyIter<'a, LocalVariable, u16>;
+pub type LocalVariableTargetTable<'input> = DecodeMany<'input, LocalVariable, u16>;
+pub type LocalVariableTargetIter<'input> = DecodeManyIter<'input, LocalVariable, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariable {
@@ -235,8 +235,8 @@ impl LocalVariable {
     }
 }
 
-impl<'a> Decode<'a> for LocalVariable {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for LocalVariable {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         Ok(LocalVariable {
             start: decoder.read()?,
             length: decoder.read()?,
@@ -251,11 +251,11 @@ impl fmt::Debug for LocalVariable {
     }
 }
 
-pub type TypePath<'a> = DecodeMany<'a, TypePathSegment<'a>, u8>;
-pub type TypePathSegmentIter<'a> = DecodeManyIter<'a, TypePathSegment<'a>, u8>;
+pub type TypePath<'input> = DecodeMany<'input, TypePathSegment<'input>, u8>;
+pub type TypePathSegmentIter<'input> = DecodeManyIter<'input, TypePathSegment<'input>, u8>;
 
 dec_structure! {
-    pub struct TypePathSegment<'a> {
+    pub struct TypePathSegment<'input> {
         kind: TypePathSegmentKind,
         type_argument_index: u8,
     }
@@ -269,8 +269,8 @@ pub enum TypePathSegmentKind {
     TypeArgument,
 }
 
-impl<'a> Decode<'a> for TypePathSegmentKind {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for TypePathSegmentKind {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         use TypePathSegmentKind::*;
 
         let tag: u8 = decoder.read()?;

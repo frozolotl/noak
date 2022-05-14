@@ -6,18 +6,18 @@ use std::fmt;
 use std::iter::FusedIterator;
 
 #[derive(Clone)]
-pub struct StackMapTable<'a> {
-    iter: StackMapIter<'a>,
+pub struct StackMapTable<'input> {
+    iter: StackMapIter<'input>,
 }
 
-impl<'a> StackMapTable<'a> {
-    pub fn iter(&self) -> StackMapIter<'a> {
+impl<'input> StackMapTable<'input> {
+    pub fn iter(&self) -> StackMapIter<'input> {
         self.iter.clone()
     }
 }
 
-impl<'a> DecodeInto<'a> for StackMapTable<'a> {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> DecodeInto<'input> for StackMapTable<'input> {
+    fn decode_into(mut decoder: Decoder<'input>) -> Result<Self, DecodeError> {
         let count = decoder.read()?;
         Ok(StackMapTable {
             iter: StackMapIter {
@@ -29,21 +29,21 @@ impl<'a> DecodeInto<'a> for StackMapTable<'a> {
     }
 }
 
-impl<'a> fmt::Debug for StackMapTable<'a> {
+impl<'input> fmt::Debug for StackMapTable<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("StackMapTable").finish()
     }
 }
 
 #[derive(Clone)]
-pub struct StackMapIter<'a> {
-    decoder: Decoder<'a>,
+pub struct StackMapIter<'input> {
+    decoder: Decoder<'input>,
     remaining: u16,
     current_offset: u32,
 }
 
-impl<'a> Iterator for StackMapIter<'a> {
-    type Item = Result<(code::Index, StackMapFrame<'a>), DecodeError>;
+impl<'input> Iterator for StackMapIter<'input> {
+    type Item = Result<(code::Index, StackMapFrame<'input>), DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.remaining == 0 {
@@ -58,16 +58,16 @@ impl<'a> Iterator for StackMapIter<'a> {
     }
 }
 
-impl<'a> FusedIterator for StackMapIter<'a> {}
+impl<'input> FusedIterator for StackMapIter<'input> {}
 
-impl<'a> fmt::Debug for StackMapIter<'a> {
+impl<'input> fmt::Debug for StackMapIter<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("StackMapIter").finish()
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum StackMapFrame<'a> {
+pub enum StackMapFrame<'input> {
     Same,
     SameExtended,
     Same1 {
@@ -80,18 +80,18 @@ pub enum StackMapFrame<'a> {
         to_chop: u8,
     },
     Append {
-        locals: VerificationTypeIter<'a>,
+        locals: VerificationTypeIter<'input>,
     },
     Full {
-        locals: VerificationTypeIter<'a>,
-        stack: VerificationTypeIter<'a>,
+        locals: VerificationTypeIter<'input>,
+        stack: VerificationTypeIter<'input>,
     },
 }
 
-fn decode_stack_map_frame<'a>(
-    decoder: &mut Decoder<'a>,
+fn decode_stack_map_frame<'input>(
+    decoder: &mut Decoder<'input>,
     current_offset: u32,
-) -> Result<(code::Index, StackMapFrame<'a>), DecodeError> {
+) -> Result<(code::Index, StackMapFrame<'input>), DecodeError> {
     let frame_type: u8 = decoder.read()?;
     match frame_type {
         0..=63 => {
@@ -186,18 +186,18 @@ fn skip_verification_type(decoder: &mut Decoder<'_>) -> Result<(), DecodeError> 
 }
 
 #[derive(Clone)]
-pub struct VerificationTypeIter<'a> {
-    decoder: Decoder<'a>,
+pub struct VerificationTypeIter<'input> {
+    decoder: Decoder<'input>,
     remaining: u16,
     current_offset: u32,
 }
 
-impl<'a> VerificationTypeIter<'a> {
+impl<'input> VerificationTypeIter<'input> {
     fn new(
-        decoder: &mut Decoder<'a>,
+        decoder: &mut Decoder<'input>,
         count: u16,
         current_offset: u32,
-    ) -> Result<VerificationTypeIter<'a>, DecodeError> {
+    ) -> Result<VerificationTypeIter<'input>, DecodeError> {
         let old_decoder = decoder.clone();
         for _ in 0..count {
             skip_verification_type(decoder)?;
@@ -210,7 +210,7 @@ impl<'a> VerificationTypeIter<'a> {
     }
 }
 
-impl<'a> Iterator for VerificationTypeIter<'a> {
+impl<'input> Iterator for VerificationTypeIter<'input> {
     type Item = Result<VerificationType, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -226,7 +226,7 @@ impl<'a> Iterator for VerificationTypeIter<'a> {
     }
 }
 
-impl<'a> fmt::Debug for VerificationTypeIter<'a> {
+impl<'input> fmt::Debug for VerificationTypeIter<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VerificationTypeIter").finish()
     }

@@ -8,19 +8,19 @@ use crate::reader::decoding::*;
 use std::{fmt, marker::PhantomData, num::NonZeroU16};
 
 #[derive(Clone)]
-pub struct ConstantPool<'a> {
-    content: Vec<Option<Item<'a>>>,
+pub struct ConstantPool<'input> {
+    content: Vec<Option<Item<'input>>>,
 }
 
-impl<'a> ConstantPool<'a> {
-    pub fn retrieve<I>(&self, at: Index<I>) -> Result<<Index<I> as ToValue<'a>>::Target, DecodeError>
+impl<'input> ConstantPool<'input> {
+    pub fn retrieve<I>(&self, at: Index<I>) -> Result<<Index<I> as ToValue<'input>>::Target, DecodeError>
     where
-        Index<I>: ToValue<'a>,
+        Index<I>: ToValue<'input>,
     {
         at.retrieve_from(self)
     }
 
-    pub fn get<I: TryFromItem<'a>>(&self, at: Index<I>) -> Result<&I, DecodeError> {
+    pub fn get<I: TryFromItem<'input>>(&self, at: Index<I>) -> Result<&I, DecodeError> {
         let pos = at.index.get() as usize;
         if pos != 0 && pos <= self.content.len() {
             if let Some(item) = &self.content[pos - 1] {
@@ -35,11 +35,11 @@ impl<'a> ConstantPool<'a> {
         ))
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Item<'a>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Item<'input>> {
         self.content.iter().filter_map(|opt| opt.as_ref())
     }
 
-    pub fn iter_indices(&self) -> impl Iterator<Item = (Index<Item<'a>>, &Item<'a>)> {
+    pub fn iter_indices(&self) -> impl Iterator<Item = (Index<Item<'input>>, &Item<'input>)> {
         self.content
             .iter()
             .enumerate()
@@ -47,8 +47,8 @@ impl<'a> ConstantPool<'a> {
     }
 }
 
-impl<'a> Decode<'a> for ConstantPool<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<ConstantPool<'a>, DecodeError> {
+impl<'input> Decode<'input> for ConstantPool<'input> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<ConstantPool<'input>, DecodeError> {
         decoder.set_context(Context::ConstantPool);
         let length = decoder.read::<u16>()?;
         if length == 0 {
@@ -70,7 +70,7 @@ impl<'a> Decode<'a> for ConstantPool<'a> {
     }
 }
 
-impl<'a> fmt::Debug for ConstantPool<'a> {
+impl<'input> fmt::Debug for ConstantPool<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ConstantPool").finish()
     }
@@ -117,21 +117,21 @@ impl<I> fmt::Debug for Index<I> {
     }
 }
 
-impl<'a, I: 'a> Decode<'a> for Index<I> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input, I: 'input> Decode<'input> for Index<I> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let index = Index::new(decoder.read()?).map_err(|err| DecodeError::from_decoder(err.kind(), decoder))?;
         Ok(index)
     }
 }
 
-impl<'a, I: 'a> Decode<'a> for Option<Index<I>> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input, I: 'input> Decode<'input> for Option<Index<I>> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         Ok(Index::new(decoder.read()?).ok())
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Item<'a> {
+pub enum Item<'input> {
     Class(Class),
     FieldRef(FieldRef),
     MethodRef(MethodRef),
@@ -142,7 +142,7 @@ pub enum Item<'a> {
     Float(Float),
     Double(Double),
     NameAndType(NameAndType),
-    Utf8(Utf8<'a>),
+    Utf8(Utf8<'input>),
     MethodHandle(MethodHandle),
     MethodType(MethodType),
     Dynamic(Dynamic),
@@ -151,8 +151,8 @@ pub enum Item<'a> {
     Package(Package),
 }
 
-impl<'a> Decode<'a> for Item<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Item<'a>, DecodeError> {
+impl<'input> Decode<'input> for Item<'input> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Item<'input>, DecodeError> {
         let tag: u8 = decoder.read()?;
         match tag {
             1 => {
@@ -208,15 +208,15 @@ impl<'a> Decode<'a> for Item<'a> {
     }
 }
 
-pub trait TryFromItem<'a>: Sized {
-    fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self>;
+pub trait TryFromItem<'input>: Sized {
+    fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self>;
 }
 
 macro_rules! impl_try_from_item {
     ($($name:ident;)*) => {
         $(
-            impl<'a> TryFromItem<'a> for $name {
-                fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self> {
+            impl<'input> TryFromItem<'input> for $name {
+                fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self> {
                     if let Item::$name(v) = item {
                         Some(v)
                     } else {
@@ -247,8 +247,8 @@ impl_try_from_item! {
     Package;
 }
 
-impl<'a> TryFromItem<'a> for Utf8<'a> {
-    fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self> {
+impl<'input> TryFromItem<'input> for Utf8<'input> {
+    fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self> {
         if let Item::Utf8(v) = item {
             Some(v)
         } else {
@@ -257,8 +257,8 @@ impl<'a> TryFromItem<'a> for Utf8<'a> {
     }
 }
 
-impl<'a> TryFromItem<'a> for Item<'a> {
-    fn try_from_item<'b>(item: &'b Item<'a>) -> Option<&'b Self> {
+impl<'input> TryFromItem<'input> for Item<'input> {
+    fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self> {
         Some(item)
     }
 }
@@ -318,8 +318,8 @@ pub struct NameAndType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Utf8<'a> {
-    pub content: &'a MStr,
+pub struct Utf8<'input> {
+    pub content: &'input MStr,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -370,8 +370,8 @@ pub enum MethodKind {
     InvokeInterface,
 }
 
-impl<'a> Decode<'a> for MethodKind {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<MethodKind, DecodeError> {
+impl<'input> Decode<'input> for MethodKind {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<MethodKind, DecodeError> {
         let tag: u8 = decoder.read()?;
         use MethodKind::*;
 

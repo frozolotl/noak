@@ -21,16 +21,16 @@ use crate::mutf8::MStr;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
 
-pub type AttributeIter<'a> = DecodeManyIter<'a, Attribute<'a>, u16>;
+pub type AttributeIter<'input> = DecodeManyIter<'input, Attribute<'input>, u16>;
 
 #[derive(Clone)]
-pub struct Attribute<'a> {
-    name: cpool::Index<cpool::Utf8<'a>>,
-    content: Decoder<'a>,
+pub struct Attribute<'input> {
+    name: cpool::Index<cpool::Utf8<'input>>,
+    content: Decoder<'input>,
 }
 
-impl<'a> Decode<'a> for Attribute<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for Attribute<'input> {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let name = decoder.read()?;
         let length = decoder.read::<u32>()? as usize;
         let content_decoder = decoder.limit(length, Context::Attributes)?;
@@ -42,16 +42,16 @@ impl<'a> Decode<'a> for Attribute<'a> {
     }
 }
 
-impl<'a> Attribute<'a> {
-    pub fn name(&self) -> cpool::Index<cpool::Utf8<'a>> {
+impl<'input> Attribute<'input> {
+    pub fn name(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.name
     }
 
-    pub fn content(&self) -> &'a [u8] {
+    pub fn content(&self) -> &'input [u8] {
         self.content.buf()
     }
 
-    pub fn read_content(&self, pool: &cpool::ConstantPool<'a>) -> Result<AttributeContent<'a>, DecodeError> {
+    pub fn read_content(&self, pool: &cpool::ConstantPool<'input>) -> Result<AttributeContent<'input>, DecodeError> {
         let name = pool.get(self.name)?.content;
         let decoder = self.content.with_context(Context::AttributeContent);
         match name.as_bytes() {
@@ -104,42 +104,42 @@ impl<'a> Attribute<'a> {
     }
 }
 
-impl<'a> fmt::Debug for Attribute<'a> {
+impl<'input> fmt::Debug for Attribute<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Attribute").finish()
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum AttributeContent<'a> {
-    AnnotationDefault(AnnotationDefault<'a>),
-    BootstrapMethods(BootstrapMethods<'a>),
-    Code(Code<'a>),
-    ConstantValue(ConstantValue<'a>),
+pub enum AttributeContent<'input> {
+    AnnotationDefault(AnnotationDefault<'input>),
+    BootstrapMethods(BootstrapMethods<'input>),
+    Code(Code<'input>),
+    ConstantValue(ConstantValue<'input>),
     Deprecated,
-    EnclosingMethod(EnclosingMethod<'a>),
-    Exceptions(Exceptions<'a>),
-    InnerClasses(InnerClasses<'a>),
-    LineNumberTable(LineNumberTable<'a>),
-    LocalVariableTable(LocalVariableTable<'a>),
-    LocalVariableTypeTable(LocalVariableTable<'a>),
-    MethodParameters(MethodParameters<'a>),
-    Module(Box<Module<'a>>),
-    ModuleMainClass(ModuleMainClass<'a>),
-    ModulePackages(ModulePackages<'a>),
-    NestHost(NestHost<'a>),
-    NestMembers(NestMembers<'a>),
-    PermittedSubclasses(PermittedSubclasses<'a>),
-    Record(Record<'a>),
-    RuntimeInvisibleAnnotations(Annotations<'a>),
-    RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'a>),
-    RuntimeInvisibleTypeAnnotations(TypeAnnotations<'a>),
-    RuntimeVisibleAnnotations(Annotations<'a>),
-    RuntimeVisibleParameterAnnotations(ParameterAnnotations<'a>),
-    RuntimeVisibleTypeAnnotations(TypeAnnotations<'a>),
-    Signature(Signature<'a>),
-    SourceDebugExtension(&'a MStr),
-    SourceFile(SourceFile<'a>),
-    StackMapTable(StackMapTable<'a>),
+    EnclosingMethod(EnclosingMethod<'input>),
+    Exceptions(Exceptions<'input>),
+    InnerClasses(InnerClasses<'input>),
+    LineNumberTable(LineNumberTable<'input>),
+    LocalVariableTable(LocalVariableTable<'input>),
+    LocalVariableTypeTable(LocalVariableTable<'input>),
+    MethodParameters(MethodParameters<'input>),
+    Module(Box<Module<'input>>),
+    ModuleMainClass(ModuleMainClass<'input>),
+    ModulePackages(ModulePackages<'input>),
+    NestHost(NestHost<'input>),
+    NestMembers(NestMembers<'input>),
+    PermittedSubclasses(PermittedSubclasses<'input>),
+    Record(Record<'input>),
+    RuntimeInvisibleAnnotations(Annotations<'input>),
+    RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'input>),
+    RuntimeInvisibleTypeAnnotations(TypeAnnotations<'input>),
+    RuntimeVisibleAnnotations(Annotations<'input>),
+    RuntimeVisibleParameterAnnotations(ParameterAnnotations<'input>),
+    RuntimeVisibleTypeAnnotations(TypeAnnotations<'input>),
+    Signature(Signature<'input>),
+    SourceDebugExtension(&'input MStr),
+    SourceFile(SourceFile<'input>),
+    StackMapTable(StackMapTable<'input>),
     Synthetic,
 }

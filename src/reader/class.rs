@@ -11,22 +11,22 @@ use crate::reader::{
 };
 
 #[derive(Clone)]
-pub struct Class<'a> {
+pub struct Class<'input> {
     read_level: ReadLevel,
-    decoder: Decoder<'a>,
+    decoder: Decoder<'input>,
     version: Version,
-    pool: LazyDecodeRef<ConstantPool<'a>>,
+    pool: LazyDecodeRef<ConstantPool<'input>>,
     access_flags: AccessFlags,
 
     this_class: Option<cpool::Index<cpool::Class>>,
     super_class: Option<cpool::Index<cpool::Class>>,
-    interfaces: Option<InterfaceIter<'a>>,
-    fields: Option<FieldIter<'a>>,
-    methods: Option<MethodIter<'a>>,
-    attributes: Option<AttributeIter<'a>>,
+    interfaces: Option<InterfaceIter<'input>>,
+    fields: Option<FieldIter<'input>>,
+    methods: Option<MethodIter<'input>>,
+    attributes: Option<AttributeIter<'input>>,
 }
 
-impl<'a> Class<'a> {
+impl<'input> Class<'input> {
     /// Initializes a class reader.
     ///
     /// ```no_run
@@ -36,7 +36,7 @@ impl<'a> Class<'a> {
     /// let mut class = Class::new(data)?;
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn new(v: &'a [u8]) -> Result<Class<'a>, DecodeError> {
+    pub fn new(v: &'input [u8]) -> Result<Class<'input>, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
 
@@ -83,7 +83,7 @@ impl<'a> Class<'a> {
     /// println!("Item: {}", item.content.display());
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn pool(&mut self) -> Result<&ConstantPool<'a>, DecodeError> {
+    pub fn pool(&mut self) -> Result<&ConstantPool<'input>, DecodeError> {
         if self.read_level < ReadLevel::ConstantPool {
             self.read_level = ReadLevel::ConstantPool;
         }
@@ -148,7 +148,7 @@ impl<'a> Class<'a> {
         Ok(self.this_class.unwrap())
     }
 
-    pub fn this_class_name(&mut self) -> Result<&'a MStr, DecodeError> {
+    pub fn this_class_name(&mut self) -> Result<&'input MStr, DecodeError> {
         let index = self.this_class_index()?;
         let pool = self.pool()?;
         Ok(pool.get(pool.get(index)?.name)?.content)
@@ -159,7 +159,7 @@ impl<'a> Class<'a> {
         Ok(self.super_class)
     }
 
-    pub fn super_class_name(&mut self) -> Result<Option<&'a MStr>, DecodeError> {
+    pub fn super_class_name(&mut self) -> Result<Option<&'input MStr>, DecodeError> {
         if let Some(index) = self.super_class_index()? {
             let pool = self.pool()?;
             Ok(Some(pool.get(pool.get(index)?.name)?.content))
@@ -180,12 +180,12 @@ impl<'a> Class<'a> {
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn interfaces(&mut self) -> Result<InterfaceIter<'a>, DecodeError> {
+    pub fn interfaces(&mut self) -> Result<InterfaceIter<'input>, DecodeError> {
         self.read_info()?;
         Ok(self.interfaces.clone().unwrap())
     }
 
-    pub fn fields(&mut self) -> Result<FieldIter<'a>, DecodeError> {
+    pub fn fields(&mut self) -> Result<FieldIter<'input>, DecodeError> {
         self.read_info()?;
         if self.read_level < ReadLevel::Fields {
             self.decoder.set_context(Context::Fields);
@@ -195,7 +195,7 @@ impl<'a> Class<'a> {
         Ok(self.fields.clone().unwrap())
     }
 
-    pub fn methods(&mut self) -> Result<MethodIter<'a>, DecodeError> {
+    pub fn methods(&mut self) -> Result<MethodIter<'input>, DecodeError> {
         if self.read_level < ReadLevel::Methods {
             self.fields()?;
             self.decoder.set_context(Context::Methods);
@@ -205,7 +205,7 @@ impl<'a> Class<'a> {
         Ok(self.methods.clone().unwrap())
     }
 
-    pub fn attributes(&mut self) -> Result<AttributeIter<'a>, DecodeError> {
+    pub fn attributes(&mut self) -> Result<AttributeIter<'input>, DecodeError> {
         if self.read_level < ReadLevel::Attributes {
             self.methods()?;
             self.decoder.set_context(Context::Attributes);
@@ -222,7 +222,7 @@ impl<'a> Class<'a> {
     }
 }
 
-impl<'a> fmt::Debug for Class<'a> {
+impl<'input> fmt::Debug for Class<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Class").finish()
     }
@@ -255,7 +255,7 @@ fn read_header(decoder: &mut Decoder<'_>) -> Result<Version, DecodeError> {
     }
 }
 
-pub type InterfaceIter<'a> = DecodeManyIter<'a, cpool::Index<cpool::Class>, u16>;
+pub type InterfaceIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class>, u16>;
 
 #[cfg(test)]
 mod tests {

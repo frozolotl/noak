@@ -12,15 +12,15 @@ use crate::reader::{cpool, AttributeIter};
 use std::fmt;
 
 #[derive(Clone)]
-pub struct Code<'a> {
+pub struct Code<'input> {
     max_stack: u16,
     max_locals: u16,
-    raw_instructions: RawInstructions<'a>,
-    exception_handlers: ExceptionHandlers<'a>,
-    attributes: AttributeIter<'a>,
+    raw_instructions: RawInstructions<'input>,
+    exception_handlers: ExceptionHandlers<'input>,
+    attributes: AttributeIter<'input>,
 }
 
-impl<'a> Code<'a> {
+impl<'input> Code<'input> {
     pub fn max_stack(&self) -> u16 {
         self.max_stack
     }
@@ -29,27 +29,27 @@ impl<'a> Code<'a> {
         self.max_locals
     }
 
-    pub fn raw_instructions(&self) -> RawInstructions<'a> {
+    pub fn raw_instructions(&self) -> RawInstructions<'input> {
         self.raw_instructions.clone()
     }
 
-    pub fn raw_instructions_from(&self, index: Index) -> Result<RawInstructions<'a>, DecodeError> {
+    pub fn raw_instructions_from(&self, index: Index) -> Result<RawInstructions<'input>, DecodeError> {
         let mut instructions = self.raw_instructions();
         instructions.decoder.advance(index.as_u32() as usize)?;
         Ok(instructions)
     }
 
-    pub fn exception_handlers(&self) -> ExceptionHandlers<'a> {
+    pub fn exception_handlers(&self) -> ExceptionHandlers<'input> {
         self.exception_handlers.clone()
     }
 
-    pub fn attributes(&self) -> AttributeIter<'a> {
+    pub fn attributes(&self) -> AttributeIter<'input> {
         self.attributes.clone()
     }
 }
 
-impl<'a> DecodeInto<'a> for Code<'a> {
-    fn decode_into(mut decoder: Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> DecodeInto<'input> for Code<'input> {
+    fn decode_into(mut decoder: Decoder<'input>) -> Result<Self, DecodeError> {
         let max_stack = decoder.read()?;
         let max_locals = decoder.read()?;
 
@@ -78,18 +78,18 @@ impl<'a> DecodeInto<'a> for Code<'a> {
     }
 }
 
-impl<'a> fmt::Debug for Code<'a> {
+impl<'input> fmt::Debug for Code<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Code").finish()
     }
 }
 
 #[derive(Clone)]
-pub struct ExceptionHandlers<'a> {
-    decoder: Decoder<'a>,
+pub struct ExceptionHandlers<'input> {
+    decoder: Decoder<'input>,
 }
 
-impl<'a> Iterator for ExceptionHandlers<'a> {
+impl<'input> Iterator for ExceptionHandlers<'input> {
     type Item = ExceptionHandler;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -97,7 +97,7 @@ impl<'a> Iterator for ExceptionHandlers<'a> {
     }
 }
 
-impl<'a> fmt::Debug for ExceptionHandlers<'a> {
+impl<'input> fmt::Debug for ExceptionHandlers<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExceptionHandlers").finish()
     }
@@ -128,8 +128,8 @@ impl ExceptionHandler {
     }
 }
 
-impl<'a> Decode<'a> for ExceptionHandler {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+impl<'input> Decode<'input> for ExceptionHandler {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
         let handler: u16 = decoder.read()?;
@@ -166,8 +166,8 @@ impl Index {
     }
 }
 
-impl<'a> Decode<'a> for Index {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Index, DecodeError> {
+impl<'input> Decode<'input> for Index {
+    fn decode(decoder: &mut Decoder<'input>) -> Result<Index, DecodeError> {
         Ok(Index::new(decoder.read()?))
     }
 }
@@ -178,11 +178,11 @@ impl fmt::Debug for Index {
     }
 }
 
-pub type LineNumberTable<'a> = DecodeMany<'a, Line<'a>, u16>;
-pub type LineNumberIter<'a> = DecodeManyIter<'a, Line<'a>, u16>;
+pub type LineNumberTable<'input> = DecodeMany<'input, Line<'input>, u16>;
+pub type LineNumberIter<'input> = DecodeManyIter<'input, Line<'input>, u16>;
 
 dec_structure! {
-    pub struct Line<'a> {
+    pub struct Line<'input> {
         start: Index,
         line_number: u16,
     }

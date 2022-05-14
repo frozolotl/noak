@@ -2,21 +2,21 @@ use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::cpool::{self, ConstantPool, Index};
 
-pub trait ToValue<'a> {
+pub trait ToValue<'input> {
     type Target;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError>;
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError>;
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Class<'a> {
-    pub name: &'a MStr,
+pub struct Class<'input> {
+    pub name: &'input MStr,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Class> {
-    type Target = Class<'a>;
+impl<'input> ToValue<'input> for Index<cpool::Class> {
+    type Target = Class<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Class {
             name: pool.retrieve(this.name)?,
@@ -25,15 +25,15 @@ impl<'a> ToValue<'a> for Index<cpool::Class> {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct FieldRef<'a> {
-    pub class: Class<'a>,
-    pub name_and_type: NameAndType<'a>,
+pub struct FieldRef<'input> {
+    pub class: Class<'input>,
+    pub name_and_type: NameAndType<'input>,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::FieldRef> {
-    type Target = FieldRef<'a>;
+impl<'input> ToValue<'input> for Index<cpool::FieldRef> {
+    type Target = FieldRef<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(FieldRef {
             class: pool.retrieve(this.class)?,
@@ -43,15 +43,15 @@ impl<'a> ToValue<'a> for Index<cpool::FieldRef> {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct MethodRef<'a> {
-    pub class: Class<'a>,
-    pub name_and_type: NameAndType<'a>,
+pub struct MethodRef<'input> {
+    pub class: Class<'input>,
+    pub name_and_type: NameAndType<'input>,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::MethodRef> {
-    type Target = MethodRef<'a>;
+impl<'input> ToValue<'input> for Index<cpool::MethodRef> {
+    type Target = MethodRef<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(MethodRef {
             class: pool.retrieve(this.class)?,
@@ -61,15 +61,15 @@ impl<'a> ToValue<'a> for Index<cpool::MethodRef> {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct InterfaceMethodRef<'a> {
-    pub class: Class<'a>,
-    pub name_and_type: NameAndType<'a>,
+pub struct InterfaceMethodRef<'input> {
+    pub class: Class<'input>,
+    pub name_and_type: NameAndType<'input>,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::InterfaceMethodRef> {
-    type Target = InterfaceMethodRef<'a>;
+impl<'input> ToValue<'input> for Index<cpool::InterfaceMethodRef> {
+    type Target = InterfaceMethodRef<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(InterfaceMethodRef {
             class: pool.retrieve(this.class)?,
@@ -79,14 +79,14 @@ impl<'a> ToValue<'a> for Index<cpool::InterfaceMethodRef> {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct String<'a> {
-    pub string: &'a MStr,
+pub struct String<'input> {
+    pub string: &'input MStr,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::String> {
-    type Target = String<'a>;
+impl<'input> ToValue<'input> for Index<cpool::String> {
+    type Target = String<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(String {
             string: pool.retrieve(this.string)?,
@@ -99,10 +99,10 @@ pub struct Integer {
     pub value: i32,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Integer> {
+impl<'input> ToValue<'input> for Index<cpool::Integer> {
     type Target = Integer;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Integer { value: this.value })
     }
@@ -113,10 +113,10 @@ pub struct Long {
     pub value: i64,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Long> {
+impl<'input> ToValue<'input> for Index<cpool::Long> {
     type Target = Long;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Long { value: this.value })
     }
@@ -127,10 +127,10 @@ pub struct Float {
     pub value: f32,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Float> {
+impl<'input> ToValue<'input> for Index<cpool::Float> {
     type Target = Float;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Float { value: this.value })
     }
@@ -141,25 +141,25 @@ pub struct Double {
     pub value: f64,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Double> {
+impl<'input> ToValue<'input> for Index<cpool::Double> {
     type Target = Double;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Double { value: this.value })
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct NameAndType<'a> {
-    pub name: &'a MStr,
-    pub descriptor: &'a MStr,
+pub struct NameAndType<'input> {
+    pub name: &'input MStr,
+    pub descriptor: &'input MStr,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::NameAndType> {
-    type Target = NameAndType<'a>;
+impl<'input> ToValue<'input> for Index<cpool::NameAndType> {
+    type Target = NameAndType<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(NameAndType {
             name: pool.retrieve(this.name)?,
@@ -168,25 +168,25 @@ impl<'a> ToValue<'a> for Index<cpool::NameAndType> {
     }
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Utf8<'a>> {
-    type Target = &'a MStr;
+impl<'input> ToValue<'input> for Index<cpool::Utf8<'input>> {
+    type Target = &'input MStr;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(this.content)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MethodHandle<'a> {
+pub struct MethodHandle<'input> {
     pub kind: cpool::MethodKind,
-    pub reference: cpool::Item<'a>,
+    pub reference: cpool::Item<'input>,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::MethodHandle> {
-    type Target = MethodHandle<'a>;
+impl<'input> ToValue<'input> for Index<cpool::MethodHandle> {
+    type Target = MethodHandle<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(MethodHandle {
             kind: this.kind,
@@ -196,14 +196,14 @@ impl<'a> ToValue<'a> for Index<cpool::MethodHandle> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MethodType<'a> {
-    pub descriptor: &'a MStr,
+pub struct MethodType<'input> {
+    pub descriptor: &'input MStr,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::MethodType> {
-    type Target = MethodType<'a>;
+impl<'input> ToValue<'input> for Index<cpool::MethodType> {
+    type Target = MethodType<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(MethodType {
             descriptor: pool.retrieve(this.descriptor)?,
@@ -212,16 +212,16 @@ impl<'a> ToValue<'a> for Index<cpool::MethodType> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Dynamic<'a> {
+pub struct Dynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
-    pub name_and_type: NameAndType<'a>,
+    pub name_and_type: NameAndType<'input>,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Dynamic> {
-    type Target = Dynamic<'a>;
+impl<'input> ToValue<'input> for Index<cpool::Dynamic> {
+    type Target = Dynamic<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Dynamic {
             bootstrap_method_attr: this.bootstrap_method_attr,
@@ -231,16 +231,16 @@ impl<'a> ToValue<'a> for Index<cpool::Dynamic> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct InvokeDynamic<'a> {
+pub struct InvokeDynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
-    pub name_and_type: NameAndType<'a>,
+    pub name_and_type: NameAndType<'input>,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::InvokeDynamic> {
-    type Target = InvokeDynamic<'a>;
+impl<'input> ToValue<'input> for Index<cpool::InvokeDynamic> {
+    type Target = InvokeDynamic<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(InvokeDynamic {
             bootstrap_method_attr: this.bootstrap_method_attr,
@@ -250,14 +250,14 @@ impl<'a> ToValue<'a> for Index<cpool::InvokeDynamic> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Module<'a> {
-    pub name: &'a MStr,
+pub struct Module<'input> {
+    pub name: &'input MStr,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Module> {
-    type Target = Module<'a>;
+impl<'input> ToValue<'input> for Index<cpool::Module> {
+    type Target = Module<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Module {
             name: pool.retrieve(this.name)?,
@@ -266,14 +266,14 @@ impl<'a> ToValue<'a> for Index<cpool::Module> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Package<'a> {
-    pub name: &'a MStr,
+pub struct Package<'input> {
+    pub name: &'input MStr,
 }
 
-impl<'a> ToValue<'a> for Index<cpool::Package> {
-    type Target = Package<'a>;
+impl<'input> ToValue<'input> for Index<cpool::Package> {
+    type Target = Package<'input>;
 
-    fn retrieve_from(self, pool: &ConstantPool<'a>) -> Result<Self::Target, DecodeError> {
+    fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError> {
         let this = pool.get(self)?;
         Ok(Package {
             name: pool.retrieve(this.name)?,
