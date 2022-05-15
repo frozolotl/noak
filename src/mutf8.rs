@@ -478,9 +478,8 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     // - v.as_ptr().add(i) was verified to be aligned at this point
                     // - the block is confirmed to not exceed the input slice
                     unsafe {
-                        if is_block_non_ascii!(*v.as_ptr().add(i).cast::<usize>())
-                            || is_block_non_ascii!(*v.as_ptr().add(i).cast::<usize>().offset(1))
-                        {
+                        let ptr = v.as_ptr().add(i).cast::<usize>();
+                        if is_block_non_ascii!(*ptr) || is_block_non_ascii!(*ptr.offset(1)) {
                             break;
                         }
                     }
