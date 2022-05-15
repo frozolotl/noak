@@ -392,26 +392,6 @@ impl<'a> fmt::Debug for CharsLossy<'a> {
 }
 
 fn is_mutf8_valid(v: &[u8]) -> bool {
-    /// The amount of bytes a character starting with a specific byte takes.
-    #[rustfmt::skip]
-    static MUTF8_CHAR_WIDTH: [u8; 256] = [
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ];
     /// False on all common systems, but who knows, maybe someone runs noak on a 128 bit system.
     const CONSTANTS_LARGE_ENOUGH: bool = size_of::<u64>() >= size_of::<usize>();
 
@@ -435,12 +415,19 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
         let b1 = v[i];
 
         if b1 >= 0x80 {
-            let width = MUTF8_CHAR_WIDTH[b1 as usize];
+            let width = if b1 & 0b1111_0000 == 0b1110_0000 {
+                3
+            } else if b1 & 0b1110_0000 == 0b1100_0000 {
+                2
+            } else {
+                return false;
+            };
             if v.len() < i + width as usize {
                 return false;
             }
             match width {
                 2 => {
+                    // two byte case: U+0000 and U+0080 to U+07FF
                     if v[i + 1] & 0b1100_0000 != 0b1000_0000 {
                         return false;
                     }
@@ -451,12 +438,12 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     i += 2;
                 }
                 3 => {
-                    // width = 3
+                    // three byte case: U+0800 and above
                     if v[i + 1] & 0b1100_0000 != 0b1000_0000 || v[i + 2] & 0b1100_0000 != 0b1000_0000 {
                         return false;
                     }
                     // overlong encodings are not allowed
-                    if b1.trailing_zeros() >= 4 && v[i + 1] & 0b0010_0000 == 0 {
+                    if b1 & 0b0000_1111 == 0b0000_0000 && v[i + 1] & 0b0010_0000 == 0 {
                         return false;
                     }
                     i += 3;
@@ -464,7 +451,7 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                 _ => return false,
             }
         } else {
-            // ASCII case
+            // ASCII case: U+0001 to 0+007F
             if !CONSTANTS_LARGE_ENOUGH || align_offset == usize::MAX || align_offset.wrapping_sub(i) % block_size != 0 {
                 // probably unaligned
                 if b1 == 0 {
