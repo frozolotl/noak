@@ -1,0 +1,19 @@
+[package]
+name = "noak-bench"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[dependencies]
+noak = { path = ".." }
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[dev-dependencies]
+criterion = "0.3.5"
+
+[[bench]]
+name = "mutf8"
+harness = false
