@@ -1,17 +1,18 @@
-
 [package]
 name = "noak-fuzz"
-version = "0.0.1"
-authors = []
+version = "0.0.0"
+authors = ["Automatically generated"]
 publish = false
+edition = "2018"
 
 [package.metadata]
 cargo-fuzz = true
 
+[dependencies]
+libfuzzer-sys = "0.4"
+
 [dependencies.noak]
 path = ".."
-[dependencies.libfuzzer-sys]
-git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
 
 # Prevent this from interfering with workspaces
 [workspace]
@@ -20,3 +21,5 @@ members = ["."]
 [[bin]]
 name = "mutf8"
 path = "fuzz_targets/mutf8.rs"
+test = false
+doc = false

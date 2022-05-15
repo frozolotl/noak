@@ -1,9 +1,7 @@
 #![no_main]
-#[macro_use] extern crate libfuzzer_sys;
-extern crate noak;
+use libfuzzer_sys::fuzz_target;
 
 use noak::mutf8::MStr;
-use std::char;
 
 fuzz_target!(|data: &[u8]| {
     if let Ok(mstr) = MStr::from_bytes(data) {
