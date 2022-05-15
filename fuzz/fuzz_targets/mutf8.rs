@@ -1,15 +1,5 @@
 #![cfg_attr(feature = "libfuzzer", no_main)]
-#[cfg(feature = "libfuzzer")]
-use libfuzzer_sys::fuzz_target as fuzz;
-
-#[cfg(feature = "afl")]
-macro_rules! fuzz {
-    ($($tt:tt)*) => {
-        fn main() {
-            afl::fuzz!($($tt)*);
-        }
-    };
-}
+use noak_fuzz::fuzz;
 
 use noak::mutf8::MStr;
 

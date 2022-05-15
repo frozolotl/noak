@@ -3,7 +3,7 @@ name = "noak-fuzz"
 version = "0.0.0"
 authors = ["Automatically generated"]
 publish = false
-edition = "2018"
+edition = "2021"
 
 [package.metadata]
 cargo-fuzz = true
@@ -24,8 +24,17 @@ libfuzzer = ["dep:libfuzzer-sys"]
 [workspace]
 members = ["."]
 
+[lib]
+path = "src/lib.rs"
+
 [[bin]]
 name = "mutf8"
 path = "fuzz_targets/mutf8.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "constant_pool"
+path = "fuzz_targets/constant_pool.rs"
 test = false
 doc = false
