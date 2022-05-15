@@ -6,6 +6,7 @@ use std::{
     char,
     fmt::{self, Write},
     iter::{DoubleEndedIterator, FromIterator},
+    mem::size_of,
     ops::{self, Deref},
     str,
 };
@@ -411,17 +412,29 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
         3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
+    /// False on all common systems, but who knows, maybe someone runs noak on a 128 bit system.
+    const CONSTANTS_LARGE_ENOUGH: bool = size_of::<u64>() >= size_of::<usize>();
+
+    macro_rules! is_block_non_ascii {
+        ($block:expr) => {{
+            let block = $block;
+            let is_not_ascii = block & (0x80808080_80808080u64 as usize) != 0;
+            // see https://jameshfisher.com/2017/01/24/bitwise-check-for-zero-byte/ for information on how this works
+            let contains_zero =
+                ((block.wrapping_sub(0x01010101_01010101u64 as usize)) & (!block) & (0x80808080_80808080u64 as usize))
+                    != 0;
+            is_not_ascii || contains_zero
+        }};
+    }
+
+    let block_size = 2 * size_of::<usize>();
+    let align_offset = v.as_ptr().align_offset(size_of::<usize>());
 
     let mut i = 0;
     while i < v.len() {
         let b1 = v[i];
-        if b1 == 0 {
-            return false;
-        }
 
-        if b1 < 0x80 {
-            i += 1;
-        } else {
+        if b1 >= 0x80 {
             let width = MUTF8_CHAR_WIDTH[b1 as usize];
             if v.len() < i + width as usize {
                 return false;
@@ -448,8 +461,39 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                     }
                     i += 3;
                 }
-
                 _ => return false,
+            }
+        } else {
+            // ASCII case
+            if !CONSTANTS_LARGE_ENOUGH || align_offset == usize::MAX || align_offset.wrapping_sub(i) % block_size != 0 {
+                // probably unaligned
+                if b1 == 0 {
+                    return false;
+                }
+                i += 1;
+            } else {
+                // aligned
+                while i + block_size < v.len() {
+                    // SAFETY:
+                    // - v.as_ptr().add(i) was verified to be aligned at this point
+                    // - the block is confirmed to not exceed the input slice
+                    unsafe {
+                        if is_block_non_ascii!(*v.as_ptr().add(i).cast::<usize>())
+                            || is_block_non_ascii!(*v.as_ptr().add(i).cast::<usize>().offset(1))
+                        {
+                            break;
+                        }
+                    }
+                    i += block_size;
+                }
+
+                // skip the remaining ascii characters after the last block
+                while i < v.len() && v[i] < 0x80 {
+                    if v[i] == 0 {
+                        return false;
+                    }
+                    i += 1;
+                }
             }
         }
     }
