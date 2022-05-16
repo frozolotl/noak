@@ -443,7 +443,7 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
                         return false;
                     }
                     // overlong encodings are not allowed
-                    if b1 & 0b0000_1111 == 0b0000_0000 && v[i + 1] & 0b0010_0000 == 0 {
+                    if b1 & 0b0000_1111 == 0 && v[i + 1] & 0b0010_0000 == 0 {
                         return false;
                     }
                     i += 3;
