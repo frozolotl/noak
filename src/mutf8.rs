@@ -309,7 +309,7 @@ impl<'a> Chars<'a> {
 }
 
 impl<'a> Iterator for Chars<'a> {
-    type Item = Option<char>;
+    type Item = Result<char, u32>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.inner.is_empty() {
@@ -491,17 +491,17 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
 ///
 /// # Safety
 /// The input bytes **must** be valid modified utf-8
-unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Option<char>) {
+unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Result<char, u32>) {
     if v[0] & 0b1000_0000 == 0b0000_0000 {
         // single byte case
-        return (1, Some(v[0] as char));
+        return (1, Ok(v[0] as char));
     }
 
     if v[0] & 0b1110_0000 == 0b1100_0000 {
         // two byte case
         let c1 = u32::from(v[0] & 0b0001_1111) << 6;
         let c2 = u32::from(v[1] & 0b0011_1111);
-        return (2, Some(char::from_u32_unchecked(c1 | c2)));
+        return (2, Ok(char::from_u32_unchecked(c1 | c2)));
     }
 
     if v[0] == 0b1110_1101 {
@@ -512,12 +512,14 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Option<char>) {
             let c3 = u32::from(v[2] & 0b0011_1111) << 10;
             let c5 = u32::from(v[4] & 0b0000_1111) << 6;
             let c6 = u32::from(v[5] & 0b0011_1111);
-            return (6, Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)));
+            return (6, Ok(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)));
         }
 
         // unpaired surrogates
         if v[1] & 0b1110_0000 == 0b1010_0000 {
-            return (3, None);
+            let c2 = u32::from(v[1] & 0b0011_1111) << 6;
+            let c3 = u32::from(v[2] & 0b0011_1111);
+            return (3, Err(0b1101_0000_0000_0000 | c2 | c3));
         }
     }
 
@@ -525,18 +527,18 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Option<char>) {
     let c1 = u32::from(v[0] & 0b0000_1111) << 12;
     let c2 = u32::from(v[1] & 0b0011_1111) << 6;
     let c3 = u32::from(v[2] & 0b0011_1111);
-    (3, Some(char::from_u32_unchecked(c1 | c2 | c3)))
+    (3, Ok(char::from_u32_unchecked(c1 | c2 | c3)))
 }
 
 /// Decodes a character from back to front and returns its size.
 ///
 /// # Safety
 /// The input bytes **must** be valid modified utf-8
-unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Option<char>) {
+unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Result<char, u32>) {
     let b1 = v[v.len() - 1];
     if b1 & 0b1000_0000 == 0b0000_0000 {
         // single byte case
-        return (1, Some(b1 as char));
+        return (1, Ok(b1 as char));
     }
 
     let b2 = v[v.len() - 2];
@@ -544,7 +546,7 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Option<char>) {
         // two byte case
         let c1 = u32::from(b2 & 0b0001_1111) << 6;
         let c2 = u32::from(b1 & 0b0011_1111);
-        return (2, Some(char::from_u32_unchecked(c1 | c2)));
+        return (2, Ok(char::from_u32_unchecked(c1 | c2)));
     }
 
     let b3 = v[v.len() - 3];
@@ -559,11 +561,14 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Option<char>) {
                 let c3 = u32::from(b4 & 0b0011_1111) << 10;
                 let c5 = u32::from(b2 & 0b0000_1111) << 6;
                 let c6 = u32::from(b1 & 0b0011_1111);
-                return (6, Some(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)));
+                return (6, Ok(char::from_u32_unchecked(0x10000 | c2 | c3 | c5 | c6)));
             }
         }
+        // unpaired surrogates
         if b2 & 0b1110_0000 == 0b1010_0000 {
-            return (3, None);
+            let c2 = u32::from(b2 & 0b0011_1111) << 6;
+            let c3 = u32::from(b1 & 0b0011_1111);
+            return (3, Err(0b1101_0000_0000_0000 | c2 | c3));
         }
     }
 
@@ -571,7 +576,7 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Option<char>) {
     let c1 = u32::from(b3 & 0b0000_1111) << 12;
     let c2 = u32::from(b2 & 0b0011_1111) << 6;
     let c3 = u32::from(b1 & 0b0011_1111);
-    (3, Some(char::from_u32_unchecked(c1 | c2 | c3)))
+    (3, Ok(char::from_u32_unchecked(c1 | c2 | c3)))
 }
 
 impl From<&str> for MString {
