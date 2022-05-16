@@ -70,11 +70,19 @@ impl MStr {
         }
     }
 
+    /// Returns an iterator over the chars in this string.
+    ///
+    /// For valid unicode characters, `Ok` is yielded.
+    /// If a character is invalid, then its code will be returned in the `Err` case.
+    /// If you don't care about invalid characters, use [`MStr::chars_lossy`].
     #[inline]
     pub fn chars(&self) -> Chars<'_> {
         Chars { inner: &self.inner }
     }
 
+    /// Returns an iterator over the chars in this string.
+    ///
+    /// Invalid characters are replaced with U+FFFD ([`char::REPLACEMENT_CHARACTER`]).
     #[inline]
     pub fn chars_lossy(&self) -> CharsLossy<'_> {
         CharsLossy { inner: &self.inner }
