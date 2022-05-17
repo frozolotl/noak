@@ -62,19 +62,19 @@ impl fmt::Debug for LocalVariable {
     }
 }
 
-pub type LocalVariableTypeTable<'input> = DecodeMany<'input, LocalVariableType, u16>;
-pub type LocalVariableTypeIter<'input> = DecodeManyIter<'input, LocalVariableType, u16>;
+pub type LocalVariableTypeTable<'input> = DecodeMany<'input, LocalVariableType<'input>, u16>;
+pub type LocalVariableTypeIter<'input> = DecodeManyIter<'input, LocalVariableType<'input>, u16>;
 
 #[derive(Clone)]
-pub struct LocalVariableType {
+pub struct LocalVariableType<'input> {
     start: code::Index,
     end: code::Index,
-    name: cpool::Index<cpool::Utf8<'static>>,
-    signature: cpool::Index<cpool::Utf8<'static>>,
+    name: cpool::Index<cpool::Utf8<'input>>,
+    signature: cpool::Index<cpool::Utf8<'input>>,
     index: u16,
 }
 
-impl LocalVariableType {
+impl<'input> LocalVariableType<'input> {
     pub fn range(&self) -> Range<code::Index> {
         Range {
             start: self.start,
@@ -82,11 +82,11 @@ impl LocalVariableType {
         }
     }
 
-    pub fn name(&self) -> cpool::Index<cpool::Utf8<'static>> {
+    pub fn name(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.name
     }
 
-    pub fn signature(&self) -> cpool::Index<cpool::Utf8<'static>> {
+    pub fn signature(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.signature
     }
 
@@ -95,7 +95,7 @@ impl LocalVariableType {
     }
 }
 
-impl<'input> Decode<'input> for LocalVariableType {
+impl<'input> Decode<'input> for LocalVariableType<'input> {
     fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
@@ -113,7 +113,7 @@ impl<'input> Decode<'input> for LocalVariableType {
     }
 }
 
-impl fmt::Debug for LocalVariableType {
+impl<'input> fmt::Debug for LocalVariableType<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LocalVariableType").finish()
     }

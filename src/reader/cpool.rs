@@ -80,14 +80,14 @@ impl<'input> fmt::Debug for ConstantPool<'input> {
 #[derive(PartialEq)]
 pub struct Index<I> {
     index: NonZeroU16,
-    mark: PhantomData<I>,
+    _marker: PhantomData<fn() -> I>,
 }
 
 impl<I> Clone for Index<I> {
     fn clone(&self) -> Index<I> {
         Index {
             index: self.index,
-            mark: PhantomData,
+            _marker: PhantomData,
         }
     }
 }
@@ -99,7 +99,7 @@ impl<I> Index<I> {
         if let Some(v) = NonZeroU16::new(index) {
             Ok(Index {
                 index: v,
-                mark: PhantomData,
+                _marker: PhantomData,
             })
         } else {
             Err(DecodeError::new(DecodeErrorKind::InvalidIndex))
@@ -132,23 +132,23 @@ impl<'input, I: 'input> Decode<'input> for Option<Index<I>> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item<'input> {
-    Class(Class),
-    FieldRef(FieldRef),
-    MethodRef(MethodRef),
-    InterfaceMethodRef(InterfaceMethodRef),
-    String(String),
+    Class(Class<'input>),
+    FieldRef(FieldRef<'input>),
+    MethodRef(MethodRef<'input>),
+    InterfaceMethodRef(InterfaceMethodRef<'input>),
+    String(String<'input>),
     Integer(Integer),
     Long(Long),
     Float(Float),
     Double(Double),
-    NameAndType(NameAndType),
+    NameAndType(NameAndType<'input>),
     Utf8(Utf8<'input>),
-    MethodHandle(MethodHandle),
-    MethodType(MethodType),
-    Dynamic(Dynamic),
-    InvokeDynamic(InvokeDynamic),
-    Module(Module),
-    Package(Package),
+    MethodHandle(MethodHandle<'input>),
+    MethodType(MethodType<'input>),
+    Dynamic(Dynamic<'input>),
+    InvokeDynamic(InvokeDynamic<'input>),
+    Module(Module<'input>),
+    Package(Package<'input>),
 }
 
 impl<'input> Decode<'input> for Item<'input> {
@@ -209,14 +209,14 @@ impl<'input> Decode<'input> for Item<'input> {
 }
 
 pub trait TryFromItem<'input>: Sized {
-    fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self>;
+    fn try_from_item<'a>(item: &'a Item<'input>) -> Option<&'a Self>;
 }
 
 macro_rules! impl_try_from_item {
-    ($($name:ident;)*) => {
+    ($($name:ident $(<$input:lifetime>)?;)*) => {
         $(
-            impl<'input> TryFromItem<'input> for $name {
-                fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self> {
+            impl<'input> TryFromItem<'input> for $name $(<$input>)? {
+                fn try_from_item<'a>(item: &'a Item<'input>) -> Option<&'a Self> {
                     if let Item::$name(v) = item {
                         Some(v)
                     } else {
@@ -229,66 +229,57 @@ macro_rules! impl_try_from_item {
 }
 
 impl_try_from_item! {
-    Class;
-    FieldRef;
-    MethodRef;
-    InterfaceMethodRef;
-    String;
+    Class<'input>;
+    FieldRef<'input>;
+    MethodRef<'input>;
+    InterfaceMethodRef<'input>;
+    String<'input>;
     Integer;
     Long;
     Float;
     Double;
-    NameAndType;
-    MethodHandle;
-    MethodType;
-    Dynamic;
-    InvokeDynamic;
-    Module;
-    Package;
-}
-
-impl<'input> TryFromItem<'input> for Utf8<'input> {
-    fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self> {
-        if let Item::Utf8(v) = item {
-            Some(v)
-        } else {
-            None
-        }
-    }
+    NameAndType<'input>;
+    Utf8<'input>;
+    MethodHandle<'input>;
+    MethodType<'input>;
+    Dynamic<'input>;
+    InvokeDynamic<'input>;
+    Module<'input>;
+    Package<'input>;
 }
 
 impl<'input> TryFromItem<'input> for Item<'input> {
-    fn try_from_item<'b>(item: &'b Item<'input>) -> Option<&'b Self> {
+    fn try_from_item<'a>(item: &'a Item<'input>) -> Option<&'a Self> {
         Some(item)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Class {
-    pub name: Index<Utf8<'static>>,
+pub struct Class<'input> {
+    pub name: Index<Utf8<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FieldRef {
-    pub class: Index<Class>,
-    pub name_and_type: Index<NameAndType>,
+pub struct FieldRef<'input> {
+    pub class: Index<Class<'input>>,
+    pub name_and_type: Index<NameAndType<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MethodRef {
-    pub class: Index<Class>,
-    pub name_and_type: Index<NameAndType>,
+pub struct MethodRef<'input> {
+    pub class: Index<Class<'input>>,
+    pub name_and_type: Index<NameAndType<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct InterfaceMethodRef {
-    pub class: Index<Class>,
-    pub name_and_type: Index<NameAndType>,
+pub struct InterfaceMethodRef<'input> {
+    pub class: Index<Class<'input>>,
+    pub name_and_type: Index<NameAndType<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct String {
-    pub string: Index<Utf8<'static>>,
+pub struct String<'input> {
+    pub string: Index<Utf8<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -312,9 +303,9 @@ pub struct Double {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NameAndType {
-    pub name: Index<Utf8<'static>>,
-    pub descriptor: Index<Utf8<'static>>,
+pub struct NameAndType<'input> {
+    pub name: Index<Utf8<'input>>,
+    pub descriptor: Index<Utf8<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -323,38 +314,38 @@ pub struct Utf8<'input> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MethodHandle {
+pub struct MethodHandle<'input> {
     pub kind: MethodKind,
-    pub reference: Index<Item<'static>>,
+    pub reference: Index<Item<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MethodType {
-    pub descriptor: Index<Utf8<'static>>,
+pub struct MethodType<'input> {
+    pub descriptor: Index<Utf8<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Dynamic {
+pub struct Dynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
-    pub name_and_type: Index<NameAndType>,
+    pub name_and_type: Index<NameAndType<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct InvokeDynamic {
+pub struct InvokeDynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
-    pub name_and_type: Index<NameAndType>,
+    pub name_and_type: Index<NameAndType<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Module {
-    pub name: Index<Utf8<'static>>,
+pub struct Module<'input> {
+    pub name: Index<Utf8<'input>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Package {
-    pub name: Index<Utf8<'static>>,
+pub struct Package<'input> {
+    pub name: Index<Utf8<'input>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -477,7 +468,7 @@ mod tests {
         assert_eq!(pool.get(Index::new(1).unwrap()), Ok(&Integer { value: 2 }));
         assert_eq!(pool.get(Index::new(2).unwrap()), Ok(&Long { value: 3 }));
         assert_eq!(pool.get(Index::new(4).unwrap()), Ok(&Integer { value: 4 }));
-        let string: &String = pool.get(Index::new(5).unwrap()).unwrap();
+        let string: &String<'_> = pool.get(Index::new(5).unwrap()).unwrap();
         assert_eq!(
             pool.get(string.string),
             Ok(&Utf8 {

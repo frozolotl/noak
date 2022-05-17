@@ -71,10 +71,10 @@ pub enum StackMapFrame<'input> {
     Same,
     SameExtended,
     Same1 {
-        stack: VerificationType,
+        stack: VerificationType<'input>,
     },
     Same1Extended {
-        stack: VerificationType,
+        stack: VerificationType<'input>,
     },
     Chop {
         to_chop: u8,
@@ -138,11 +138,11 @@ fn decode_stack_map_frame<'input>(
 }
 
 #[derive(Debug, Copy, Clone)]
-pub enum VerificationType {
+pub enum VerificationType<'input> {
     Top,
     Null,
     UninitializedThis,
-    Object(cpool::Index<cpool::Class>),
+    Object(cpool::Index<cpool::Class<'input>>),
     UninitializedVariable(code::Index),
     Integer,
     Long,
@@ -150,7 +150,10 @@ pub enum VerificationType {
     Double,
 }
 
-fn decode_verification_type(decoder: &mut Decoder<'_>, current_offset: u32) -> Result<VerificationType, DecodeError> {
+fn decode_verification_type<'input>(
+    decoder: &mut Decoder<'input>,
+    current_offset: u32,
+) -> Result<VerificationType<'input>, DecodeError> {
     let tag: u8 = decoder.read()?;
     match tag {
         0x00 => Ok(VerificationType::Top),
@@ -169,11 +172,11 @@ fn decode_verification_type(decoder: &mut Decoder<'_>, current_offset: u32) -> R
     }
 }
 
-fn skip_verification_type(decoder: &mut Decoder<'_>) -> Result<(), DecodeError> {
+fn skip_verification_type<'input>(decoder: &mut Decoder<'input>) -> Result<(), DecodeError> {
     let tag: u8 = decoder.read()?;
     match tag {
         0x07 => {
-            decoder.read::<cpool::Index<cpool::Class>>()?;
+            decoder.read::<cpool::Index<cpool::Class<'input>>>()?;
             Ok(())
         }
         0x08 => {
@@ -211,7 +214,7 @@ impl<'input> VerificationTypeIter<'input> {
 }
 
 impl<'input> Iterator for VerificationTypeIter<'input> {
-    type Item = Result<VerificationType, DecodeError>;
+    type Item = Result<VerificationType<'input>, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.remaining == 0 {

@@ -18,8 +18,8 @@ pub struct Class<'input> {
     pool: LazyDecodeRef<ConstantPool<'input>>,
     access_flags: AccessFlags,
 
-    this_class: Option<cpool::Index<cpool::Class>>,
-    super_class: Option<cpool::Index<cpool::Class>>,
+    this_class: Option<cpool::Index<cpool::Class<'input>>>,
+    super_class: Option<cpool::Index<cpool::Class<'input>>>,
     interfaces: Option<InterfaceIter<'input>>,
     fields: Option<FieldIter<'input>>,
     methods: Option<MethodIter<'input>>,
@@ -143,7 +143,7 @@ impl<'input> Class<'input> {
     ///
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn this_class_index(&mut self) -> Result<cpool::Index<cpool::Class>, DecodeError> {
+    pub fn this_class_index(&mut self) -> Result<cpool::Index<cpool::Class<'input>>, DecodeError> {
         self.read_info()?;
         Ok(self.this_class.unwrap())
     }
@@ -154,7 +154,7 @@ impl<'input> Class<'input> {
         Ok(pool.get(pool.get(index)?.name)?.content)
     }
 
-    pub fn super_class_index(&mut self) -> Result<Option<cpool::Index<cpool::Class>>, DecodeError> {
+    pub fn super_class_index(&mut self) -> Result<Option<cpool::Index<cpool::Class<'input>>>, DecodeError> {
         self.read_info()?;
         Ok(self.super_class)
     }
@@ -255,7 +255,7 @@ fn read_header(decoder: &mut Decoder<'_>) -> Result<Version, DecodeError> {
     }
 }
 
-pub type InterfaceIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class>, u16>;
+pub type InterfaceIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class<'input>>, u16>;
 
 #[cfg(test)]
 mod tests {

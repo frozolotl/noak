@@ -90,7 +90,7 @@ pub struct ExceptionHandlers<'input> {
 }
 
 impl<'input> Iterator for ExceptionHandlers<'input> {
-    type Item = ExceptionHandler;
+    type Item = ExceptionHandler<'input>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.decoder.read().ok()
@@ -103,14 +103,14 @@ impl<'input> fmt::Debug for ExceptionHandlers<'input> {
     }
 }
 
-pub struct ExceptionHandler {
+pub struct ExceptionHandler<'input> {
     start: Index,
     end: Index,
     handler: Index,
-    catch_type: Option<cpool::Index<cpool::Class>>,
+    catch_type: Option<cpool::Index<cpool::Class<'input>>>,
 }
 
-impl ExceptionHandler {
+impl<'input> ExceptionHandler<'input> {
     pub fn start(&self) -> Index {
         self.start
     }
@@ -123,12 +123,12 @@ impl ExceptionHandler {
         self.handler
     }
 
-    pub fn catch_type(&self) -> Option<cpool::Index<cpool::Class>> {
+    pub fn catch_type(&self) -> Option<cpool::Index<cpool::Class<'input>>> {
         self.catch_type
     }
 }
 
-impl<'input> Decode<'input> for ExceptionHandler {
+impl<'input> Decode<'input> for ExceptionHandler<'input> {
     fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let start: u16 = decoder.read()?;
         let end: u16 = decoder.read()?;
@@ -144,7 +144,7 @@ impl<'input> Decode<'input> for ExceptionHandler {
     }
 }
 
-impl fmt::Debug for ExceptionHandler {
+impl<'input> fmt::Debug for ExceptionHandler<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExceptionHandler").finish()
     }

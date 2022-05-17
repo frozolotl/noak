@@ -49,7 +49,7 @@ pub enum RawInstruction<'input> {
     ALoad2,
     ALoad3,
     ANewArray {
-        index: cpool::Index<cpool::Class>,
+        index: cpool::Index<cpool::Class<'input>>,
     },
     AReturn,
     ArrayLength,
@@ -72,7 +72,7 @@ pub enum RawInstruction<'input> {
     CALoad,
     CAStore,
     CheckCast {
-        index: cpool::Index<cpool::Class>,
+        index: cpool::Index<cpool::Class<'input>>,
     },
     D2F,
     D2I,
@@ -154,10 +154,10 @@ pub enum RawInstruction<'input> {
     FStore3,
     FSub,
     GetField {
-        index: cpool::Index<cpool::FieldRef>,
+        index: cpool::Index<cpool::FieldRef<'input>>,
     },
     GetStatic {
-        index: cpool::Index<cpool::FieldRef>,
+        index: cpool::Index<cpool::FieldRef<'input>>,
     },
     Goto {
         offset: i16,
@@ -252,13 +252,13 @@ pub enum RawInstruction<'input> {
     IMul,
     INeg,
     InstanceOf {
-        index: cpool::Index<cpool::Class>,
+        index: cpool::Index<cpool::Class<'input>>,
     },
     InvokeDynamic {
-        index: cpool::Index<cpool::InvokeDynamic>,
+        index: cpool::Index<cpool::InvokeDynamic<'input>>,
     },
     InvokeInterface {
-        index: cpool::Index<cpool::InterfaceMethodRef>,
+        index: cpool::Index<cpool::InterfaceMethodRef<'input>>,
         count: u8,
     },
     InvokeSpecial {
@@ -268,7 +268,7 @@ pub enum RawInstruction<'input> {
         index: cpool::Index<cpool::Item<'input>>,
     },
     InvokeVirtual {
-        index: cpool::Index<cpool::MethodRef>,
+        index: cpool::Index<cpool::MethodRef<'input>>,
     },
     IOr,
     IRem,
@@ -348,11 +348,11 @@ pub enum RawInstruction<'input> {
     MonitorEnter,
     MonitorExit,
     MultiANewArray {
-        index: cpool::Index<cpool::Class>,
+        index: cpool::Index<cpool::Class<'input>>,
         dimensions: u8,
     },
     New {
-        index: cpool::Index<cpool::Class>,
+        index: cpool::Index<cpool::Class<'input>>,
     },
     NewArray {
         atype: ArrayType,
@@ -361,10 +361,10 @@ pub enum RawInstruction<'input> {
     Pop,
     Pop2,
     PutField {
-        index: cpool::Index<cpool::FieldRef>,
+        index: cpool::Index<cpool::FieldRef<'input>>,
     },
     PutStatic {
-        index: cpool::Index<cpool::FieldRef>,
+        index: cpool::Index<cpool::FieldRef<'input>>,
     },
     Ret {
         index: u8,
