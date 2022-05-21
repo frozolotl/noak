@@ -159,7 +159,7 @@ impl<'input> Decode<'input> for Item<'input> {
                 let len: u16 = decoder.read()?;
                 let buf = decoder.split_bytes_off(len as usize)?;
                 Ok(Item::Utf8(Utf8 {
-                    content: MStr::from_bytes(buf)?,
+                    content: MStr::from_mutf8(buf)?,
                 }))
             }
             3 => Ok(Item::Integer(Integer { value: decoder.read()? })),
@@ -434,7 +434,7 @@ mod tests {
         assert_eq!(
             iter.next(),
             Some(&Item::Utf8(Utf8 {
-                content: MStr::from_bytes(b"hello world").unwrap(),
+                content: MStr::from_mutf8(b"hello world").unwrap(),
             }))
         );
         assert_eq!(iter.next(), Some(&Item::Long(Long { value: 0xFF })));
@@ -460,7 +460,7 @@ mod tests {
                 string: Index::new(6).unwrap(),
             })),
             Some(Item::Utf8(Utf8 {
-                content: MStr::from_bytes(&some_string).unwrap(),
+                content: MStr::from_mutf8(&some_string).unwrap(),
             })),
         ];
 
@@ -472,7 +472,7 @@ mod tests {
         assert_eq!(
             pool.get(string.string),
             Ok(&Utf8 {
-                content: MStr::from_bytes(&some_string).unwrap(),
+                content: MStr::from_mutf8(&some_string).unwrap(),
             })
         );
 

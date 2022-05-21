@@ -90,7 +90,7 @@ impl<'input> Attribute<'input> {
             }
             b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
             b"SourceDebugExtension" => {
-                let content = MStr::from_bytes(decoder.buf())?;
+                let content = MStr::from_mutf8(decoder.buf())?;
                 Ok(AttributeContent::SourceDebugExtension(content))
             }
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read_into()?)),

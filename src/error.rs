@@ -44,7 +44,7 @@ pub struct DecodeError {
 }
 
 impl DecodeError {
-    pub(crate) fn new(kind: DecodeErrorKind) -> DecodeError {
+    pub(crate) const fn new(kind: DecodeErrorKind) -> DecodeError {
         DecodeError {
             kind,
             position: None,
@@ -52,7 +52,7 @@ impl DecodeError {
         }
     }
 
-    pub(crate) fn with_context(kind: DecodeErrorKind, context: Context) -> DecodeError {
+    pub(crate) const fn with_context(kind: DecodeErrorKind, context: Context) -> DecodeError {
         DecodeError {
             kind,
             position: None,
@@ -60,7 +60,7 @@ impl DecodeError {
         }
     }
 
-    pub(crate) fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
+    pub(crate) const fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
         DecodeError {
             kind,
             position: Some(position),
