@@ -2,7 +2,6 @@ use std::fmt;
 
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
-use crate::mutf8::MStr;
 use crate::reader::{
     attributes::AttributeIter,
     cpool::{self, ConstantPool},
@@ -135,37 +134,18 @@ impl<'input> Class<'input> {
     ///
     /// # let data = &[];
     /// let mut class = Class::new(data)?;
-    /// let class_index = class.this_class_index()?;
-    /// let pool = class.pool()?;
-    /// let name_index = pool.get(class_index)?.name;
-    /// let class_name = pool.get(name_index)?.content;
-    /// println!("Class: {}", class_name.display());
-    ///
+    /// let this_class = class.this_class()?;
+    /// println!("Class: {}", class.pool()?.retrieve(this_class)?.name.display());
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn this_class_index(&mut self) -> Result<cpool::Index<cpool::Class<'input>>, DecodeError> {
+    pub fn this_class(&mut self) -> Result<cpool::Index<cpool::Class<'input>>, DecodeError> {
         self.read_info()?;
         Ok(self.this_class.unwrap())
     }
 
-    pub fn this_class_name(&mut self) -> Result<&'input MStr, DecodeError> {
-        let index = self.this_class_index()?;
-        let pool = self.pool()?;
-        Ok(pool.get(pool.get(index)?.name)?.content)
-    }
-
-    pub fn super_class_index(&mut self) -> Result<Option<cpool::Index<cpool::Class<'input>>>, DecodeError> {
+    pub fn super_class(&mut self) -> Result<Option<cpool::Index<cpool::Class<'input>>>, DecodeError> {
         self.read_info()?;
         Ok(self.super_class)
-    }
-
-    pub fn super_class_name(&mut self) -> Result<Option<&'input MStr>, DecodeError> {
-        if let Some(index) = self.super_class_index()? {
-            let pool = self.pool()?;
-            Ok(Some(pool.get(pool.get(index)?.name)?.content))
-        } else {
-            Ok(None)
-        }
     }
 
     /// Returns an iterator over the interface indices into the constant pool.

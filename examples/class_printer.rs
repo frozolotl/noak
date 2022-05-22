@@ -18,9 +18,13 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
     println!("- Major Version: {}", version.major);
     println!("- Minor Version: {}", version.minor);
     println!("- Access Flags: {:?}", class.access_flags()?);
-    println!("- Class Name: {}", class.this_class_name()?.display());
-    if let Some(name) = class.super_class_name()? {
-        println!("- Super Class Name: {}", name.display());
+    let this_class = class.this_class()?;
+    println!("- Class Name: {}", class.pool()?.retrieve(this_class)?.name.display());
+    if let Some(super_class) = class.super_class()? {
+        println!(
+            "- Super Class Name: {}",
+            class.pool()?.retrieve(super_class)?.name.display()
+        );
     }
 
     println!("- Interfaces:");
