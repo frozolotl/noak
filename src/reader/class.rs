@@ -195,7 +195,7 @@ impl<'input> Class<'input> {
         Ok(self.attributes.clone().unwrap())
     }
 
-    /// The count of bytes used by the class file.
+    /// The number of bytes used by the class file.
     pub fn buffer_size(&mut self) -> Result<usize, DecodeError> {
         self.attributes()?;
         Ok(self.decoder.file_position())
