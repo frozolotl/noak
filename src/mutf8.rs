@@ -1,4 +1,4 @@
-//! Modified UTF-8 string handling
+//! Modified UTF-8 string handling.
 
 use crate::error::*;
 use std::{
@@ -139,6 +139,7 @@ impl MStr {
     ///
     /// # Safety
     /// This slice may not contain bytes that do not make up a modified UTF-8 string.
+    #[must_use]
     pub const unsafe fn from_mutf8_unchecked(v: &[u8]) -> &MStr {
         // SAFETY: Relies on &MStr and &[u8] having the same layout
         std::mem::transmute(v)
@@ -148,32 +149,43 @@ impl MStr {
     ///
     /// # Safety
     /// This slice may not contain bytes that do not make up a modified UTF-8 string.
+    #[must_use]
     pub unsafe fn from_mutf8_unchecked_mut(v: &mut [u8]) -> &mut MStr {
-        // SAFETY: Relies on &mut MStr and &mut [u8] having the same layout
-        std::mem::transmute(v)
+        let v: *mut [u8] = v;
+        &mut *(v as *mut MStr)
     }
 
+    /// Returns the length of the string in bytes.
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    /// Returns whether the string contains any characters.
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
+    /// Returns the inner byte slice.
     #[inline]
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         &self.inner
     }
 
+    /// Checks whether the modified UTF-8 string is valid UTF-8 and returns a [`&str`] if it is.
     #[inline]
+    #[must_use]
     pub fn to_str(&self) -> Option<&str> {
         str::from_utf8(&self.inner).ok()
     }
 
+    /// Returns whether the `index`-th byte is the first byte of a modified UTF-8 code point sequence or the end of the string.
     #[inline]
+    #[must_use]
     pub fn is_char_boundary(&self, index: usize) -> bool {
         if index == 0 || index == self.len() {
             true
@@ -191,6 +203,7 @@ impl MStr {
     /// If a character is invalid, then its code will be returned in the `Err` case.
     /// If you don't care about invalid characters, use [`MStr::chars_lossy`].
     #[inline]
+    #[must_use]
     pub fn chars(&self) -> Chars<'_> {
         Chars { inner: &self.inner }
     }
@@ -199,11 +212,16 @@ impl MStr {
     ///
     /// Invalid characters are replaced with U+FFFD ([`char::REPLACEMENT_CHARACTER`]).
     #[inline]
+    #[must_use]
     pub fn chars_lossy(&self) -> CharsLossy<'_> {
         CharsLossy { inner: &self.inner }
     }
 
+    /// Provides a value of a type that implements `Display`.
+    ///
+    /// Invalid characters are displayed as U+FFFD ([`char::REPLACEMENT_CHARACTER`]).
     #[inline]
+    #[must_use]
     pub fn display(&self) -> Display<'_> {
         Display { inner: &self.inner }
     }

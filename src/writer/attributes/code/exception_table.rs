@@ -11,7 +11,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
         let position = self.context.get_label_position(label)?;
         // end has to fit into an u16 and thus the last valid index for end is 65535
         // but start has to be less than end and thus the last valid index for start is 65534
-        if position >= u16::max_value() as u32 {
+        if position >= u32::from(u16::max_value()) {
             return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
         self.context.encoder().write(position as u16)?;
@@ -26,7 +26,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
 impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Length> {
     pub fn end(mut self, label: LabelRef) -> Result<ExceptionWriter<Ctx, ExceptionWriterState::Handler>, EncodeError> {
         let position = self.context.get_label_position(label)?;
-        if position > u16::max_value() as u32 {
+        if position > u32::from(u16::max_value()) {
             return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
         self.context.encoder().write(position as u16)?;
@@ -44,7 +44,7 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Handler> {
         label: LabelRef,
     ) -> Result<ExceptionWriter<Ctx, ExceptionWriterState::CatchType>, EncodeError> {
         let position = self.context.get_label_position(label)?;
-        if position > u16::max_value() as u32 {
+        if position > u32::from(u16::max_value()) {
             return Err(EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code));
         }
         self.context.encoder().write(position as u16)?;

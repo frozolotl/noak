@@ -1,8 +1,9 @@
-use crate::error::*;
+use crate::error::{DecodeError, DecodeErrorKind};
 use crate::mutf8::{CharsLossy, MStr};
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// A field type descriptor not wrapped within an array.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BaseType<'a> {
     Boolean,
     Byte,
@@ -32,27 +33,37 @@ impl<'a> fmt::Display for BaseType<'a> {
     }
 }
 
+/// A field descriptor represents the type of a class, instance or local variable.
+/// It is a [`BaseType`] that may be wrapped in a n-dimensional array.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeDescriptor<'a> {
-    dimensions: u8,
-    base: BaseType<'a>,
+    pub dimensions: u8,
+    pub base: BaseType<'a>,
 }
 
 impl<'a> TypeDescriptor<'a> {
-    pub fn new(base: BaseType<'a>, dimensions: u8) -> TypeDescriptor<'a> {
-        TypeDescriptor { dimensions, base }
-    }
-
+    /// Parses a field descriptor as described in [§4.3.2](https://docs.oracle.com/javase/specs/jvms/se18/html/jvms-4.html#jvms-4.3.2).
+    ///
+    /// # Examples
+    /// ```
+    /// use noak::descriptor::{BaseType, TypeDescriptor};
+    /// use noak::mutf8::MStr;
+    ///
+    /// let descriptor = TypeDescriptor::parse(MStr::from_mutf8(b"[F").unwrap()).unwrap();
+    /// assert_eq!(descriptor.dimensions, 1);
+    /// assert_eq!(descriptor.base, BaseType::Float);
+    /// ```
     pub fn parse(s: &'a MStr) -> Result<TypeDescriptor<'a>, DecodeError> {
         let mut chars = s.chars_lossy().enumerate();
-        let mut dimensions = 0;
+        let mut dimensions: u8 = 0;
         while let Some((start, ch)) = chars.next() {
             if ch == '[' {
-                if dimensions == u8::max_value() {
+                // Can't have more than 255 dimensions.
+                dimensions = if let Some(dimensions) = dimensions.checked_add(1) {
+                    dimensions
+                } else {
                     break;
-                }
-
-                dimensions += 1;
+                };
             } else {
                 use BaseType::*;
 
@@ -66,19 +77,14 @@ impl<'a> TypeDescriptor<'a> {
                     'D' => Double,
                     'C' => Char,
                     'L' => {
-                        let mut valid = false;
-                        for (_, ch) in &mut chars {
-                            if ch == ';' {
-                                valid = true;
-                                break;
-                            }
-                        }
-
-                        if !valid {
+                        // Assure that the descriptor contains a ';'.
+                        if !chars.by_ref().any(|(_, ch)| ch == ';') {
                             break;
                         }
 
+                        // Extract the name from the descriptor
                         let name = &s[start + 1..s.len() - 1];
+                        // Assure that the name is not empty.
                         if name.is_empty() {
                             break;
                         }
@@ -87,6 +93,7 @@ impl<'a> TypeDescriptor<'a> {
                     _ => break,
                 };
 
+                // Verify that there is no character after the base type.
                 if chars.next().is_some() {
                     break;
                 }
@@ -96,16 +103,6 @@ impl<'a> TypeDescriptor<'a> {
         }
 
         Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
-    }
-
-    #[inline]
-    pub fn dimensions(&self) -> u8 {
-        self.dimensions
-    }
-
-    #[inline]
-    pub fn base(&self) -> &BaseType<'a> {
-        &self.base
     }
 }
 
@@ -119,14 +116,26 @@ impl<'a> fmt::Display for TypeDescriptor<'a> {
     }
 }
 
+/// A method descriptor specifies the parameter types and return type of a method.
 pub struct MethodDescriptor<'a> {
     input: &'a MStr,
     return_index: u16,
 }
 
 impl<'a> MethodDescriptor<'a> {
+    /// Parses a method descriptor as described in [§4.3.3](https://docs.oracle.com/javase/specs/jvms/se18/html/jvms-4.html#jvms-4.3.3).
+    ///
+    /// # Examples
+    /// ```
+    /// use noak::descriptor::{BaseType, MethodDescriptor, TypeDescriptor};
+    /// use noak::mutf8::MStr;
+    ///
+    /// let descriptor = MethodDescriptor::parse(MStr::from_mutf8(b"(Ljava/lang/String;)I").unwrap()).unwrap();
+    /// assert_eq!(descriptor.parameters().count(), 1);
+    /// assert_eq!(descriptor.return_type(), Some(TypeDescriptor { dimensions: 0, base: BaseType::Integer }));
+    /// ```
     pub fn parse(input: &'a MStr) -> Result<MethodDescriptor<'a>, DecodeError> {
-        if input.len() <= u16::max_value() as usize {
+        if u16::try_from(input.len()).is_ok() {
             let mut chars = input.chars_lossy();
             if let Some('(') = chars.next() {
                 loop {
@@ -149,6 +158,8 @@ impl<'a> MethodDescriptor<'a> {
         Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
     }
 
+    /// Returns an iterator over the method parameters.
+    #[must_use]
     pub fn parameters(&self) -> impl Iterator<Item = TypeDescriptor<'a>> + 'a {
         struct Parameters<'a> {
             chars: CharsLossy<'a>,
@@ -163,7 +174,7 @@ impl<'a> MethodDescriptor<'a> {
                     self.chars = <&MStr>::default().chars_lossy();
                     None
                 } else {
-                    read_type(ch.unwrap(), &mut self.chars)
+                    Some(read_type(ch.unwrap(), &mut self.chars))
                 }
             }
         }
@@ -174,33 +185,32 @@ impl<'a> MethodDescriptor<'a> {
         Parameters { chars }
     }
 
+    /// Returns the return type of this method descriptor.
+    /// If the return type is void (`V`), then `None` is returned.
     pub fn return_type(&self) -> Option<TypeDescriptor<'a>> {
         let input = &self.input[self.return_index as usize..];
         if input.as_bytes() == b"V" {
             None
         } else {
             let mut chars = input.chars_lossy();
-            read_type(chars.next().unwrap(), &mut chars)
+            Some(read_type(chars.next().unwrap(), &mut chars))
         }
     }
 }
 
-fn validate_type(
-    mut ch: Option<char>,
-    mut chars: impl Iterator<Item = char>,
-    return_type: bool,
-) -> Result<(), DecodeError> {
+/// Verify that the next type is valid.
+fn validate_type(mut ch: Option<char>, chars: &mut CharsLossy<'_>, return_type: bool) -> Result<(), DecodeError> {
     if return_type && ch == Some('V') {
         return Ok(());
     }
 
-    let mut dimensions: u16 = 0;
+    let mut dimensions: u8 = 0;
     while let Some('[') = ch {
-        if dimensions == u16::from(u8::max_value()) {
-            return Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor));
-        }
+        // Can't have more than 255 array dimensions.
+        dimensions = dimensions
+            .checked_add(1)
+            .ok_or_else(|| DecodeError::new(DecodeErrorKind::InvalidDescriptor))?;
         ch = chars.next();
-        dimensions += 1;
     }
     if let Some(ch) = ch {
         match ch {
@@ -212,9 +222,8 @@ fn validate_type(
                     if ch == ';' {
                         found_semicolon = true;
                         break;
-                    } else {
-                        found_character = true;
                     }
+                    found_character = true;
                 }
                 if found_semicolon && found_character {
                     return Ok(());
@@ -226,7 +235,9 @@ fn validate_type(
     Err(DecodeError::new(DecodeErrorKind::InvalidDescriptor))
 }
 
-fn read_type<'a>(mut ch: char, chars: &mut CharsLossy<'a>) -> Option<TypeDescriptor<'a>> {
+/// Reads a type descriptor from a method descriptor.
+/// Does not verify the input.
+fn read_type<'a>(mut ch: char, chars: &mut CharsLossy<'a>) -> TypeDescriptor<'a> {
     use BaseType::*;
 
     let mut dimensions = 0;
@@ -258,7 +269,7 @@ fn read_type<'a>(mut ch: char, chars: &mut CharsLossy<'a>) -> Option<TypeDescrip
         _ => unreachable!("the tag is guaranteed to be valid"),
     };
 
-    Some(TypeDescriptor { dimensions, base })
+    TypeDescriptor { dimensions, base }
 }
 
 impl<'a> fmt::Debug for MethodDescriptor<'a> {
@@ -282,29 +293,96 @@ mod test {
             assert_eq!(TypeDescriptor::parse(&m).unwrap(), td);
         }
 
-        eq("Z", TypeDescriptor::new(Boolean, 0));
-        eq("B", TypeDescriptor::new(Byte, 0));
-        eq("S", TypeDescriptor::new(Short, 0));
-        eq("I", TypeDescriptor::new(Integer, 0));
-        eq("J", TypeDescriptor::new(Long, 0));
-        eq("F", TypeDescriptor::new(Float, 0));
-        eq("D", TypeDescriptor::new(Double, 0));
+        eq(
+            "Z",
+            TypeDescriptor {
+                base: Boolean,
+                dimensions: 0,
+            },
+        );
+        eq(
+            "B",
+            TypeDescriptor {
+                base: Byte,
+                dimensions: 0,
+            },
+        );
+        eq(
+            "S",
+            TypeDescriptor {
+                base: Short,
+                dimensions: 0,
+            },
+        );
+        eq(
+            "I",
+            TypeDescriptor {
+                base: Integer,
+                dimensions: 0,
+            },
+        );
+        eq(
+            "J",
+            TypeDescriptor {
+                base: Long,
+                dimensions: 0,
+            },
+        );
+        eq(
+            "F",
+            TypeDescriptor {
+                base: Float,
+                dimensions: 0,
+            },
+        );
+        eq(
+            "D",
+            TypeDescriptor {
+                base: Double,
+                dimensions: 0,
+            },
+        );
         eq(
             "Ljava/lang/String;",
-            TypeDescriptor::new(Object(&MString::from("java/lang/String")), 0),
+            TypeDescriptor {
+                base: Object(&MString::from("java/lang/String")),
+                dimensions: 0,
+            },
         );
 
-        eq("[D", TypeDescriptor::new(Double, 1));
+        eq(
+            "[D",
+            TypeDescriptor {
+                base: Double,
+                dimensions: 1,
+            },
+        );
         eq(
             "[[Ljava/lang/String;",
-            TypeDescriptor::new(Object(&MString::from("java/lang/String")), 2),
+            TypeDescriptor {
+                base: Object(&MString::from("java/lang/String")),
+                dimensions: 2,
+            },
         );
-        eq("[[[[[[[[[[[[[[[[[[F", TypeDescriptor::new(Float, 18));
-        eq(&("[".repeat(255) + "I"), TypeDescriptor::new(Integer, 255));
+        eq(
+            "[[[[[[[[[[[[[[[[[[F",
+            TypeDescriptor {
+                base: Float,
+                dimensions: 18,
+            },
+        );
+        eq(
+            &("[".repeat(255) + "I"),
+            TypeDescriptor {
+                base: Integer,
+                dimensions: 255,
+            },
+        );
     }
 
     #[test]
     fn invalid_type() {
+        #[track_caller]
         fn check(s: &str) {
             let m: MString = s.into();
             TypeDescriptor::parse(&m).unwrap_err();
@@ -322,6 +400,7 @@ mod test {
 
     #[test]
     fn valid_method_descriptor() {
+        #[track_caller]
         fn eq(s: &str, parameters: &[TypeDescriptor<'_>], return_type: Option<TypeDescriptor<'_>>) {
             let m: MString = s.into();
             let desc = MethodDescriptor::parse(&m).unwrap();
@@ -331,31 +410,65 @@ mod test {
         }
 
         eq("()V", &[], None);
-        eq("(I)V", &[TypeDescriptor::new(Integer, 0)], None);
+        eq(
+            "(I)V",
+            &[TypeDescriptor {
+                dimensions: 0,
+                base: Integer,
+            }],
+            None,
+        );
         eq(
             "([[IF)V",
-            &[TypeDescriptor::new(Integer, 2), TypeDescriptor::new(Float, 0)],
+            &[
+                TypeDescriptor {
+                    dimensions: 2,
+                    base: Integer,
+                },
+                TypeDescriptor {
+                    dimensions: 0,
+                    base: Float,
+                },
+            ],
             None,
         );
         eq(
             "(I)F",
-            &[TypeDescriptor::new(Integer, 0)],
-            Some(TypeDescriptor::new(Float, 0)),
+            &[TypeDescriptor {
+                dimensions: 0,
+                base: Integer,
+            }],
+            Some(TypeDescriptor {
+                dimensions: 0,
+                base: Float,
+            }),
         );
         eq(
             "(LFoo;)V",
-            &[TypeDescriptor::new(Object(&MString::from("Foo")), 0)],
+            &[TypeDescriptor {
+                dimensions: 0,
+                base: Object(&MString::from("Foo")),
+            }],
             None,
         );
         eq(
             "()LBar;",
             &[],
-            Some(TypeDescriptor::new(Object(&MString::from("Bar")), 0)),
+            Some(TypeDescriptor {
+                dimensions: 0,
+                base: Object(&MString::from("Bar")),
+            }),
         );
         eq(
             "(LFoo;)LBar;",
-            &[TypeDescriptor::new(Object(&MString::from("Foo")), 0)],
-            Some(TypeDescriptor::new(Object(&MString::from("Bar")), 0)),
+            &[TypeDescriptor {
+                dimensions: 0,
+                base: Object(&MString::from("Foo")),
+            }],
+            Some(TypeDescriptor {
+                dimensions: 0,
+                base: Object(&MString::from("Bar")),
+            }),
         );
     }
 

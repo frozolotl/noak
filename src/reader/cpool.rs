@@ -363,9 +363,9 @@ pub enum MethodKind {
 
 impl<'input> Decode<'input> for MethodKind {
     fn decode(decoder: &mut Decoder<'input>) -> Result<MethodKind, DecodeError> {
-        let tag: u8 = decoder.read()?;
         use MethodKind::*;
 
+        let tag: u8 = decoder.read()?;
         match tag {
             1 => Ok(GetField),
             2 => Ok(GetStatic),
