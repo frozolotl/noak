@@ -11,18 +11,16 @@ use crate::reader::{
 
 #[derive(Clone)]
 pub struct Class<'input> {
-    read_level: ReadLevel,
-    decoder: Decoder<'input>,
     version: Version,
-    pool: LazyDecodeRef<ConstantPool<'input>>,
+    pool: ConstantPool<'input>,
     access_flags: AccessFlags,
-
-    this_class: Option<cpool::Index<cpool::Class<'input>>>,
+    this_class: cpool::Index<cpool::Class<'input>>,
     super_class: Option<cpool::Index<cpool::Class<'input>>>,
-    interfaces: Option<InterfaceIter<'input>>,
-    fields: Option<FieldIter<'input>>,
-    methods: Option<MethodIter<'input>>,
-    attributes: Option<AttributeIter<'input>>,
+    interfaces: InterfaceIter<'input>,
+    fields: FieldIter<'input>,
+    methods: MethodIter<'input>,
+    attributes: AttributeIter<'input>,
+    buffer_size: usize,
 }
 
 impl<'input> Class<'input> {
@@ -38,19 +36,33 @@ impl<'input> Class<'input> {
     pub fn new(v: &'input [u8]) -> Result<Class<'input>, DecodeError> {
         let mut decoder = Decoder::new(v, Context::Start);
         let version = read_header(&mut decoder)?;
+        decoder.set_context(Context::ConstantPool);
+        let pool = decoder.read()?;
+        decoder.set_context(Context::ClassInfo);
+        let access_flags = decoder.read()?;
+        let this_class = decoder.read()?;
+        let super_class = decoder.read()?;
+        decoder.set_context(Context::Interfaces);
+        let interfaces = decoder.read()?;
+        decoder.set_context(Context::Fields);
+        let fields = decoder.read()?;
+        decoder.set_context(Context::Methods);
+        let methods = decoder.read()?;
+        decoder.set_context(Context::Attributes);
+        let attributes = decoder.read()?;
+        let buffer_size = decoder.file_position();
 
         Ok(Class {
-            read_level: ReadLevel::Start,
-            decoder,
             version,
-            pool: LazyDecodeRef::NotRead,
-            access_flags: AccessFlags::empty(),
-            this_class: None,
-            super_class: None,
-            interfaces: None,
-            fields: None,
-            methods: None,
-            attributes: None,
+            pool,
+            access_flags,
+            this_class,
+            super_class,
+            interfaces,
+            fields,
+            methods,
+            attributes,
+            buffer_size,
         })
     }
 
@@ -77,34 +89,13 @@ impl<'input> Class<'input> {
     /// # let data = &[];
     /// # let index = cpool::Index::new(10)?;
     /// let mut class = Class::new(data)?;
-    /// let pool = class.pool()?;
     ///
-    /// let item: &cpool::Utf8 = pool.get(index)?;
+    /// let item: &cpool::Utf8 = class.pool().get(index)?;
     /// println!("Item: {}", item.content.display());
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn pool(&mut self) -> Result<&ConstantPool<'input>, DecodeError> {
-        if self.read_level < ReadLevel::ConstantPool {
-            self.read_level = ReadLevel::ConstantPool;
-        }
-
-        self.pool.get(&mut self.decoder)
-    }
-
-    fn read_info(&mut self) -> Result<(), DecodeError> {
-        if self.read_level < ReadLevel::Info {
-            // advance the decoder
-            self.pool()?;
-
-            self.decoder.set_context(Context::ClassInfo);
-            self.access_flags = self.decoder.read()?;
-            self.this_class = Some(self.decoder.read()?);
-            self.super_class = self.decoder.read()?;
-            self.interfaces = Some(self.decoder.read()?);
-            self.read_level = ReadLevel::Info;
-        }
-
-        Ok(())
+    pub fn pool(&self) -> &ConstantPool<'input> {
+        &self.pool
     }
 
     /// Returns the access flags of the class.
@@ -117,14 +108,13 @@ impl<'input> Class<'input> {
     ///
     /// # let data = &[];
     /// let mut class = Class::new(data)?;
-    /// let flags = class.access_flags()?;
+    /// let flags = class.access_flags();
     /// assert!(flags.contains(AccessFlags::PUBLIC | AccessFlags::SUPER));
     ///
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn access_flags(&mut self) -> Result<AccessFlags, DecodeError> {
-        self.read_info()?;
-        Ok(self.access_flags)
+    pub fn access_flags(&self) -> AccessFlags {
+        self.access_flags
     }
 
     /// Returns the index of this class name.
@@ -135,18 +125,16 @@ impl<'input> Class<'input> {
     ///
     /// # let data = &[];
     /// let mut class = Class::new(data)?;
-    /// let this_class = class.this_class()?;
-    /// println!("Class: {}", class.pool()?.retrieve(this_class)?.name.display());
+    /// let this_class = class.this_class();
+    /// println!("Class: {}", class.pool().retrieve(this_class)?.name.display());
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn this_class(&mut self) -> Result<cpool::Index<cpool::Class<'input>>, DecodeError> {
-        self.read_info()?;
-        Ok(self.this_class.unwrap())
+    pub fn this_class(&self) -> cpool::Index<cpool::Class<'input>> {
+        self.this_class
     }
 
-    pub fn super_class(&mut self) -> Result<Option<cpool::Index<cpool::Class<'input>>>, DecodeError> {
-        self.read_info()?;
-        Ok(self.super_class)
+    pub fn super_class(&self) -> Option<cpool::Index<cpool::Class<'input>>> {
+        self.super_class
     }
 
     /// Returns an iterator over the interface indices into the constant pool.
@@ -156,50 +144,70 @@ impl<'input> Class<'input> {
     ///
     /// # let data = &[];
     /// let mut class = Class::new(data)?;
-    /// for interface in class.interfaces()? {
-    ///     println!("Interface: {}", class.pool()?.retrieve(interface?)?.name.display());
+    /// for interface in class.interfaces() {
+    ///     let interface = interface?;
+    ///     println!("Interface: {}", class.pool().retrieve(interface)?.name.display());
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn interfaces(&mut self) -> Result<InterfaceIter<'input>, DecodeError> {
-        self.read_info()?;
-        Ok(self.interfaces.clone().unwrap())
+    pub fn interfaces(&self) -> InterfaceIter<'input> {
+        self.interfaces.clone()
     }
 
-    pub fn fields(&mut self) -> Result<FieldIter<'input>, DecodeError> {
-        self.read_info()?;
-        if self.read_level < ReadLevel::Fields {
-            self.decoder.set_context(Context::Fields);
-            self.fields = Some(self.decoder.read()?);
-            self.read_level = ReadLevel::Fields;
-        }
-        Ok(self.fields.clone().unwrap())
+    /// Returns an iterator over the fields of this class.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// for field in class.fields() {
+    ///     let field = field?;
+    ///     println!("Field name: {}", class.pool().retrieve(field.name())?.display());
+    /// }
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
+    pub fn fields(&self) -> FieldIter<'input> {
+        self.fields.clone()
     }
 
-    pub fn methods(&mut self) -> Result<MethodIter<'input>, DecodeError> {
-        if self.read_level < ReadLevel::Methods {
-            self.fields()?;
-            self.decoder.set_context(Context::Methods);
-            self.methods = Some(self.decoder.read()?);
-            self.read_level = ReadLevel::Methods;
-        }
-        Ok(self.methods.clone().unwrap())
+    /// Returns an iterator over the methods of this class.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// for method in class.methods() {
+    ///     let method = method?;
+    ///     println!("Method name: {}", class.pool().retrieve(method.name())?.display());
+    /// }
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
+    pub fn methods(&self) -> MethodIter<'input> {
+        self.methods.clone()
     }
 
-    pub fn attributes(&mut self) -> Result<AttributeIter<'input>, DecodeError> {
-        if self.read_level < ReadLevel::Attributes {
-            self.methods()?;
-            self.decoder.set_context(Context::Attributes);
-            self.attributes = Some(self.decoder.read()?);
-            self.read_level = ReadLevel::Attributes;
-        }
-        Ok(self.attributes.clone().unwrap())
+    /// Returns an iterator over the attributes of this class.
+    ///
+    /// ```no_run
+    /// use noak::reader::Class;
+    ///
+    /// # let data = &[];
+    /// let mut class = Class::new(data)?;
+    /// for attribute in class.attributes() {
+    ///     let attribute = attribute?;
+    ///     println!("Attribute name: {}", class.pool().retrieve(attribute.name())?.display());
+    /// }
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
+    pub fn attributes(&self) -> AttributeIter<'input> {
+        self.attributes.clone()
     }
 
     /// The number of bytes used by the class file.
-    pub fn buffer_size(&mut self) -> Result<usize, DecodeError> {
-        self.attributes()?;
-        Ok(self.decoder.file_position())
+    pub fn buffer_size(&self) -> usize {
+        self.buffer_size
     }
 }
 
@@ -207,22 +215,6 @@ impl<'input> fmt::Debug for Class<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Class").finish()
     }
-}
-
-/// How much of the class is already read.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum ReadLevel {
-    // Version numbers
-    Start,
-    ConstantPool,
-    // Access Flags, Class Name, Super Class
-    Info,
-    // The field table
-    Fields,
-    // The method table
-    Methods,
-    // The attribute table
-    Attributes,
 }
 
 fn read_header(decoder: &mut Decoder<'_>) -> Result<Version, DecodeError> {

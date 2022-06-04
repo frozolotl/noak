@@ -175,36 +175,6 @@ impl<'input> Decode<'input> for f64 {
     }
 }
 
-#[derive(Clone)]
-pub enum LazyDecodeRef<R> {
-    NotRead,
-    Read(R),
-    Error(DecodeError),
-}
-
-impl<'input, R: Decode<'input>> LazyDecodeRef<R> {
-    pub fn get(&mut self, decoder: &mut Decoder<'input>) -> Result<&R, DecodeError> {
-        match self {
-            LazyDecodeRef::NotRead => match decoder.read() {
-                Ok(v) => {
-                    *self = LazyDecodeRef::Read(v);
-                    if let LazyDecodeRef::Read(v) = self {
-                        Ok(v)
-                    } else {
-                        unreachable!();
-                    }
-                }
-                Err(err) => {
-                    *self = LazyDecodeRef::Error(err.clone());
-                    Err(err)
-                }
-            },
-            LazyDecodeRef::Read(v) => Ok(v),
-            LazyDecodeRef::Error(err) => Err(err.clone()),
-        }
-    }
-}
-
 pub struct DecodeManyIter<'input, T, Count> {
     decoder: Decoder<'input>,
     remaining: Count,
