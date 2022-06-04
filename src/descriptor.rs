@@ -47,7 +47,7 @@ impl<'a> TypeDescriptor<'a> {
     /// # Examples
     /// ```
     /// use noak::descriptor::{BaseType, TypeDescriptor};
-    /// use noak::mutf8::MStr;
+    /// use noak::MStr;
     ///
     /// let descriptor = TypeDescriptor::parse(MStr::from_mutf8(b"[F").unwrap()).unwrap();
     /// assert_eq!(descriptor.dimensions, 1);
@@ -119,7 +119,7 @@ impl<'a> fmt::Display for TypeDescriptor<'a> {
 /// A method descriptor specifies the parameter types and return type of a method.
 pub struct MethodDescriptor<'a> {
     input: &'a MStr,
-    return_index: u16,
+    return_index: usize,
 }
 
 impl<'a> MethodDescriptor<'a> {
@@ -128,30 +128,28 @@ impl<'a> MethodDescriptor<'a> {
     /// # Examples
     /// ```
     /// use noak::descriptor::{BaseType, MethodDescriptor, TypeDescriptor};
-    /// use noak::mutf8::MStr;
+    /// use noak::MStr;
     ///
     /// let descriptor = MethodDescriptor::parse(MStr::from_mutf8(b"(Ljava/lang/String;)I").unwrap()).unwrap();
     /// assert_eq!(descriptor.parameters().count(), 1);
     /// assert_eq!(descriptor.return_type(), Some(TypeDescriptor { dimensions: 0, base: BaseType::Integer }));
     /// ```
     pub fn parse(input: &'a MStr) -> Result<MethodDescriptor<'a>, DecodeError> {
-        if u16::try_from(input.len()).is_ok() {
-            let mut chars = input.chars_lossy();
-            if let Some('(') = chars.next() {
-                loop {
-                    let ch = chars.next();
-                    if let Some(')') = ch {
-                        break;
-                    }
-
-                    validate_type(ch, &mut chars, false)?;
+        let mut chars = input.chars_lossy();
+        if let Some('(') = chars.next() {
+            loop {
+                let ch = chars.next();
+                if let Some(')') = ch {
+                    break;
                 }
 
-                let return_index = (input.len() - chars.as_mstr().len()) as u16;
-                validate_type(chars.next(), &mut chars, true)?;
-                if chars.next().is_none() {
-                    return Ok(MethodDescriptor { input, return_index });
-                }
+                validate_type(ch, &mut chars, false)?;
+            }
+
+            let return_index = input.len() - chars.as_mstr().len();
+            validate_type(chars.next(), &mut chars, true)?;
+            if chars.next().is_none() {
+                return Ok(MethodDescriptor { input, return_index });
             }
         }
 
@@ -159,7 +157,6 @@ impl<'a> MethodDescriptor<'a> {
     }
 
     /// Returns an iterator over the method parameters.
-    #[must_use]
     pub fn parameters(&self) -> impl Iterator<Item = TypeDescriptor<'a>> + 'a {
         struct Parameters<'a> {
             chars: CharsLossy<'a>,
@@ -187,8 +184,9 @@ impl<'a> MethodDescriptor<'a> {
 
     /// Returns the return type of this method descriptor.
     /// If the return type is void (`V`), then `None` is returned.
+    #[must_use]
     pub fn return_type(&self) -> Option<TypeDescriptor<'a>> {
-        let input = &self.input[self.return_index as usize..];
+        let input = &self.input[self.return_index..];
         if input.as_bytes() == b"V" {
             None
         } else {
@@ -284,7 +282,7 @@ impl<'a> fmt::Debug for MethodDescriptor<'a> {
 #[cfg(test)]
 mod test {
     use super::{BaseType::*, *};
-    use crate::mutf8::MString;
+    use crate::MString;
 
     #[test]
     fn valid_type() {

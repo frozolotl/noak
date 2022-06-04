@@ -40,12 +40,10 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
     where
         I: cpool::Insertable<cpool::Utf8>,
     {
+        let length = u32::try_from(bytes.len())
+            .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::AttributeContent))?;
         let index = name.insert(&mut self.context)?;
-        self.context
-            .encoder()
-            .write(index)?
-            .write(bytes.len() as u32)?
-            .write(bytes)?;
+        self.context.encoder().write(index)?.write(length)?.write(bytes)?;
 
         Ok(AttributeWriter {
             context: self.context,

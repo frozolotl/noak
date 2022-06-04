@@ -1,6 +1,5 @@
 #![warn(
     clippy::cargo,
-    clippy::pedantic,
     missing_debug_implementations,
     rust_2018_idioms,
     trivial_casts,
@@ -14,4 +13,5 @@ pub mod mutf8;
 pub mod reader;
 pub mod writer;
 
-pub use header::*;
+pub use header::{AccessFlags, Version};
+pub use mutf8::{MStr, MString};

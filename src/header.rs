@@ -32,10 +32,12 @@ impl Version {
 
     /// The latest version which is guaranteed to work with this library.
     /// Changes of this value are not considered breaking changes.
+    #[must_use]
     pub const fn latest() -> Version {
         Version::V18
     }
 
+    #[must_use]
     pub fn is_preview(self) -> bool {
         self.major >= Version::V12.major && self.minor == 65535
     }

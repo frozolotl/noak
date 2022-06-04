@@ -21,14 +21,17 @@ pub struct Code<'input> {
 }
 
 impl<'input> Code<'input> {
+    #[must_use]
     pub fn max_stack(&self) -> u16 {
         self.max_stack
     }
 
+    #[must_use]
     pub fn max_locals(&self) -> u16 {
         self.max_locals
     }
 
+    #[must_use]
     pub fn raw_instructions(&self) -> RawInstructions<'input> {
         self.raw_instructions.clone()
     }
@@ -39,10 +42,12 @@ impl<'input> Code<'input> {
         Ok(instructions)
     }
 
+    #[must_use]
     pub fn exception_handlers(&self) -> ExceptionHandlers<'input> {
         self.exception_handlers.clone()
     }
 
+    #[must_use]
     pub fn attributes(&self) -> AttributeIter<'input> {
         self.attributes.clone()
     }
@@ -111,18 +116,22 @@ pub struct ExceptionHandler<'input> {
 }
 
 impl<'input> ExceptionHandler<'input> {
+    #[must_use]
     pub fn start(&self) -> Index {
         self.start
     }
 
+    #[must_use]
     pub fn end(&self) -> Index {
         self.end
     }
 
+    #[must_use]
     pub fn handler(&self) -> Index {
         self.handler
     }
 
+    #[must_use]
     pub fn catch_type(&self) -> Option<cpool::Index<cpool::Class<'input>>> {
         self.catch_type
     }
@@ -157,10 +166,12 @@ pub struct Index {
 }
 
 impl Index {
+    #[must_use]
     pub(crate) fn new(index: u32) -> Index {
         Index { index }
     }
 
+    #[must_use]
     pub fn as_u32(self) -> u32 {
         self.index
     }

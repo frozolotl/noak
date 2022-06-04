@@ -64,6 +64,7 @@ impl<'input> Class<'input> {
     /// assert_eq!(class.version(), Version::latest());
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
+    #[must_use]
     pub fn version(&self) -> Version {
         self.version
     }

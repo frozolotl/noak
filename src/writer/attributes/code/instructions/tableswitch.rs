@@ -5,6 +5,9 @@ use crate::writer::{attributes::code::*, encoding::*};
 
 pub struct TableSwitchWriter<'a, Ctx, State: TableSwitchWriterState::State> {
     context: &'a mut InstructionWriter<Ctx>,
+    /// This field is multi-purpose.
+    /// If the state is `High`, then it describes the `low` value of the table switch when casted to [`i32`].
+    /// Else it actually describes the number of remaining jumps.
     remaining: u32,
     _marker: PhantomData<State>,
 }

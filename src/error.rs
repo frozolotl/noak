@@ -44,6 +44,7 @@ pub struct DecodeError {
 }
 
 impl DecodeError {
+    #[must_use]
     pub(crate) const fn new(kind: DecodeErrorKind) -> DecodeError {
         DecodeError {
             kind,
@@ -52,6 +53,7 @@ impl DecodeError {
         }
     }
 
+    #[must_use]
     pub(crate) const fn with_context(kind: DecodeErrorKind, context: Context) -> DecodeError {
         DecodeError {
             kind,
@@ -60,6 +62,7 @@ impl DecodeError {
         }
     }
 
+    #[must_use]
     pub(crate) const fn with_info(kind: DecodeErrorKind, position: usize, context: Context) -> DecodeError {
         DecodeError {
             kind,
@@ -68,6 +71,7 @@ impl DecodeError {
         }
     }
 
+    #[must_use]
     pub(crate) fn from_decoder(kind: DecodeErrorKind, decoder: &Decoder<'_>) -> DecodeError {
         DecodeError {
             kind,
@@ -76,15 +80,18 @@ impl DecodeError {
         }
     }
 
+    #[must_use]
     pub fn kind(&self) -> DecodeErrorKind {
         self.kind
     }
 
     /// The absolute byte position at which the error occurred.
+    #[must_use]
     pub fn position(&self) -> Option<usize> {
         self.position
     }
 
+    #[must_use]
     pub fn context(&self) -> Context {
         self.context
     }
@@ -162,10 +169,12 @@ impl EncodeError {
         EncodeError { kind, context }
     }
 
+    #[must_use]
     pub fn kind(&self) -> &EncodeErrorKind {
         &self.kind
     }
 
+    #[must_use]
     pub fn context(&self) -> Context {
         self.context
     }

@@ -43,10 +43,12 @@ impl<'input> Decode<'input> for Attribute<'input> {
 }
 
 impl<'input> Attribute<'input> {
+    #[must_use]
     pub fn name(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.name
     }
 
+    #[must_use]
     pub fn content(&self) -> &'input [u8] {
         self.content.buf()
     }

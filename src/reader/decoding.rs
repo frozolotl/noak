@@ -184,25 +184,23 @@ pub enum LazyDecodeRef<R> {
 
 impl<'input, R: Decode<'input>> LazyDecodeRef<R> {
     pub fn get(&mut self, decoder: &mut Decoder<'input>) -> Result<&R, DecodeError> {
-        use LazyDecodeRef::*;
-
         match self {
-            NotRead => match decoder.read() {
+            LazyDecodeRef::NotRead => match decoder.read() {
                 Ok(v) => {
-                    *self = Read(v);
-                    if let Read(v) = self {
+                    *self = LazyDecodeRef::Read(v);
+                    if let LazyDecodeRef::Read(v) = self {
                         Ok(v)
                     } else {
                         unreachable!();
                     }
                 }
                 Err(err) => {
-                    *self = Error(err.clone());
+                    *self = LazyDecodeRef::Error(err.clone());
                     Err(err)
                 }
             },
-            Read(v) => Ok(v),
-            Error(err) => Err(err.clone()),
+            LazyDecodeRef::Read(v) => Ok(v),
+            LazyDecodeRef::Error(err) => Err(err.clone()),
         }
     }
 }
@@ -312,7 +310,12 @@ pub struct DecodeMany<'input, T, Count> {
     iter: DecodeManyIter<'input, T, Count>,
 }
 
-impl<'input, T, Count: Countdown> DecodeMany<'input, T, Count> {
+impl<'input, T, Count> DecodeMany<'input, T, Count>
+where
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
+{
+    #[must_use]
     pub fn iter(&self) -> DecodeManyIter<'input, T, Count> {
         self.iter.clone()
     }
@@ -406,6 +409,7 @@ macro_rules! dec_structure {
         impl<'input> $struct_name<'input> {
             $(
                 $(#[doc = $doc_comment])*
+                #[must_use]
                 $vis fn $field_name(&self) -> $field_type {
                     Clone::clone(&self.$field_name)
                 }

@@ -401,10 +401,12 @@ pub struct LookupSwitch<'input> {
 }
 
 impl<'input> LookupSwitch<'input> {
+    #[must_use]
     pub fn default_offset(&self) -> i32 {
         self.default_offset
     }
 
+    #[must_use]
     pub fn pairs(&self) -> LookupPairs<'input> {
         self.pairs.clone()
     }
@@ -457,10 +459,12 @@ pub struct LookupPair {
 }
 
 impl LookupPair {
+    #[must_use]
     pub fn key(&self) -> i32 {
         self.key
     }
 
+    #[must_use]
     pub fn offset(&self) -> i32 {
         self.offset
     }
@@ -473,18 +477,22 @@ pub struct TableSwitch<'input> {
 }
 
 impl<'input> TableSwitch<'input> {
+    #[must_use]
     pub fn default_offset(&self) -> i32 {
         self.default_offset
     }
 
+    #[must_use]
     pub fn low(&self) -> i32 {
         self.pairs.key
     }
 
+    #[must_use]
     pub fn high(&self) -> i32 {
         self.pairs.high
     }
 
+    #[must_use]
     pub fn pairs(&self) -> TablePairs<'input> {
         self.pairs.clone()
     }
@@ -533,10 +541,12 @@ pub struct TablePair {
 }
 
 impl TablePair {
+    #[must_use]
     pub fn key(&self) -> i32 {
         self.key
     }
 
+    #[must_use]
     pub fn offset(&self) -> i32 {
         self.offset
     }

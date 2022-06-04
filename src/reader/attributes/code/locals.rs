@@ -18,6 +18,7 @@ pub struct LocalVariable {
 }
 
 impl LocalVariable {
+    #[must_use]
     pub fn range(&self) -> Range<code::Index> {
         Range {
             start: self.start,
@@ -25,14 +26,17 @@ impl LocalVariable {
         }
     }
 
+    #[must_use]
     pub fn name(&self) -> cpool::Index<cpool::Utf8<'static>> {
         self.name
     }
 
+    #[must_use]
     pub fn descriptor(&self) -> cpool::Index<cpool::Utf8<'static>> {
         self.descriptor
     }
 
+    #[must_use]
     pub fn index(&self) -> u16 {
         self.index
     }
@@ -75,6 +79,7 @@ pub struct LocalVariableType<'input> {
 }
 
 impl<'input> LocalVariableType<'input> {
+    #[must_use]
     pub fn range(&self) -> Range<code::Index> {
         Range {
             start: self.start,
@@ -82,14 +87,17 @@ impl<'input> LocalVariableType<'input> {
         }
     }
 
+    #[must_use]
     pub fn name(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.name
     }
 
+    #[must_use]
     pub fn signature(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.signature
     }
 
+    #[must_use]
     pub fn index(&self) -> u16 {
         self.index
     }

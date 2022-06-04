@@ -51,6 +51,7 @@ impl Default for ClassWriter<ClassWriterState::Start> {
 
 impl ClassWriter<ClassWriterState::Start> {
     /// Creates a new class writer with a sensitive initial capacity.
+    #[must_use]
     pub fn new() -> ClassWriter<ClassWriterState::Start> {
         ClassWriter {
             start_encoder: VecEncoder::new(Vec::with_capacity(1024)),

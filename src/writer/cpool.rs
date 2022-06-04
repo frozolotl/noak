@@ -77,6 +77,7 @@ pub struct Index<I> {
 }
 
 impl<I> Index<I> {
+    #[must_use]
     pub fn as_item(self) -> Index<Item> {
         Index {
             index: self.index,
@@ -84,6 +85,7 @@ impl<I> Index<I> {
         }
     }
 
+    #[must_use]
     pub fn as_u16(self) -> u16 {
         self.index.get()
     }

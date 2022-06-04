@@ -18,22 +18,27 @@ pub struct TypeAnnotation<'input> {
 }
 
 impl<'input> TypeAnnotation<'input> {
+    #[must_use]
     pub fn target_type(&self) -> TargetType {
         self.target_type
     }
 
+    #[must_use]
     pub fn target_info(&self) -> &TargetInfo<'input> {
         &self.target_info
     }
 
+    #[must_use]
     pub fn target_path(&self) -> &TypePath<'input> {
         &self.target_path
     }
 
+    #[must_use]
     pub fn type_(&self) -> cpool::Index<cpool::Utf8<'input>> {
         self.type_
     }
 
+    #[must_use]
     pub fn pairs(&self) -> ElementValuePairIter<'input> {
         self.pairs.clone()
     }
@@ -224,12 +229,14 @@ pub struct LocalVariable {
 }
 
 impl LocalVariable {
+    #[must_use]
     pub fn range(&self) -> Range<code::Index> {
         let start = code::Index::new(self.start.into());
         let end = code::Index::new(u32::from(self.start) + u32::from(self.length));
         start..end
     }
 
+    #[must_use]
     pub fn index(&self) -> u16 {
         self.index
     }

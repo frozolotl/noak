@@ -11,6 +11,7 @@ pub struct StackMapTable<'input> {
 }
 
 impl<'input> StackMapTable<'input> {
+    #[must_use]
     pub fn iter(&self) -> StackMapIter<'input> {
         self.iter.clone()
     }

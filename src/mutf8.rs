@@ -42,7 +42,7 @@ fn is_mutf8_valid(v: &[u8]) -> bool {
             } else {
                 return false;
             };
-            if v.len() < i + width as usize {
+            if v.len() < i + width {
                 return false;
             }
             match width {
@@ -322,12 +322,14 @@ pub struct MString {
 impl MString {
     /// Creates an empty string.
     #[inline]
+    #[must_use]
     pub fn new() -> MString {
         MString { buf: Vec::new() }
     }
 
     /// Creates an empty string with capacity.
     #[inline]
+    #[must_use]
     pub fn with_capacity(cap: usize) -> MString {
         MString {
             buf: Vec::with_capacity(cap),
@@ -469,6 +471,7 @@ pub struct Chars<'a> {
 }
 
 impl<'a> Chars<'a> {
+    #[must_use]
     pub fn as_mstr(&self) -> &'a MStr {
         // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
         unsafe { MStr::from_mutf8_unchecked(self.inner) }
@@ -516,6 +519,7 @@ pub struct CharsLossy<'a> {
 }
 
 impl<'a> CharsLossy<'a> {
+    #[must_use]
     pub fn as_mstr(&self) -> &'a MStr {
         // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
         unsafe { MStr::from_mutf8_unchecked(self.inner) }
@@ -688,7 +692,7 @@ impl Extend<char> for MString {
 
 impl<'a> Extend<&'a str> for MString {
     fn extend<I: IntoIterator<Item = &'a str>>(&mut self, iter: I) {
-        self.extend(iter.into_iter().flat_map(|s| s.chars()))
+        self.extend(iter.into_iter().flat_map(str::chars));
     }
 }
 

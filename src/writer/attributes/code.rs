@@ -137,6 +137,13 @@ impl<Ctx: EncoderContext, State: CodeWriterState::State> CodeWriter<Ctx, State> 
             Err(EncodeError::with_context(EncodeErrorKind::LabelNotFound, Context::Code))
         }
     }
+
+    fn get_label_position_u16(&self, label: LabelRef) -> Result<u16, EncodeError> {
+        let position = self.get_label_position(label)?;
+        position
+            .try_into()
+            .map_err(|_| EncodeError::with_context(EncodeErrorKind::LabelTooFar, Context::Code))
+    }
 }
 
 impl<Ctx: EncoderContext, State: CodeWriterState::State> InternalEncoderContext for CodeWriter<Ctx, State> {
@@ -178,6 +185,7 @@ impl<Ctx: EncoderContext> WriteDisassembler for CodeWriter<Ctx, CodeWriterState:
 
 enc_state!(pub mod CodeWriterState: MaxStack, MaxLocals, Instructions, ExceptionTable, Attributes, End);
 
+#[derive(PartialEq, Eq)]
 pub struct Label(u32);
 
 impl fmt::Debug for Label {
@@ -186,7 +194,7 @@ impl fmt::Debug for Label {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct LabelRef(u32);
 
 impl fmt::Debug for LabelRef {
