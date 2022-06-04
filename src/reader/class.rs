@@ -191,13 +191,16 @@ impl<'input> Class<'input> {
     /// Returns an iterator over the attributes of this class.
     ///
     /// ```no_run
-    /// use noak::reader::Class;
+    /// use noak::reader::{AttributeContent, Class};
     ///
     /// # let data = &[];
     /// let mut class = Class::new(data)?;
     /// for attribute in class.attributes() {
     ///     let attribute = attribute?;
-    ///     println!("Attribute name: {}", class.pool().retrieve(attribute.name())?.display());
+    ///     match attribute.read_content(class.pool())? {
+    ///         AttributeContent::Deprecated => println!("Class is deprecated"),
+    ///         _ => {}
+    ///     }
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
