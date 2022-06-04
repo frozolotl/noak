@@ -175,20 +175,11 @@ impl<'input> Decode<'input> for f64 {
     }
 }
 
+/// Allows iteration over structures arranged in a contiguous array within the binary class file.
 pub struct DecodeManyIter<'input, T, Count> {
     decoder: Decoder<'input>,
     remaining: Count,
     marker: PhantomData<T>,
-}
-
-impl<'input, T, Count: 'input> DecodeManyIter<'input, T, Count> {
-    pub fn new(decoder: Decoder<'input>, count: Count) -> DecodeManyIter<'input, T, Count> {
-        DecodeManyIter {
-            decoder,
-            remaining: count,
-            marker: PhantomData,
-        }
-    }
 }
 
 impl<'input, T, Count> Decode<'input> for DecodeManyIter<'input, T, Count>
@@ -276,6 +267,7 @@ where
     }
 }
 
+/// Provides a method ([`DecodeMany::iter`]) to iterate over a contiguous array declared within the class file.
 pub struct DecodeMany<'input, T, Count> {
     iter: DecodeManyIter<'input, T, Count>,
 }
@@ -285,6 +277,7 @@ where
     T: Decode<'input>,
     Count: Decode<'input> + Countdown,
 {
+    /// Returns an iterator over the elements.
     #[must_use]
     pub fn iter(&self) -> DecodeManyIter<'input, T, Count> {
         self.iter.clone()
