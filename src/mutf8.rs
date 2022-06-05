@@ -728,6 +728,93 @@ fn encode_char(ch: char, buf: &mut [u8]) -> usize {
     }
 }
 
+/// Dispatch conversion to a byte slice.
+/// Used within the [`mutf8`] macro.
+#[doc(hidden)]
+#[allow(non_camel_case_types, missing_debug_implementations)]
+pub struct __hidden_MUtf8Literal<T>(pub T);
+
+impl __hidden_MUtf8Literal<&'static str> {
+    pub const fn as_slice(self) -> &'static [u8] {
+        self.0.as_bytes()
+    }
+}
+
+impl __hidden_MUtf8Literal<&'static [u8]> {
+    pub const fn as_slice(self) -> &'static [u8] {
+        self.0
+    }
+}
+
+/// Reimplementation of [`is_mutf8_valid`] but const.
+/// Used within the [`mutf8`] macro.
+/// TODO: If const functions are advanced enough, then remove this.
+#[doc(hidden)]
+pub const fn __hidden_const_is_mutf8_valid(v: &[u8]) -> bool {
+    let mut i = 0;
+    while i < v.len() {
+        let b1 = v[i];
+
+        if b1 == 0 {
+            return false;
+        } else if b1 < 0x80 {
+            i += 1;
+        } else {
+            let width = if b1 & 0b1111_0000 == 0b1110_0000 {
+                3
+            } else if b1 & 0b1110_0000 == 0b1100_0000 {
+                2
+            } else {
+                return false;
+            };
+            if v.len() < i + width {
+                return false;
+            }
+            match width {
+                2 => {
+                    // two byte case: U+0000 and U+0080 to U+07FF
+                    if v[i + 1] & 0b1100_0000 != 0b1000_0000 {
+                        return false;
+                    }
+                    // overlong encodings which do not encode `0` are not allowed
+                    if b1 & 0b0001_1110 == 0 && (b1 != 0b1100_0000 && v[i + 1] != 0b1000_0000) {
+                        return false;
+                    }
+                    i += 2;
+                }
+                3 => {
+                    // three byte case: U+0800 and above
+                    if v[i + 1] & 0b1100_0000 != 0b1000_0000 || v[i + 2] & 0b1100_0000 != 0b1000_0000 {
+                        return false;
+                    }
+                    // overlong encodings are not allowed
+                    if b1 & 0b0000_1111 == 0 && v[i + 1] & 0b0010_0000 == 0 {
+                        return false;
+                    }
+                    i += 3;
+                }
+                _ => return false,
+            }
+        }
+    }
+
+    true
+}
+
+/// Declares a
+#[macro_export]
+macro_rules! mutf8 {
+    ($s:literal) => {{
+        let s: &'static [u8] = $crate::mutf8::__hidden_MUtf8Literal(&*$s).as_slice();
+        if !$crate::mutf8::__hidden_const_is_mutf8_valid(s) {
+            panic!("Literal does not contain valid modified UTF-8 data.");
+        }
+        unsafe { $crate::mutf8::MStr::from_mutf8_unchecked(s) }
+    }};
+}
+
+const _: &'static MStr = mutf8!("Hello World");
+
 #[cfg(test)]
 mod tests {
     use super::*;
