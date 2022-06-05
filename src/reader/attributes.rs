@@ -17,7 +17,6 @@ pub use method::*;
 pub use module::*;
 
 use crate::error::*;
-use crate::mutf8::MStr;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
 
@@ -91,10 +90,7 @@ impl<'input> Attribute<'input> {
                 Ok(AttributeContent::RuntimeVisibleTypeAnnotations(decoder.read_into()?))
             }
             b"Signature" => Ok(AttributeContent::Signature(decoder.read_into()?)),
-            b"SourceDebugExtension" => {
-                let content = MStr::from_mutf8(decoder.buf())?;
-                Ok(AttributeContent::SourceDebugExtension(content))
-            }
+            b"SourceDebugExtension" => Ok(AttributeContent::SourceDebugExtension(decoder.read_into()?)),
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read_into()?)),
             b"StackMapTable" => Ok(AttributeContent::StackMapTable(decoder.read_into()?)),
             b"Synthetic" => Ok(AttributeContent::Synthetic),
@@ -140,7 +136,7 @@ pub enum AttributeContent<'input> {
     RuntimeVisibleParameterAnnotations(ParameterAnnotations<'input>),
     RuntimeVisibleTypeAnnotations(TypeAnnotations<'input>),
     Signature(Signature<'input>),
-    SourceDebugExtension(&'input MStr),
+    SourceDebugExtension(SourceDebugExtension<'input>),
     SourceFile(SourceFile<'input>),
     StackMapTable(StackMapTable<'input>),
     Synthetic,
