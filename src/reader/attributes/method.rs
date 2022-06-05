@@ -4,14 +4,15 @@ use crate::reader::decoding::*;
 
 dec_structure! {
     pub struct Exceptions<'input> into {
-        iter: ExceptionIter<'input>,
+        exceptions: DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>,
     }
 }
 
-pub type ExceptionIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class<'input>>, u16>;
-
-pub type MethodParameters<'input> = DecodeMany<'input, MethodParameter<'input>, u8>;
-pub type MethodParameterIter<'input> = DecodeManyIter<'input, MethodParameter<'input>, u8>;
+dec_structure! {
+    pub struct MethodParameters<'input> into {
+        parameters: DecodeMany<'input, MethodParameter<'input>, u8>,
+    }
+}
 
 dec_structure! {
     pub struct MethodParameter<'input> {

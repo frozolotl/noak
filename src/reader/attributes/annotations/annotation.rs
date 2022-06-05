@@ -2,20 +2,12 @@ use crate::error::*;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
 
-pub type Annotations<'input> = DecodeMany<'input, Annotation<'input>, u16>;
-pub type AnnotationIter<'input> = DecodeManyIter<'input, Annotation<'input>, u16>;
-
-pub type ParameterAnnotations<'input> = DecodeMany<'input, Annotations<'input>, u8>;
-pub type ParameterAnnotationIter<'input> = DecodeManyIter<'input, Annotations<'input>, u8>;
-
 dec_structure! {
     pub struct Annotation<'input> {
         type_: cpool::Index<cpool::Utf8<'input>>,
-        pairs: ElementValuePairIter<'input>,
+        pairs: DecodeMany<'input, ElementValuePair<'input>, u16>,
     }
 }
-
-pub type ElementValuePairIter<'input> = DecodeManyIter<'input, ElementValuePair<'input>, u16>;
 
 dec_structure! {
     pub struct ElementValuePair<'input> {
@@ -41,7 +33,7 @@ pub enum ElementValue<'input> {
         const_name: cpool::Index<cpool::Utf8<'input>>,
     },
     Annotation(Annotation<'input>),
-    Array(ElementArray<'input>),
+    Array(DecodeMany<'input, ElementValue<'input>, u16>),
 }
 
 impl<'input> Decode<'input> for ElementValue<'input> {
@@ -71,6 +63,3 @@ impl<'input> Decode<'input> for ElementValue<'input> {
         Ok(value)
     }
 }
-
-pub type ElementArray<'input> = DecodeMany<'input, ElementValue<'input>, u16>;
-pub type ElementArrayIter<'input> = DecodeManyIter<'input, ElementValue<'input>, u16>;

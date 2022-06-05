@@ -2,6 +2,7 @@ use crate::reader::decoding::Decoder;
 use std::{error::Error, fmt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum DecodeErrorKind {
     UnexpectedEoi,
     InvalidPrefix,
@@ -14,6 +15,7 @@ pub enum DecodeErrorKind {
     InvalidDescriptor,
     UnknownAttributeName,
     InvalidInstruction,
+    AttributeNotFound,
 }
 
 impl fmt::Display for DecodeErrorKind {
@@ -32,6 +34,7 @@ impl fmt::Display for DecodeErrorKind {
             InvalidDescriptor => write!(f, "invalid descriptor"),
             UnknownAttributeName => write!(f, "unknown attribute name"),
             InvalidInstruction => write!(f, "invalid instruction"),
+            AttributeNotFound => write!(f, "attribute was not found"),
         }
     }
 }
@@ -110,6 +113,7 @@ impl fmt::Display for DecodeError {
 }
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum EncodeErrorKind {
     TooManyItems,
     TooManyBytes,
@@ -198,6 +202,7 @@ impl fmt::Display for EncodeError {
 
 /// The context in which a error occurred in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Context {
     /// No context.
     None,

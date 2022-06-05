@@ -3,10 +3,10 @@ use std::fmt;
 use crate::error::*;
 use crate::header::{AccessFlags, Version};
 use crate::reader::{
-    attributes::AttributeIter,
     cpool::{self, ConstantPool},
     decoding::*,
-    items::{FieldIter, MethodIter},
+    items::{Field, Method},
+    Attribute,
 };
 
 #[derive(Clone)]
@@ -16,10 +16,10 @@ pub struct Class<'input> {
     access_flags: AccessFlags,
     this_class: cpool::Index<cpool::Class<'input>>,
     super_class: Option<cpool::Index<cpool::Class<'input>>>,
-    interfaces: InterfaceIter<'input>,
-    fields: FieldIter<'input>,
-    methods: MethodIter<'input>,
-    attributes: AttributeIter<'input>,
+    interfaces: DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>,
+    fields: DecodeMany<'input, Field<'input>, u16>,
+    methods: DecodeMany<'input, Method<'input>, u16>,
+    attributes: DecodeMany<'input, Attribute<'input>, u16>,
     buffer_size: usize,
 }
 
@@ -150,7 +150,7 @@ impl<'input> Class<'input> {
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn interfaces(&self) -> InterfaceIter<'input> {
+    pub fn interfaces(&self) -> DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16> {
         self.interfaces.clone()
     }
 
@@ -167,7 +167,7 @@ impl<'input> Class<'input> {
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn fields(&self) -> FieldIter<'input> {
+    pub fn fields(&self) -> DecodeMany<'input, Field<'input>, u16> {
         self.fields.clone()
     }
 
@@ -184,7 +184,7 @@ impl<'input> Class<'input> {
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn methods(&self) -> MethodIter<'input> {
+    pub fn methods(&self) -> DecodeMany<'input, Method<'input>, u16> {
         self.methods.clone()
     }
 
@@ -198,13 +198,13 @@ impl<'input> Class<'input> {
     /// for attribute in class.attributes() {
     ///     let attribute = attribute?;
     ///     match attribute.read_content(class.pool())? {
-    ///         AttributeContent::Deprecated => println!("Class is deprecated"),
+    ///         AttributeContent::Deprecated(_) => println!("Class is deprecated"),
     ///         _ => {}
     ///     }
     /// }
     /// # Ok::<(), noak::error::DecodeError>(())
     /// ```
-    pub fn attributes(&self) -> AttributeIter<'input> {
+    pub fn attributes(&self) -> DecodeMany<'input, Attribute<'input>, u16> {
         self.attributes.clone()
     }
 
@@ -230,8 +230,6 @@ fn read_header(decoder: &mut Decoder<'_>) -> Result<Version, DecodeError> {
         Err(DecodeError::from_decoder(DecodeErrorKind::InvalidPrefix, decoder))
     }
 }
-
-pub type InterfaceIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class<'input>>, u16>;
 
 #[cfg(test)]
 mod tests {

@@ -1,7 +1,7 @@
 use crate::reader::decoding::*;
 use crate::{
     header::AccessFlags,
-    reader::{cpool, AttributeIter},
+    reader::{cpool, Attribute},
 };
 
 dec_structure! {
@@ -17,11 +17,17 @@ dec_structure! {
     }
 }
 
-pub type NestMembers<'input> = DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>;
-pub type NestMemberIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class<'input>>, u16>;
+dec_structure! {
+    pub struct NestMembers<'input> into {
+        classes: DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>,
+    }
+}
 
-pub type InnerClasses<'input> = DecodeMany<'input, InnerClass<'input>, u16>;
-pub type InnerClassIter<'input> = DecodeManyIter<'input, InnerClass<'input>, u16>;
+dec_structure! {
+    pub struct InnerClasses<'input> into {
+        classes: DecodeMany<'input, InnerClass<'input>, u16>,
+    }
+}
 
 dec_structure! {
     pub struct InnerClass<'input> {
@@ -32,22 +38,22 @@ dec_structure! {
     }
 }
 
-pub type BootstrapMethods<'input> = DecodeMany<'input, BootstrapMethod<'input>, u16>;
-pub type BootstrapMethodIter<'input> = DecodeManyIter<'input, BootstrapMethod<'input>, u16>;
+dec_structure! {
+    pub struct BootstrapMethods<'input> into {
+        methods: DecodeMany<'input, BootstrapMethod<'input>, u16>,
+    }
+}
 
 dec_structure! {
     pub struct BootstrapMethod<'input> {
         method_ref: cpool::Index<cpool::MethodRef<'input>>,
-        arguments: BootstrapArguments<'input>,
+        arguments: DecodeMany<'input, cpool::Index<cpool::MethodHandle<'input>>, u16>
     }
 }
 
-pub type BootstrapArguments<'input> = DecodeMany<'input, cpool::Index<cpool::MethodHandle<'input>>, u16>;
-pub type BootstrapArgumentIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::MethodHandle<'input>>, u16>;
-
 dec_structure! {
     pub struct Record<'input> into {
-        components: RecordComponents<'input>,
+        components: DecodeMany<'input, RecordComponent<'input>, u16>,
     }
 }
 
@@ -55,12 +61,12 @@ dec_structure! {
     pub struct RecordComponent<'input> {
         name: cpool::Index<cpool::Utf8<'input>>,
         descriptor: cpool::Index<cpool::Utf8<'input>>,
-        attributes: AttributeIter<'input>,
+        attributes: DecodeMany<'input, Attribute<'input>, u16>,
     }
 }
 
-pub type RecordComponents<'input> = DecodeMany<'input, RecordComponent<'input>, u16>;
-pub type RecordComponentIter<'input> = DecodeManyIter<'input, RecordComponent<'input>, u16>;
-
-pub type PermittedSubclasses<'input> = DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>;
-pub type PermittedSubclassesIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class<'input>>, u16>;
+dec_structure! {
+    pub struct PermittedSubclasses<'input> into {
+        classes: DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>,
+    }
+}

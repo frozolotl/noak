@@ -8,7 +8,7 @@ pub use stack_map::*;
 
 use crate::error::*;
 use crate::reader::decoding::*;
-use crate::reader::{cpool, AttributeIter};
+use crate::reader::{cpool, Attribute};
 use std::fmt;
 
 #[derive(Clone)]
@@ -17,7 +17,7 @@ pub struct Code<'input> {
     max_locals: u16,
     raw_instructions: RawInstructions<'input>,
     exception_handlers: ExceptionHandlers<'input>,
-    attributes: AttributeIter<'input>,
+    attributes: DecodeMany<'input, Attribute<'input>, u16>,
 }
 
 impl<'input> Code<'input> {
@@ -48,7 +48,7 @@ impl<'input> Code<'input> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> AttributeIter<'input> {
+    pub fn attributes(&self) -> DecodeMany<'input, Attribute<'input>, u16> {
         self.attributes.clone()
     }
 }
@@ -189,8 +189,11 @@ impl fmt::Debug for Index {
     }
 }
 
-pub type LineNumberTable<'input> = DecodeMany<'input, Line<'input>, u16>;
-pub type LineNumberIter<'input> = DecodeManyIter<'input, Line<'input>, u16>;
+dec_structure! {
+    pub struct LineNumberTable<'input> into {
+        lines: DecodeMany<'input, Line<'input>, u16>,
+    }
+}
 
 dec_structure! {
     pub struct Line<'input> {

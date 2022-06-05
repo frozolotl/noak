@@ -8,7 +8,11 @@ mod module;
 
 use std::fmt;
 
-pub use annotations::{AnnotationDefault, Annotations, ParameterAnnotations, TypeAnnotations};
+pub use annotations::{
+    AnnotationDefault, RuntimeInvisibleAnnotations, RuntimeInvisibleParameterAnnotations,
+    RuntimeInvisibleTypeAnnotations, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations,
+    RuntimeVisibleTypeAnnotations,
+};
 pub use class::*;
 pub use code::*;
 pub use debug::*;
@@ -19,8 +23,7 @@ pub use module::*;
 use crate::error::*;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
-
-pub type AttributeIter<'input> = DecodeManyIter<'input, Attribute<'input>, u16>;
+use crate::MStr;
 
 #[derive(Clone)]
 pub struct Attribute<'input> {
@@ -60,7 +63,7 @@ impl<'input> Attribute<'input> {
             b"BootstrapMethods" => Ok(AttributeContent::BootstrapMethods(decoder.read_into()?)),
             b"Code" => Ok(AttributeContent::Code(decoder.read_into()?)),
             b"ConstantValue" => Ok(AttributeContent::ConstantValue(decoder.read_into()?)),
-            b"Deprecated" => Ok(AttributeContent::Deprecated),
+            b"Deprecated" => Ok(AttributeContent::Deprecated(decoder.read_into()?)),
             b"EnclosingMethod" => Ok(AttributeContent::EnclosingMethod(decoder.read_into()?)),
             b"Exceptions" => Ok(AttributeContent::Exceptions(decoder.read_into()?)),
             b"InnerClasses" => Ok(AttributeContent::InnerClasses(decoder.read_into()?)),
@@ -93,7 +96,7 @@ impl<'input> Attribute<'input> {
             b"SourceDebugExtension" => Ok(AttributeContent::SourceDebugExtension(decoder.read_into()?)),
             b"SourceFile" => Ok(AttributeContent::SourceFile(decoder.read_into()?)),
             b"StackMapTable" => Ok(AttributeContent::StackMapTable(decoder.read_into()?)),
-            b"Synthetic" => Ok(AttributeContent::Synthetic),
+            b"Synthetic" => Ok(AttributeContent::Synthetic(decoder.read_into()?)),
             _ => Err(DecodeError::from_decoder(
                 DecodeErrorKind::UnknownAttributeName,
                 &self.content,
@@ -114,13 +117,13 @@ pub enum AttributeContent<'input> {
     BootstrapMethods(BootstrapMethods<'input>),
     Code(Code<'input>),
     ConstantValue(ConstantValue<'input>),
-    Deprecated,
+    Deprecated(Deprecated<'input>),
     EnclosingMethod(EnclosingMethod<'input>),
     Exceptions(Exceptions<'input>),
     InnerClasses(InnerClasses<'input>),
     LineNumberTable(LineNumberTable<'input>),
     LocalVariableTable(LocalVariableTable<'input>),
-    LocalVariableTypeTable(LocalVariableTable<'input>),
+    LocalVariableTypeTable(LocalVariableTypeTable<'input>),
     MethodParameters(MethodParameters<'input>),
     Module(Box<Module<'input>>),
     ModuleMainClass(ModuleMainClass<'input>),
@@ -129,15 +132,103 @@ pub enum AttributeContent<'input> {
     NestMembers(NestMembers<'input>),
     PermittedSubclasses(PermittedSubclasses<'input>),
     Record(Record<'input>),
-    RuntimeInvisibleAnnotations(Annotations<'input>),
-    RuntimeInvisibleParameterAnnotations(ParameterAnnotations<'input>),
-    RuntimeInvisibleTypeAnnotations(TypeAnnotations<'input>),
-    RuntimeVisibleAnnotations(Annotations<'input>),
-    RuntimeVisibleParameterAnnotations(ParameterAnnotations<'input>),
-    RuntimeVisibleTypeAnnotations(TypeAnnotations<'input>),
+    RuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations<'input>),
+    RuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations<'input>),
+    RuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations<'input>),
+    RuntimeVisibleAnnotations(RuntimeVisibleAnnotations<'input>),
+    RuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations<'input>),
+    RuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations<'input>),
     Signature(Signature<'input>),
     SourceDebugExtension(SourceDebugExtension<'input>),
     SourceFile(SourceFile<'input>),
     StackMapTable(StackMapTable<'input>),
+    Synthetic(Synthetic<'input>),
+}
+
+macro_rules! impl_try_from {
+    ($($attr:ident),* $(,)?) => {
+        $(
+            impl<'input> TryFrom<AttributeContent<'input>> for $attr<'input> {
+                type Error = DecodeError;
+
+                fn try_from(value: AttributeContent<'input>) -> Result<Self, Self::Error> {
+                    match value {
+                        AttributeContent::$attr(attr) => Ok(attr),
+                        _ => Err(DecodeError::with_context(DecodeErrorKind::AttributeNotFound, Context::Attributes)),
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_try_from! {
+    AnnotationDefault,
+    BootstrapMethods,
+    Code,
+    ConstantValue,
+    Deprecated,
+    EnclosingMethod,
+    Exceptions,
+    InnerClasses,
+    LineNumberTable,
+    LocalVariableTable,
+    LocalVariableTypeTable,
+    MethodParameters,
+    ModuleMainClass,
+    ModulePackages,
+    NestHost,
+    NestMembers,
+    PermittedSubclasses,
+    Record,
+    RuntimeInvisibleAnnotations,
+    RuntimeInvisibleParameterAnnotations,
+    RuntimeInvisibleTypeAnnotations,
+    RuntimeVisibleAnnotations,
+    RuntimeVisibleParameterAnnotations,
+    RuntimeVisibleTypeAnnotations,
+    Signature,
+    SourceDebugExtension,
+    SourceFile,
+    StackMapTable,
     Synthetic,
+}
+
+impl<'input> TryFrom<AttributeContent<'input>> for Module<'input> {
+    type Error = DecodeError;
+
+    fn try_from(value: AttributeContent<'input>) -> Result<Self, Self::Error> {
+        match value {
+            AttributeContent::Module(module) => Ok(*module),
+            _ => Err(DecodeError::with_context(
+                DecodeErrorKind::AttributeNotFound,
+                Context::Attributes,
+            )),
+        }
+    }
+}
+
+impl<'input> TryFrom<AttributeContent<'input>> for Box<Module<'input>> {
+    type Error = DecodeError;
+
+    fn try_from(value: AttributeContent<'input>) -> Result<Self, Self::Error> {
+        match value {
+            AttributeContent::Module(module) => Ok(module),
+            _ => Err(DecodeError::with_context(
+                DecodeErrorKind::AttributeNotFound,
+                Context::Attributes,
+            )),
+        }
+    }
+}
+
+impl<'input> DecodeMany<'input, Attribute<'input>, u16> {
+    // FIXME: don't decode every data structure
+    pub fn find_attribute<A>(&self, pool: &cpool::ConstantPool<'input>) -> Option<A>
+    where
+        A: TryFrom<AttributeContent<'input>>,
+    {
+        self.iter()
+            .find_map(|attribute| attribute.ok()?.read_content(pool).ok()?.try_into().ok())
+    }
 }

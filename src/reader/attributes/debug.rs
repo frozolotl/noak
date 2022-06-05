@@ -6,14 +6,18 @@ use crate::{
 };
 
 dec_structure! {
-    pub struct SourceFile<'input> into {
-        source_file: cpool::Index<cpool::Utf8<'input>>,
-    }
+    pub struct Deprecated<'input> into {}
 }
 
 dec_structure! {
     pub struct Signature<'input> into {
         signature: cpool::Index<cpool::Utf8<'input>>,
+    }
+}
+
+dec_structure! {
+    pub struct SourceFile<'input> into {
+        source_file: cpool::Index<cpool::Utf8<'input>>,
     }
 }
 
@@ -40,4 +44,8 @@ impl<'input> fmt::Debug for SourceDebugExtension<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SourceDebugExtension").finish()
     }
+}
+
+dec_structure! {
+    pub struct Synthetic<'input> into {}
 }

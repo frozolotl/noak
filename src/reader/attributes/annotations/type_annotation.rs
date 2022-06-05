@@ -1,20 +1,17 @@
 use crate::error::*;
-use crate::reader::attributes::annotations::ElementValuePairIter;
+use crate::reader::attributes::annotations::ElementValuePair;
 use crate::reader::decoding::*;
 use crate::reader::{attributes::code, cpool};
 use std::fmt;
 use std::ops::Range;
 
-pub type TypeAnnotations<'input> = DecodeMany<'input, TypeAnnotation<'input>, u16>;
-pub type TypeAnnotationIter<'input> = DecodeManyIter<'input, TypeAnnotation<'input>, u16>;
-
 #[derive(Clone)]
 pub struct TypeAnnotation<'input> {
     target_type: TargetType,
     target_info: TargetInfo<'input>,
-    target_path: TypePath<'input>,
+    target_path: DecodeMany<'input, TypePathSegment<'input>, u8>,
     type_: cpool::Index<cpool::Utf8<'input>>,
-    pairs: ElementValuePairIter<'input>,
+    pairs: DecodeMany<'input, ElementValuePair<'input>, u16>,
 }
 
 impl<'input> TypeAnnotation<'input> {
@@ -29,7 +26,7 @@ impl<'input> TypeAnnotation<'input> {
     }
 
     #[must_use]
-    pub fn target_path(&self) -> &TypePath<'input> {
+    pub fn target_path(&self) -> &DecodeMany<'input, TypePathSegment<'input>, u8> {
         &self.target_path
     }
 
@@ -39,7 +36,7 @@ impl<'input> TypeAnnotation<'input> {
     }
 
     #[must_use]
-    pub fn pairs(&self) -> ElementValuePairIter<'input> {
+    pub fn pairs(&self) -> DecodeMany<'input, ElementValuePair<'input>, u16> {
         self.pairs.clone()
     }
 }
@@ -62,7 +59,7 @@ impl<'input> Decode<'input> for TypeAnnotation<'input> {
                 bound_index: decoder.read()?,
             },
             TT::Field | TT::MethodReturn | TT::MethodReceiver => TI::Empty,
-            TT::LocalVariable | TT::ResourceVariable => TI::LocalVariable(decoder.read()?),
+            TT::LocalVariable | TT::ResourceVariable => TI::LocalVariable { table: decoder.read()? },
             TT::MethodFormalParameter => TI::FormalParameter {
                 formal_parameter_index: decoder.read()?,
             },
@@ -188,7 +185,9 @@ pub enum TargetInfo<'input> {
     Throws {
         throws_type_index: u16,
     },
-    LocalVariable(LocalVariableTargetTable<'input>),
+    LocalVariable {
+        table: DecodeMany<'input, LocalVariable, u16>,
+    },
     Catch {
         exception_table_index: u16,
     },
@@ -217,9 +216,6 @@ impl<'input> Decode<'input> for SuperTypeIndex {
         }
     }
 }
-
-pub type LocalVariableTargetTable<'input> = DecodeMany<'input, LocalVariable, u16>;
-pub type LocalVariableTargetIter<'input> = DecodeManyIter<'input, LocalVariable, u16>;
 
 #[derive(Clone)]
 pub struct LocalVariable {
@@ -257,9 +253,6 @@ impl fmt::Debug for LocalVariable {
         f.debug_struct("LocalVariable").finish()
     }
 }
-
-pub type TypePath<'input> = DecodeMany<'input, TypePathSegment<'input>, u8>;
-pub type TypePathSegmentIter<'input> = DecodeManyIter<'input, TypePathSegment<'input>, u8>;
 
 dec_structure! {
     pub struct TypePathSegment<'input> {

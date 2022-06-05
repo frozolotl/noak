@@ -284,6 +284,45 @@ where
     }
 }
 
+impl<'input, T, Count> IntoIterator for DecodeMany<'input, T, Count>
+where
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
+{
+    type Item = Result<T, DecodeError>;
+    type IntoIter = DecodeManyIter<'input, T, Count>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'input, T, Count> IntoIterator for &'_ DecodeMany<'input, T, Count>
+where
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
+{
+    type Item = Result<T, DecodeError>;
+    type IntoIter = DecodeManyIter<'input, T, Count>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'input, T, Count> IntoIterator for &'_ mut DecodeMany<'input, T, Count>
+where
+    T: Decode<'input>,
+    Count: Decode<'input> + Countdown,
+{
+    type Item = Result<T, DecodeError>;
+    type IntoIter = DecodeManyIter<'input, T, Count>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 impl<'input, T, Count> Decode<'input> for DecodeMany<'input, T, Count>
 where
     T: Decode<'input>,
@@ -399,6 +438,7 @@ macro_rules! dec_structure {
     };
     (@decode into => $struct_name:ident; $($field_name:ident),*) => {
         impl<'input> $crate::reader::decoding::DecodeInto<'input> for $struct_name<'input> {
+            #[allow(unused_variables, unused_mut)]
             fn decode_into(mut decoder: $crate::reader::decoding::Decoder<'input>) -> Result<Self, $crate::error::DecodeError> {
                 Ok(Self {
                     $($field_name: decoder.read()?,)*

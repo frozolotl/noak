@@ -2,8 +2,11 @@ use crate::header::AccessFlags;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
 
-pub type ModulePackages<'input> = DecodeMany<'input, cpool::Index<cpool::Package<'input>>, u16>;
-pub type ModulePackageIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Package<'input>>, u16>;
+dec_structure! {
+    pub struct ModulePackages<'input> into {
+        packages: DecodeMany<'input, cpool::Index<cpool::Package<'input>>, u16>,
+    }
+}
 
 dec_structure! {
     pub struct ModuleMainClass<'input> into {
@@ -16,16 +19,13 @@ dec_structure! {
         name: cpool::Index<cpool::Module<'input>>,
         flags: AccessFlags,
         version: Option<cpool::Index<cpool::Utf8<'input>>>,
-        requires: Requires<'input>,
-        exports: Exports<'input>,
-        opens: Opens<'input>,
-        uses: Uses<'input>,
-        provides: Provides<'input>,
+        requires: DecodeMany<'input, Require<'input>, u16>,
+        exports: DecodeMany<'input, Export<'input>, u16>,
+        opens: DecodeMany<'input, Open<'input>, u16>,
+        uses: DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>,
+        provides: DecodeMany<'input, Provide<'input>, u16>,
     }
 }
-
-pub type Requires<'input> = DecodeMany<'input, Require<'input>, u16>;
-pub type RequireIter<'input> = DecodeManyIter<'input, Require<'input>, u16>;
 
 dec_structure! {
     pub struct Require<'input> {
@@ -35,43 +35,25 @@ dec_structure! {
     }
 }
 
-pub type Exports<'input> = DecodeMany<'input, Export<'input>, u16>;
-pub type ExportIter<'input> = DecodeManyIter<'input, Export<'input>, u16>;
-
-pub type ExportsToIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Module<'input>>, u16>;
-
 dec_structure! {
     pub struct Export<'input> {
         index: cpool::Index<cpool::Package<'input>>,
         flags: AccessFlags,
-        exports_to: ExportsToIter<'input>,
+        exports_to: DecodeMany<'input, cpool::Index<cpool::Module<'input>>, u16>,
     }
 }
-
-pub type Opens<'input> = DecodeMany<'input, Open<'input>, u16>;
-pub type OpenIter<'input> = DecodeManyIter<'input, Open<'input>, u16>;
-
-pub type OpensToIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Module<'input>>, u16>;
 
 dec_structure! {
     pub struct Open<'input> {
         index: cpool::Index<cpool::Package<'input>>,
         flags: AccessFlags,
-        opens_to: OpensToIter<'input>,
+        opens_to: DecodeMany<'input, cpool::Index<cpool::Module<'input>>, u16>,
     }
 }
-
-pub type Uses<'input> = DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>;
-pub type UseIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class<'input>>, u16>;
-
-pub type Provides<'input> = DecodeMany<'input, Provide<'input>, u16>;
-pub type ProvideIter<'input> = DecodeManyIter<'input, Provide<'input>, u16>;
-
-pub type ProvidesWithIter<'input> = DecodeManyIter<'input, cpool::Index<cpool::Class<'input>>, u16>;
 
 dec_structure! {
     pub struct Provide<'input> {
         index: cpool::Index<cpool::Class<'input>>,
-        provides_with: ProvidesWithIter<'input>,
+        provides_with: DecodeMany<'input, cpool::Index<cpool::Class<'input>>, u16>,
     }
 }
