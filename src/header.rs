@@ -3,7 +3,8 @@ use crate::reader::decoding::{Decode, Decoder};
 use crate::writer::encoding::{Encode, Encoder};
 use bitflags::bitflags;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// The version numbers of a class file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Version {
     pub major: u16,
     pub minor: u16,
@@ -44,6 +45,8 @@ impl Version {
 }
 
 bitflags! {
+    /// Denotes access permissions used in various structures within a class file.
+    /// Meaning depends on usage.
     pub struct AccessFlags: u16 {
         const PUBLIC       = 1;
         const PRIVATE      = 1 << 1;
