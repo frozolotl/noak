@@ -201,7 +201,9 @@ impl MStr {
     ///
     /// For valid unicode characters, `Ok` is yielded.
     /// If a character is invalid, then its code will be returned in the `Err` case.
-    /// If you don't care about invalid characters, use [`MStr::chars_lossy`].
+    /// If you don't care about invalid characters, use [`chars_lossy`].
+    ///
+    /// [`chars_lossy`]: MStr::chars_lossy
     #[inline]
     #[must_use]
     pub fn chars(&self) -> Chars<'_> {
@@ -758,6 +760,7 @@ impl<const N: usize> __hidden_MUtf8Literal<&'static [u8; N]> {
 /// Reimplementation of [`is_mutf8_valid`] but const.
 /// Used from within the [`mutf8`] macro.
 /// TODO: Remove this when const functions are advanced enough.
+#[doc(hidden)]
 pub const fn __hidden_is_mutf8_valid(v: &[u8]) -> bool {
     let mut i = 0;
     while i < v.len() {

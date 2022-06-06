@@ -267,7 +267,9 @@ where
     }
 }
 
-/// Provides a method ([`DecodeMany::iter`]) to iterate over a contiguous array declared within the class file.
+/// Provides a method ([`iter`]) to iterate over a contiguous array declared within the class file.
+///
+/// [`iter`]: DecodeMany::iter
 pub struct DecodeMany<'input, T, Count> {
     iter: DecodeManyIter<'input, T, Count>,
 }
