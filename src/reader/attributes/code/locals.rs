@@ -1,7 +1,10 @@
 use crate::error::*;
+use crate::mutf8;
 use crate::reader::attributes::code;
+use crate::reader::attributes::FromAttribute;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
+use crate::MStr;
 use std::fmt;
 use std::ops::Range;
 
@@ -9,6 +12,10 @@ dec_structure! {
     pub struct LocalVariableTable<'input> into {
         locals: DecodeMany<'input, LocalVariable, u16>,
     }
+}
+
+impl<'input> FromAttribute<'input> for LocalVariableTable<'input> {
+    const NAME: &'static MStr = mutf8!("LocalVariableTable");
 }
 
 #[derive(Clone)]
@@ -73,6 +80,10 @@ dec_structure! {
     pub struct LocalVariableTypeTable<'input> into {
         locals: DecodeMany<'input, LocalVariableType<'input>, u16>,
     }
+}
+
+impl<'input> FromAttribute<'input> for LocalVariableTypeTable<'input> {
+    const NAME: &'static MStr = mutf8!("LocalVariableTypeTable");
 }
 
 #[derive(Clone)]

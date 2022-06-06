@@ -929,7 +929,7 @@ pub const fn __private_utf8_to_mutf8<const N: usize>(v: &[u8]) -> [u8; N] {
 macro_rules! mutf8 {
     ($s:literal) => {{
         // Ensure that the code is executed in a const context.
-        const MSTR: &MStr = {
+        const MSTR: &$crate::mutf8::MStr = {
             const BYTES: &[u8] = $crate::mutf8::__private_MUtf8Literal($s).as_slice();
             if $crate::mutf8::__private_MUtf8Literal($s).is_str() {
                 let s = &$crate::mutf8::__private_utf8_to_mutf8::<

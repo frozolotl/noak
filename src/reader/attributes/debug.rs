@@ -1,12 +1,19 @@
 use core::fmt;
 
 use crate::{
+    mutf8,
     reader::{cpool, decoding::*},
     MStr,
 };
 
+use super::FromAttribute;
+
 dec_structure! {
     pub struct Deprecated<'input> into {}
+}
+
+impl<'input> FromAttribute<'input> for Deprecated<'input> {
+    const NAME: &'static MStr = mutf8!("Deprecated");
 }
 
 dec_structure! {
@@ -15,10 +22,18 @@ dec_structure! {
     }
 }
 
+impl<'input> FromAttribute<'input> for Signature<'input> {
+    const NAME: &'static MStr = mutf8!("Signature");
+}
+
 dec_structure! {
     pub struct SourceFile<'input> into {
         source_file: cpool::Index<cpool::Utf8<'input>>,
     }
+}
+
+impl<'input> FromAttribute<'input> for SourceFile<'input> {
+    const NAME: &'static MStr = mutf8!("SourceFile");
 }
 
 #[derive(Clone)]
@@ -38,6 +53,10 @@ impl<'input> DecodeInto<'input> for SourceDebugExtension<'input> {
             content: MStr::from_mutf8(decoder.buf())?,
         })
     }
+}
+
+impl<'input> FromAttribute<'input> for SourceDebugExtension<'input> {
+    const NAME: &'static MStr = mutf8!("SourceDebugExtension");
 }
 
 impl<'input> fmt::Debug for SourceDebugExtension<'input> {

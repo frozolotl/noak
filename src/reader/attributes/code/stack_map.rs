@@ -1,7 +1,10 @@
 use crate::error::*;
+use crate::mutf8;
 use crate::reader::attributes::code;
+use crate::reader::attributes::FromAttribute;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
+use crate::MStr;
 use std::fmt;
 use std::iter::FusedIterator;
 
@@ -28,6 +31,10 @@ impl<'input> DecodeInto<'input> for StackMapTable<'input> {
             },
         })
     }
+}
+
+impl<'input> FromAttribute<'input> for StackMapTable<'input> {
+    const NAME: &'static MStr = mutf8!("StackMapTable");
 }
 
 impl<'input> fmt::Debug for StackMapTable<'input> {

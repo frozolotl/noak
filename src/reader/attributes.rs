@@ -222,13 +222,44 @@ impl<'input> TryFrom<AttributeContent<'input>> for Box<Module<'input>> {
     }
 }
 
+pub trait FromAttribute<'input>: sealed::FromAttributeInternal<'input> {
+    const NAME: &'static MStr;
+}
+
+/// Prevent at least some leakage of internals.
+mod sealed {
+    use crate::reader::decoding::DecodeInto;
+
+    pub trait FromAttributeInternal<'input>: DecodeInto<'input> {}
+
+    impl<'input, T: DecodeInto<'input>> FromAttributeInternal<'input> for T {}
+}
+
 impl<'input> DecodeMany<'input, Attribute<'input>, u16> {
-    // FIXME: don't decode every data structure
-    pub fn find_attribute<A>(&self, pool: &cpool::ConstantPool<'input>) -> Option<A>
+    /// Tries to find a specific attribute. The first occurrence with the matching name is returned.
+    ///
+    /// ```no_run
+    /// # let class: noak::reader::Class<'_> = unimplemented!();
+    /// # let method: noak::reader::Method = unimplemented!();
+    /// use noak::reader::attributes::Code;
+    ///
+    /// let code: Code<'_> = method
+    ///     .attributes()
+    ///     .find_attribute(&class.pool())?
+    ///     .expect("no `Code` attribute found");
+    /// # Ok::<(), noak::error::DecodeError>(())
+    /// ```
+    pub fn find_attribute<A>(&self, pool: &cpool::ConstantPool<'input>) -> Result<Option<A>, DecodeError>
     where
-        A: TryFrom<AttributeContent<'input>>,
+        A: FromAttribute<'input>,
     {
-        self.iter()
-            .find_map(|attribute| attribute.ok()?.read_content(pool).ok()?.try_into().ok())
+        for attribute in self.iter() {
+            let attribute = attribute?;
+            if pool.retrieve(attribute.name())? == A::NAME {
+                let decoder = attribute.content.with_context(Context::AttributeContent);
+                return Ok(Some(decoder.read_into()?));
+            }
+        }
+        Ok(None)
     }
 }

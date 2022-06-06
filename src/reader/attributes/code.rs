@@ -6,10 +6,12 @@ pub use instructions::*;
 pub use locals::*;
 pub use stack_map::*;
 
-use crate::error::*;
 use crate::reader::decoding::*;
 use crate::reader::{cpool, Attribute};
+use crate::{error::*, mutf8, MStr};
 use std::fmt;
+
+use super::FromAttribute;
 
 #[derive(Clone)]
 pub struct Code<'input> {
@@ -81,6 +83,10 @@ impl<'input> DecodeInto<'input> for Code<'input> {
             attributes,
         })
     }
+}
+
+impl<'input> FromAttribute<'input> for Code<'input> {
+    const NAME: &'static MStr = mutf8!("Code");
 }
 
 impl<'input> fmt::Debug for Code<'input> {

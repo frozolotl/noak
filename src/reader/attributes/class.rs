@@ -3,6 +3,9 @@ use crate::{
     header::AccessFlags,
     reader::{cpool, Attribute},
 };
+use crate::{mutf8, MStr};
+
+use super::FromAttribute;
 
 dec_structure! {
     pub struct EnclosingMethod<'input> into {
@@ -11,10 +14,18 @@ dec_structure! {
     }
 }
 
+impl<'input> FromAttribute<'input> for EnclosingMethod<'input> {
+    const NAME: &'static MStr = mutf8!("EnclosingMethod");
+}
+
 dec_structure! {
     pub struct NestHost<'input> into {
         host_class: cpool::Index<cpool::Class<'input>>,
     }
+}
+
+impl<'input> FromAttribute<'input> for NestHost<'input> {
+    const NAME: &'static MStr = mutf8!("NestHost");
 }
 
 dec_structure! {
@@ -23,10 +34,18 @@ dec_structure! {
     }
 }
 
+impl<'input> FromAttribute<'input> for NestMembers<'input> {
+    const NAME: &'static MStr = mutf8!("NestMembers");
+}
+
 dec_structure! {
     pub struct InnerClasses<'input> into {
         classes: DecodeMany<'input, InnerClass<'input>, u16>,
     }
+}
+
+impl<'input> FromAttribute<'input> for InnerClasses<'input> {
+    const NAME: &'static MStr = mutf8!("InnerClasses");
 }
 
 dec_structure! {
@@ -42,6 +61,10 @@ dec_structure! {
     pub struct BootstrapMethods<'input> into {
         methods: DecodeMany<'input, BootstrapMethod<'input>, u16>,
     }
+}
+
+impl<'input> FromAttribute<'input> for BootstrapMethods<'input> {
+    const NAME: &'static MStr = mutf8!("BootstrapMethods");
 }
 
 dec_structure! {

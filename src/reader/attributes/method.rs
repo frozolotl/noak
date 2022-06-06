@@ -1,6 +1,10 @@
 use crate::header::AccessFlags;
+use crate::mutf8;
 use crate::reader::cpool;
 use crate::reader::decoding::*;
+use crate::MStr;
+
+use super::FromAttribute;
 
 dec_structure! {
     pub struct Exceptions<'input> into {
@@ -8,10 +12,18 @@ dec_structure! {
     }
 }
 
+impl<'input> FromAttribute<'input> for Exceptions<'input> {
+    const NAME: &'static MStr = mutf8!("Exceptions");
+}
+
 dec_structure! {
     pub struct MethodParameters<'input> into {
         parameters: DecodeMany<'input, MethodParameter<'input>, u8>,
     }
+}
+
+impl<'input> FromAttribute<'input> for MethodParameters<'input> {
+    const NAME: &'static MStr = mutf8!("MethodParameters");
 }
 
 dec_structure! {
