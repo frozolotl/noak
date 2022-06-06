@@ -949,7 +949,6 @@ macro_rules! mutf8 {
     }};
 }
 
-const _: &MStr = mutf8!(b"Hello World");
 #[cfg(test)]
 mod tests {
     use super::*;
