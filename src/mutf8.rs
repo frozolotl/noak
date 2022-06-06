@@ -979,13 +979,15 @@ mod tests {
         let s = MStr::from_mutf8(&[0xED, 0xA0, 0xBD, 0xED, 0xB0, 0x96]).unwrap();
         assert_eq!(s.chars().next_back(), s.chars().next());
     }
-    
+
     #[test]
     pub fn valid_mutf8_macro() {
         assert_eq!(mutf8!("Hello World").to_str().unwrap(), "Hello World");
         assert_eq!(mutf8!("Ich grüße die Welt").to_str().unwrap(), "Ich grüße die Welt");
         assert_eq!(mutf8!("Hello 🦀").display().to_string(), "Hello 🦀");
-        assert!(is_mutf8_valid(mutf8!(b"\xED\xA0\xBD\xED\xB0\x96 \xED\xBB\x8B \xED\xA7\xAB \xED\xAD\x9C \x26\x0A\x0A").as_bytes()));
+        assert!(is_mutf8_valid(
+            mutf8!(b"\xED\xA0\xBD\xED\xB0\x96 \xED\xBB\x8B \xED\xA7\xAB \xED\xAD\x9C \x26\x0A\x0A").as_bytes()
+        ));
         assert_eq!(mutf8!("Hello 🦀").as_bytes(), MString::from("Hello 🦀").as_bytes());
     }
 }
