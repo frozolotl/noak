@@ -735,9 +735,9 @@ fn encode_mutf8_char(ch: char, buf: &mut [u8]) -> usize {
 /// Used from within the [`mutf8`] macro.
 #[doc(hidden)]
 #[allow(non_camel_case_types, missing_debug_implementations)]
-pub struct __hidden_MUtf8Literal<T>(pub T);
+pub struct __private_MUtf8Literal<T>(pub T);
 
-impl __hidden_MUtf8Literal<&'static str> {
+impl __private_MUtf8Literal<&'static str> {
     pub const fn is_str(self) -> bool {
         true
     }
@@ -747,7 +747,7 @@ impl __hidden_MUtf8Literal<&'static str> {
     }
 }
 
-impl<const N: usize> __hidden_MUtf8Literal<&'static [u8; N]> {
+impl<const N: usize> __private_MUtf8Literal<&'static [u8; N]> {
     pub const fn is_str(self) -> bool {
         false
     }
@@ -761,7 +761,7 @@ impl<const N: usize> __hidden_MUtf8Literal<&'static [u8; N]> {
 /// Used from within the [`mutf8`] macro.
 /// TODO: Remove this when const functions are advanced enough.
 #[doc(hidden)]
-pub const fn __hidden_is_mutf8_valid(v: &[u8]) -> bool {
+pub const fn __private_is_mutf8_valid(v: &[u8]) -> bool {
     let mut i = 0;
     while i < v.len() {
         let b1 = v[i];
@@ -816,7 +816,7 @@ pub const fn __hidden_is_mutf8_valid(v: &[u8]) -> bool {
 /// The input has to be valid UTF-8.
 /// Used from within the [`mutf8`] macro.
 #[doc(hidden)]
-pub const fn __hidden_utf8_to_mutf8_length(v: &[u8]) -> usize {
+pub const fn __private_utf8_to_mutf8_length(v: &[u8]) -> usize {
     // The position within the UTF-8 string.
     let mut i = 0;
     // The length of the UTF-8 string converted to modified UTF-8.
@@ -858,7 +858,7 @@ pub const fn __hidden_utf8_to_mutf8_length(v: &[u8]) -> usize {
 }
 
 #[doc(hidden)]
-pub const fn __hidden_utf8_to_mutf8<const N: usize>(v: &[u8]) -> [u8; N] {
+pub const fn __private_utf8_to_mutf8<const N: usize>(v: &[u8]) -> [u8; N] {
     let mut out = [0; N];
     // The position within the UTF-8 string.
     let mut i = 0;
@@ -930,15 +930,15 @@ macro_rules! mutf8 {
     ($s:literal) => {{
         // Ensure that the code is executed in a const context.
         const MSTR: &MStr = {
-            const BYTES: &[u8] = $crate::mutf8::__hidden_MUtf8Literal($s).as_slice();
-            if $crate::mutf8::__hidden_MUtf8Literal($s).is_str() {
-                let s = &$crate::mutf8::__hidden_utf8_to_mutf8::<{ $crate::mutf8::__hidden_utf8_to_mutf8_length(BYTES) }>(
-                    BYTES,
-                );
+            const BYTES: &[u8] = $crate::mutf8::__private_MUtf8Literal($s).as_slice();
+            if $crate::mutf8::__private_MUtf8Literal($s).is_str() {
+                let s = &$crate::mutf8::__private_utf8_to_mutf8::<
+                    { $crate::mutf8::__private_utf8_to_mutf8_length(BYTES) },
+                >(BYTES);
                 // SAFETY: The converted string is guaranteed to be valid modified UTF-8.
                 unsafe { $crate::mutf8::MStr::from_mutf8_unchecked(s) }
             } else {
-                if !$crate::mutf8::__hidden_is_mutf8_valid(BYTES) {
+                if !$crate::mutf8::__private_is_mutf8_valid(BYTES) {
                     panic!("literal is not a valid modified UTF-8 string.");
                 }
                 // SAFETY: It was verified that the string is valued modified UTF-8.
