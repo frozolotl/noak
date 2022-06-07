@@ -708,14 +708,14 @@ fn encode_mutf8_char(ch: char, buf: &mut [u8]) -> usize {
             1
         }
         0 | 0x80..=0x7FF => {
-            buf[0] = (0b1110_0000 | (ch >> 6)) as u8;
-            buf[1] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
+            buf[0] = (0b1100_0000 | (ch >> 6)) as u8;
+            buf[1] = (0b1000_0000 | (ch & 0b0011_1111)) as u8;
             2
         }
         0x800..=0xFFFF => {
-            buf[0] = (0b1111_0000 | (ch >> 12)) as u8;
-            buf[1] = (0b1100_0000 | ((ch >> 6) & 0b0011_1111)) as u8;
-            buf[2] = (0b1100_0000 | (ch & 0b0011_1111)) as u8;
+            buf[0] = (0b1110_0000 | (ch >> 12)) as u8;
+            buf[1] = (0b1000_0000 | ((ch >> 6) & 0b0011_1111)) as u8;
+            buf[2] = (0b1000_0000 | (ch & 0b0011_1111)) as u8;
             3
         }
         _ => {
@@ -987,6 +987,7 @@ mod tests {
         assert!(is_mutf8_valid(
             mutf8!(b"\xED\xA0\xBD\xED\xB0\x96 \xED\xBB\x8B \xED\xA7\xAB \xED\xAD\x9C \x26\x0A\x0A").as_bytes()
         ));
-        assert_eq!(mutf8!("Hello 🦀").as_bytes(), MString::from("Hello 🦀").as_bytes());
+        assert_eq!(mutf8!("Ich grüße die 🦀.").as_bytes(), MString::from("Ich grüße die 🦀.").as_bytes());
+        assert_eq!(mutf8!("这里有一些三字节的案例").as_bytes(), MString::from("Ich grüße die 🦀.").as_bytes());
     }
 }
