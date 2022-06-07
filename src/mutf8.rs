@@ -987,7 +987,14 @@ mod tests {
         assert!(is_mutf8_valid(
             mutf8!(b"\xED\xA0\xBD\xED\xB0\x96 \xED\xBB\x8B \xED\xA7\xAB \xED\xAD\x9C \x26\x0A\x0A").as_bytes()
         ));
-        assert_eq!(mutf8!("Ich grüße die 🦀.").as_bytes(), MString::from("Ich grüße die 🦀.").as_bytes());
-        assert_eq!(mutf8!("这里有一些三字节的案例").as_bytes(), MString::from("Ich grüße die 🦀.").as_bytes());
+        assert_eq!(
+            mutf8!("Ich grüße die 🦀.").as_bytes(),
+            MString::from("Ich grüße die 🦀.").as_bytes()
+        );
+
+        assert_eq!(
+            mutf8!("这里有一些三字节的案例").as_bytes(),
+            MString::from("这里有一些三字节的案例").as_bytes()
+        );
     }
 }
