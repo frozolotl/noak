@@ -5,7 +5,7 @@ pub use value::ToValue;
 use crate::error::*;
 use crate::mutf8::MStr;
 use crate::reader::decoding::*;
-use std::{fmt, marker::PhantomData, num::NonZeroU16};
+use std::{fmt, hash::Hash, marker::PhantomData, num::NonZeroU16};
 
 #[derive(Clone)]
 pub struct ConstantPool<'input> {
@@ -77,22 +77,10 @@ impl<'input> fmt::Debug for ConstantPool<'input> {
 }
 
 /// A 1-based index into the constant pool.
-#[derive(PartialEq)]
 pub struct Index<I> {
     index: NonZeroU16,
     _marker: PhantomData<fn() -> I>,
 }
-
-impl<I> Clone for Index<I> {
-    fn clone(&self) -> Index<I> {
-        Index {
-            index: self.index,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<I> Copy for Index<I> {}
 
 impl<I> Index<I> {
     pub fn new(index: u16) -> Result<Index<I>, DecodeError> {
@@ -108,6 +96,43 @@ impl<I> Index<I> {
 
     pub fn as_u16(self) -> u16 {
         self.index.get()
+    }
+}
+
+impl<I> Clone for Index<I> {
+    fn clone(&self) -> Index<I> {
+        Index {
+            index: self.index,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<I> Copy for Index<I> {}
+
+impl<I> PartialEq for Index<I> {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index
+    }
+}
+
+impl<I> Eq for Index<I> {}
+
+impl<I> PartialOrd for Index<I> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.index.partial_cmp(&other.index)
+    }
+}
+
+impl<I> Ord for Index<I> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.index.cmp(&other.index)
+    }
+}
+
+impl<I> Hash for Index<I> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.index.hash(state);
     }
 }
 
@@ -130,7 +155,7 @@ impl<'input, I: 'input> Decode<'input> for Option<Index<I>> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Item<'input> {
     Class(Class<'input>),
     FieldRef(FieldRef<'input>),
@@ -254,101 +279,101 @@ impl<'input> TryFromItem<'input> for Item<'input> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Class<'input> {
     pub name: Index<Utf8<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FieldRef<'input> {
     pub class: Index<Class<'input>>,
     pub name_and_type: Index<NameAndType<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MethodRef<'input> {
     pub class: Index<Class<'input>>,
     pub name_and_type: Index<NameAndType<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct InterfaceMethodRef<'input> {
     pub class: Index<Class<'input>>,
     pub name_and_type: Index<NameAndType<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct String<'input> {
     pub string: Index<Utf8<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Integer {
     pub value: i32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Long {
     pub value: i64,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Float {
     pub value: f32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Double {
     pub value: f64,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NameAndType<'input> {
     pub name: Index<Utf8<'input>>,
     pub descriptor: Index<Utf8<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Utf8<'input> {
     pub content: &'input MStr,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MethodHandle<'input> {
     pub kind: MethodKind,
     pub reference: Index<Item<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MethodType<'input> {
     pub descriptor: Index<Utf8<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Dynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
     pub name_and_type: Index<NameAndType<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct InvokeDynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
     pub name_and_type: Index<NameAndType<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Module<'input> {
     pub name: Index<Utf8<'input>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Package<'input> {
     pub name: Index<Utf8<'input>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MethodKind {
     GetField,
     GetStatic,

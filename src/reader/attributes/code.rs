@@ -166,7 +166,7 @@ impl<'input> fmt::Debug for ExceptionHandler<'input> {
 }
 
 /// A 0-based index into the code table.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Index {
     index: u32,
 }

@@ -8,7 +8,7 @@ pub trait ToValue<'input> {
     fn retrieve_from(self, pool: &ConstantPool<'input>) -> Result<Self::Target, DecodeError>;
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Class<'input> {
     pub name: &'input MStr,
 }
@@ -24,7 +24,7 @@ impl<'input> ToValue<'input> for Index<cpool::Class<'input>> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FieldRef<'input> {
     pub class: Class<'input>,
     pub name_and_type: NameAndType<'input>,
@@ -42,7 +42,7 @@ impl<'input> ToValue<'input> for Index<cpool::FieldRef<'input>> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MethodRef<'input> {
     pub class: Class<'input>,
     pub name_and_type: NameAndType<'input>,
@@ -60,7 +60,7 @@ impl<'input> ToValue<'input> for Index<cpool::MethodRef<'input>> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct InterfaceMethodRef<'input> {
     pub class: Class<'input>,
     pub name_and_type: NameAndType<'input>,
@@ -78,7 +78,7 @@ impl<'input> ToValue<'input> for Index<cpool::InterfaceMethodRef<'input>> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct String<'input> {
     pub string: &'input MStr,
 }
@@ -94,7 +94,7 @@ impl<'input> ToValue<'input> for Index<cpool::String<'input>> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Integer {
     pub value: i32,
 }
@@ -108,7 +108,7 @@ impl<'input> ToValue<'input> for Index<cpool::Integer> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Long {
     pub value: i64,
 }
@@ -150,7 +150,7 @@ impl<'input> ToValue<'input> for Index<cpool::Double> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NameAndType<'input> {
     pub name: &'input MStr,
     pub descriptor: &'input MStr,
@@ -177,7 +177,7 @@ impl<'input> ToValue<'input> for Index<cpool::Utf8<'input>> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct MethodHandle<'input> {
     pub kind: cpool::MethodKind,
     pub reference: cpool::Item<'input>,
@@ -195,7 +195,7 @@ impl<'input> ToValue<'input> for Index<cpool::MethodHandle<'input>> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MethodType<'input> {
     pub descriptor: &'input MStr,
 }
@@ -211,7 +211,7 @@ impl<'input> ToValue<'input> for Index<cpool::MethodType<'input>> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Dynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
@@ -230,7 +230,7 @@ impl<'input> ToValue<'input> for Index<cpool::Dynamic<'input>> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct InvokeDynamic<'input> {
     // actually an index into the bootstrap method table
     pub bootstrap_method_attr: u16,
@@ -249,7 +249,7 @@ impl<'input> ToValue<'input> for Index<cpool::InvokeDynamic<'input>> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Module<'input> {
     pub name: &'input MStr,
 }
@@ -265,7 +265,7 @@ impl<'input> ToValue<'input> for Index<cpool::Module<'input>> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Package<'input> {
     pub name: &'input MStr,
 }

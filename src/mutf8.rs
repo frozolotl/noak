@@ -151,6 +151,7 @@ impl MStr {
     /// This slice may not contain bytes that do not make up a modified UTF-8 string.
     #[must_use]
     pub unsafe fn from_mutf8_unchecked_mut(v: &mut [u8]) -> &mut MStr {
+        // SAFETY: Relies on &MStr and &[u8] having the same layout
         let v: *mut [u8] = v;
         &mut *(v as *mut MStr)
     }
@@ -445,6 +446,7 @@ impl<'a> fmt::Display for Display<'a> {
                     f.write_str(unsafe { str::from_utf8_unchecked(&self.inner[start..i]) })?;
                 }
 
+                // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
                 let (size, ch) = unsafe { decode_mutf8_char(&self.inner[i..]) };
                 i += size;
 
@@ -464,6 +466,7 @@ impl<'a> fmt::Display for Display<'a> {
 
 impl<'a> fmt::Debug for Display<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
         unsafe { MStr::from_mutf8_unchecked(self.inner) }.fmt(f)
     }
 }
