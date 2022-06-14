@@ -542,8 +542,9 @@ impl<'a> fmt::Display for Display<'a> {
         let mut start = 0;
         let mut i = 0;
         while i < self.inner.len() {
-            if self.inner[i] < 0x80 {
-                i += 1;
+            if self.inner[i] != 0b1110_1101 {
+                // Three byte long
+                i += 1 + i.leading_ones() as usize;
             } else {
                 if i != start {
                     // SAFETY: This is safe because everything from start to i are non-zero ascii bytes.
@@ -1061,7 +1062,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn valid_mutf8() {
+    fn valid_mutf8() {
         assert!(is_mutf8_valid(b"Hello World"));
         assert!(is_mutf8_valid("Ich grüße die Welt".as_bytes()));
         assert!(is_mutf8_valid("你好，世界".as_bytes()));
@@ -1074,20 +1075,27 @@ mod tests {
     }
 
     #[test]
-    pub fn invalid_mutf8() {
+    fn invalid_mutf8() {
         assert!(!is_mutf8_valid(&[0xFF]));
         assert!(!is_mutf8_valid(&[0x00]));
         assert!(!is_mutf8_valid(&[0xED, 0xAD, 0xBD, 0xED, 0x25]));
     }
 
     #[test]
-    pub fn iterate() {
+    fn display() {
+        assert_eq!(mutf8!("Ich grüße die Welt").display().to_string(), "Ich grüße die Welt");
+        assert_eq!(mutf8!("Hello 🦀").display().to_string(), "Hello 🦀");
+        assert_eq!(mutf8!(b"Test \xED\xBB\x8B.").display().to_string(), "Test \u{FFFD}.");
+    }
+
+    #[test]
+    fn iterate() {
         let s = MStr::from_mutf8(&[0xED, 0xA0, 0xBD, 0xED, 0xB0, 0x96]).unwrap();
         assert_eq!(s.chars().next_back(), s.chars().next());
     }
 
     #[test]
-    pub fn valid_mutf8_macro() {
+    fn valid_mutf8_macro() {
         assert_eq!(mutf8!("Hello World").to_str().unwrap(), "Hello World");
         assert_eq!(mutf8!("Ich grüße die Welt").to_str().unwrap(), "Ich grüße die Welt");
         assert_eq!(mutf8!("Hello 🦀").display().to_string(), "Hello 🦀");
