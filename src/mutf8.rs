@@ -1049,7 +1049,7 @@ macro_rules! mutf8 {
                 if !$crate::mutf8::__private_is_mutf8_valid(BYTES) {
                     panic!("literal is not a valid modified UTF-8 string.");
                 }
-                // SAFETY: It was verified that the string is valued modified UTF-8.
+                // SAFETY: It was verified that the string is valid modified UTF-8.
                 unsafe { $crate::mutf8::MStr::from_mutf8_unchecked(BYTES) }
             }
         };
