@@ -512,9 +512,15 @@ impl ToOwned for MStr {
 impl fmt::Debug for MStr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_char('"')?;
-        for c in self.chars_lossy() {
-            for c in c.escape_debug() {
-                f.write_char(c)?;
+        for c in self.chars() {
+            match c {
+                Ok(c) => {
+                    write!(f, "{}", c.escape_debug())?;
+                }
+                Err(n) => {
+                    // Unpaired surrogates are written as `\s{..}`.
+                    write!(f, "\\s{{{n:x}}}")?;
+                }
             }
         }
         f.write_char('"')
