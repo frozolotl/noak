@@ -1,5 +1,5 @@
 # Noak
-A library for reading and writing java bytecode.
+A library for reading and writing java class files.
 
 ## Example
 ```rust
@@ -79,7 +79,7 @@ Libraries written in Rust:
 
 A small fraction of libraries written in languages that are not Rust:
 - [ASM](https://asm.ow2.io/) (Java)
-  - The most comprehensive and best supported bytecode manipulation and analysis framework.
+  - The most comprehensive and best supported class file manipulation and analysis framework.
   - Use this if noak does not suit your requirements and probably even if it does suit them.
 - [javassist](https://github.com/jboss-javassist/javassist) (Java)
   - A high-level bytecode library.
