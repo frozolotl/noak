@@ -2,8 +2,9 @@
 
 use crate::error::*;
 use std::{
-    borrow::{Borrow, BorrowMut, ToOwned},
+    borrow::{Borrow, BorrowMut, Cow, ToOwned},
     char,
+    cmp::Ordering,
     fmt::{self, Write},
     iter::{DoubleEndedIterator, FromIterator},
     mem::size_of,
@@ -237,6 +238,13 @@ impl Default for &'static MStr {
     }
 }
 
+impl Default for &'static mut MStr {
+    fn default() -> &'static mut MStr {
+        // SAFETY: This is safe because an empty slice is always valid.
+        unsafe { MStr::from_mutf8_unchecked_mut(&mut []) }
+    }
+}
+
 impl ops::Index<ops::RangeFull> for MStr {
     type Output = MStr;
 
@@ -313,6 +321,96 @@ impl ops::Index<ops::RangeFrom<usize>> for MStr {
         } else {
             panic!("MUtf8 index out of bounds");
         }
+    }
+}
+
+impl PartialEq<MString> for MStr {
+    #[inline]
+    fn eq(&self, other: &MString) -> bool {
+        *self == **other
+    }
+}
+
+impl PartialEq<MStr> for MString {
+    #[inline]
+    fn eq(&self, other: &MStr) -> bool {
+        **self == *other
+    }
+}
+
+impl PartialEq<str> for MStr {
+    #[inline]
+    fn eq(&self, other: &str) -> bool {
+        let mut left = self.chars();
+        let mut right = other.chars();
+        loop {
+            match (left.next(), right.next()) {
+                (Some(Ok(l)), Some(r)) if l == r => {}
+                (None, None) => return true,
+                (_, _) => return false,
+            }
+        }
+    }
+}
+
+impl PartialEq<MStr> for str {
+    #[inline]
+    fn eq(&self, other: &MStr) -> bool {
+        *other == *self
+    }
+}
+
+impl PartialEq<&'_ str> for MStr {
+    #[inline]
+    fn eq(&self, other: &&'_ str) -> bool {
+        *self == **other
+    }
+}
+
+impl PartialEq<MStr> for &'_ str {
+    #[inline]
+    fn eq(&self, other: &MStr) -> bool {
+        *other == **self
+    }
+}
+
+impl PartialEq<Cow<'_, MStr>> for MStr {
+    #[inline]
+    fn eq(&self, other: &Cow<'_, MStr>) -> bool {
+        *self == **other
+    }
+}
+
+impl PartialEq<MStr> for Cow<'_, MStr> {
+    #[inline]
+    fn eq(&self, other: &MStr) -> bool {
+        **self == *other
+    }
+}
+
+impl PartialOrd<str> for MStr {
+    fn partial_cmp(&self, other: &str) -> Option<Ordering> {
+        let mut left = self.chars();
+        let mut right = other.chars();
+        loop {
+            match (left.next(), right.next()) {
+                (Some(Ok(l)), Some(r)) => match l.cmp(&r) {
+                    Ordering::Equal => {}
+                    ord => return Some(ord),
+                },
+                (None, None) => return Some(Ordering::Equal),
+                (None, Some(_)) => return Some(Ordering::Less),
+                (Some(_), None) => return Some(Ordering::Greater),
+                (Some(Err(l)), Some(r)) => return Some(l.cmp(&(r as u32))),
+            }
+        }
+    }
+}
+
+impl PartialOrd<MStr> for str {
+    #[inline]
+    fn partial_cmp(&self, other: &MStr) -> Option<Ordering> {
+        other.partial_cmp(self)
     }
 }
 
