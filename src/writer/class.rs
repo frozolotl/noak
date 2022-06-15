@@ -214,7 +214,7 @@ impl ClassWriter<ClassWriterState::Attributes> {
 }
 
 impl ClassWriter<ClassWriterState::End> {
-    pub fn finish(self) -> Result<Vec<u8>, EncodeError> {
+    pub fn into_bytes(self) -> Result<Vec<u8>, EncodeError> {
         let mut buf = self.start_encoder.into_inner();
         buf.extend_from_slice(self.encoder.inner());
         Ok(buf)
