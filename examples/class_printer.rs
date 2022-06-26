@@ -12,7 +12,7 @@ fn main() {
 }
 
 fn print(bytes: &[u8]) -> Result<(), DecodeError> {
-    let class = Class::new(&bytes)?;
+    let class = Class::new(bytes)?;
 
     let version = class.version();
     println!("- Major Version: {}", version.major);
