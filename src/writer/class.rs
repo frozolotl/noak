@@ -31,7 +31,7 @@ use crate::writer::{
 ///         attributes.begin(|attribute| attribute.source_file("Example.java"))?;
 ///         Ok(())
 ///     })?
-///     .finish()?;
+///     .into_bytes()?;
 /// # Ok::<(), noak::error::EncodeError>(())
 /// ```
 #[derive(Clone)]
