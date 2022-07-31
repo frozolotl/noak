@@ -13,19 +13,19 @@ impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attri
         f: F,
     ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
     where
-        F: FnOnce(&mut StackMapTableWriter<Ctx>) -> Result<(), EncodeError>,
+        F: FnOnce(StackMapTableWriter<Ctx>) -> Result<StackMapTableWriter<Ctx>, EncodeError>,
     {
         let length_writer = self.attribute_writer("StackMapTable")?;
 
         let count_offset = self.context.encoder().position();
         self.context.encoder().write(0u16)?;
 
-        let mut writer = StackMapTableWriter {
+        let writer = StackMapTableWriter {
             context: self.context,
             last_position: 0,
             count: 0,
         };
-        f(&mut writer)?;
+        let writer = f(writer)?;
         self.context = writer.context;
 
         let count = writer.count;
@@ -420,7 +420,7 @@ pub struct FullWriter<Ctx, State: FullWriterState::State> {
 }
 
 impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Locals> {
-    pub fn locals<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::Locals>, EncodeError>
+    pub fn locals<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::End>, EncodeError>
     where
         F: FnOnce(
             &mut ManyWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
