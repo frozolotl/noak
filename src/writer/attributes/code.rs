@@ -108,11 +108,16 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::ExceptionTable> {
 impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Attributes> {
     pub fn attributes<F>(mut self, f: F) -> Result<CodeWriter<Ctx, CodeWriterState::End>, EncodeError>
     where
-        F: FnOnce(&mut ManyWriter<AttributeWriter<Ctx, AttributeWriterState::Start>, u16>) -> Result<(), EncodeError>,
+        F: FnOnce(
+            &mut ManyWriter<
+                AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::Start>,
+                u16,
+            >,
+        ) -> Result<(), EncodeError>,
     {
-        let mut builder = ManyWriter::new(self.context)?;
+        let mut builder = ManyWriter::new(self)?;
         f(&mut builder)?;
-        self.context = builder.finish()?;
+        self = builder.finish()?;
 
         Ok(CodeWriter {
             context: self.context,
