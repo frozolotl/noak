@@ -1412,7 +1412,7 @@ impl<Ctx: EncoderContext> WriteDisassembler for InstructionWriter<Ctx> {
                     // skip default and count
                     let offset_pair_start = offset_default.offset(4 + 4);
                     for i in 0..count {
-                        jmp_i32!(offset_pair_start.offset((i as usize * 2 + 1) * 4));
+                        jmp_i32!(offset_pair_start.offset((i * 2 + 1) * 4));
                     }
                 }
                 TableSwitch(tableswitch) => {

@@ -142,8 +142,8 @@ impl MStr {
     /// This slice may not contain bytes that do not make up a modified UTF-8 string.
     #[must_use]
     pub const unsafe fn from_mutf8_unchecked(v: &[u8]) -> &MStr {
-        // SAFETY: Relies on &MStr and &[u8] having the same layout
-        std::mem::transmute(v)
+        // SAFETY: Relies on &MStr and &[u8] having the same layout.
+        unsafe { std::mem::transmute(v) }
     }
 
     /// Creates a string from a modified UTF-8 byte slice without checking its contents.
@@ -152,9 +152,11 @@ impl MStr {
     /// This slice may not contain bytes that do not make up a modified UTF-8 string.
     #[must_use]
     pub unsafe fn from_mutf8_unchecked_mut(v: &mut [u8]) -> &mut MStr {
-        // SAFETY: Relies on &MStr and &[u8] having the same layout
-        let v: *mut [u8] = v;
-        &mut *(v as *mut MStr)
+        // SAFETY: Relies on &MStr and &[u8] having the same layout.
+        unsafe {
+            let v: *mut [u8] = v;
+            &mut *(v as *mut MStr)
+        }
     }
 
     /// Returns the length of the string in bytes.
@@ -686,7 +688,9 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Result<char, u32>) {
         // two byte case
         let c1 = u32::from(v[0] & 0b0001_1111) << 6;
         let c2 = u32::from(v[1] & 0b0011_1111);
-        return (2, Ok(char::from_u32_unchecked(c1 | c2)));
+        // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
+        let c = unsafe { char::from_u32_unchecked(c1 | c2) };
+        return (2, Ok(c));
     }
 
     if v[0] == 0b1110_1101 {
@@ -697,7 +701,9 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Result<char, u32>) {
             let c3 = u32::from(v[2] & 0b0011_1111) << 10;
             let c5 = u32::from(v[4] & 0b0000_1111) << 6;
             let c6 = u32::from(v[5] & 0b0011_1111);
-            return (6, Ok(char::from_u32_unchecked(0x10000 + (c2 | c3 | c5 | c6))));
+            // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
+            let c = unsafe { char::from_u32_unchecked(0x10000 + (c2 | c3 | c5 | c6)) };
+            return (6, Ok(c));
         }
 
         // unpaired surrogates
@@ -712,7 +718,9 @@ unsafe fn decode_mutf8_char(v: &[u8]) -> (usize, Result<char, u32>) {
     let c1 = u32::from(v[0] & 0b0000_1111) << 12;
     let c2 = u32::from(v[1] & 0b0011_1111) << 6;
     let c3 = u32::from(v[2] & 0b0011_1111);
-    (3, Ok(char::from_u32_unchecked(c1 | c2 | c3)))
+    // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
+    let c = unsafe { char::from_u32_unchecked(c1 | c2 | c3) };
+    (3, Ok(c))
 }
 
 /// Decodes a character from back to front and returns its size.
@@ -731,7 +739,9 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Result<char, u32>) {
         // two byte case
         let c1 = u32::from(b2 & 0b0001_1111) << 6;
         let c2 = u32::from(b1 & 0b0011_1111);
-        return (2, Ok(char::from_u32_unchecked(c1 | c2)));
+        // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
+        let c = unsafe { char::from_u32_unchecked(c1 | c2) };
+        return (2, Ok(c));
     }
 
     let b3 = v[v.len() - 3];
@@ -746,7 +756,9 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Result<char, u32>) {
                 let c3 = u32::from(b4 & 0b0011_1111) << 10;
                 let c5 = u32::from(b2 & 0b0000_1111) << 6;
                 let c6 = u32::from(b1 & 0b0011_1111);
-                return (6, Ok(char::from_u32_unchecked(0x10000 + (c2 | c3 | c5 | c6))));
+                // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
+                let c = unsafe { char::from_u32_unchecked(0x10000 + (c2 | c3 | c5 | c6)) };
+                return (6, Ok(c));
             }
         }
         // unpaired surrogates
@@ -761,7 +773,9 @@ unsafe fn decode_mutf8_char_reversed(v: &[u8]) -> (usize, Result<char, u32>) {
     let c1 = u32::from(b3 & 0b0000_1111) << 12;
     let c2 = u32::from(b2 & 0b0011_1111) << 6;
     let c3 = u32::from(b1 & 0b0011_1111);
-    (3, Ok(char::from_u32_unchecked(c1 | c2 | c3)))
+    // SAFETY: This is safe because the underlying buffer is guaranteed to be valid.
+    let c = unsafe { char::from_u32_unchecked(c1 | c2 | c3) };
+    (3, Ok(c))
 }
 
 impl From<&MStr> for MString {

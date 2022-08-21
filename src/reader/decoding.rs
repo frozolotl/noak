@@ -179,7 +179,7 @@ impl<'input> Decode<'input> for f64 {
 pub struct DecodeManyIter<'input, T, Count> {
     decoder: Decoder<'input>,
     remaining: Count,
-    marker: PhantomData<T>,
+    marker: PhantomData<fn() -> T>,
 }
 
 impl<'input, T, Count> Decode<'input> for DecodeManyIter<'input, T, Count>

@@ -142,14 +142,14 @@ impl<'a> Encoder for ReplacingEncoder<'a> {
 }
 
 /// An encoder writing the amount of bytes written since its creation to the front.
-pub struct LengthWriter<Ctx> {
+pub(crate) struct LengthWriter<Ctx> {
     /// The offset of the byte counter.
     length_offset: Offset,
     marker: PhantomData<Ctx>,
 }
 
 impl<Ctx: EncoderContext> LengthWriter<Ctx> {
-    pub fn new(context: &mut Ctx) -> Result<Self, EncodeError> {
+    pub(crate) fn new(context: &mut Ctx) -> Result<Self, EncodeError> {
         let length_offset = context.encoder().position();
         context.encoder().write(0u32)?;
         Ok(LengthWriter {
@@ -158,7 +158,7 @@ impl<Ctx: EncoderContext> LengthWriter<Ctx> {
         })
     }
 
-    pub fn finish(self, context: &mut Ctx) -> Result<(), EncodeError> {
+    pub(crate) fn finish(self, context: &mut Ctx) -> Result<(), EncodeError> {
         let length = context.encoder().position().sub(self.length_offset).sub(Offset(4)); // subtract the amount of bytes the length takes up
         let length = u32::try_from(length.0)
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))?;
@@ -200,6 +200,7 @@ pub trait WriteAssembler: Sized {
     fn new(context: Self::Context) -> Result<Self, EncodeError>;
 }
 
+#[allow(unreachable_pub)]
 pub trait WriteDisassembler {
     type Context: EncoderContext;
 

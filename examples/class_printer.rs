@@ -18,6 +18,7 @@ fn print(bytes: &[u8]) -> Result<(), DecodeError> {
     println!("- Major Version: {}", version.major);
     println!("- Minor Version: {}", version.minor);
     println!("- Access Flags: {:?}", class.access_flags());
+
     println!(
         "- Class Name: {}",
         class.pool().retrieve(class.this_class())?.name.display()
