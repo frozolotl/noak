@@ -13,19 +13,19 @@ impl<Ctx: EncoderContext> AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attri
         f: F,
     ) -> Result<AttributeWriter<CodeWriter<Ctx, CodeWriterState::Attributes>, AttributeWriterState::End>, EncodeError>
     where
-        F: FnOnce(StackMapTableWriter<Ctx>) -> Result<StackMapTableWriter<Ctx>, EncodeError>,
+        F: FnOnce(&mut StackMapTableWriter<Ctx>) -> Result<(), EncodeError>,
     {
         let length_writer = self.attribute_writer("StackMapTable")?;
 
         let count_offset = self.context.encoder().position();
         self.context.encoder().write(0u16)?;
 
-        let writer = StackMapTableWriter {
+        let mut writer = StackMapTableWriter {
             context: self.context,
             last_position: 0,
             count: 0,
         };
-        let writer = f(writer)?;
+        f(&mut writer)?;
         self.context = writer.context;
 
         let count = writer.count;
@@ -46,7 +46,7 @@ pub struct StackMapTableWriter<Ctx> {
 }
 
 impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
-    pub fn same(mut self, label: LabelRef) -> Result<Self, EncodeError> {
+    pub fn same(&mut self, label: LabelRef) -> Result<(), EncodeError> {
         let offset = self.get_label_offset(label)?;
         if offset >= 64 {
             return self.same_extended(label);
@@ -54,21 +54,21 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
 
         self.increment_counter()?;
         self.context.encoder().write(offset as u8)?;
-        Ok(self)
+        Ok(())
     }
 
-    pub fn same_extended(mut self, label: LabelRef) -> Result<Self, EncodeError> {
+    pub fn same_extended(&mut self, label: LabelRef) -> Result<(), EncodeError> {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
         self.context.encoder().write(251)?.write(offset)?;
-        Ok(self)
+        Ok(())
     }
 
-    pub fn same1<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
+    pub fn same1<F>(&mut self, label: LabelRef, f: F) -> Result<(), EncodeError>
     where
-        F: FnOnce(
-            Same1Writer<Ctx, Same1WriterState::Start>,
-        ) -> Result<Same1Writer<Ctx, Same1WriterState::End>, EncodeError>,
+        F: for<'ctx> FnOnce(
+            Same1Writer<'ctx, Ctx, Same1WriterState::Start>,
+        ) -> Result<Same1Writer<'ctx, Ctx, Same1WriterState::End>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         if offset >= 64 {
@@ -78,27 +78,27 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
         self.increment_counter()?;
         self.context.encoder().write(64 + offset as u8)?;
 
-        self.context = f(Same1Writer::new(self.context)?)?.finish()?;
+        f(Same1Writer::new(&mut self.context)?)?.finish()?;
 
-        Ok(self)
+        Ok(())
     }
 
-    pub fn same1_extended<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
+    pub fn same1_extended<F>(&mut self, label: LabelRef, f: F) -> Result<(), EncodeError>
     where
-        F: FnOnce(
-            Same1Writer<Ctx, Same1WriterState::Start>,
-        ) -> Result<Same1Writer<Ctx, Same1WriterState::End>, EncodeError>,
+        F: for<'ctx> FnOnce(
+            Same1Writer<'ctx, Ctx, Same1WriterState::Start>,
+        ) -> Result<Same1Writer<'ctx, Ctx, Same1WriterState::End>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
         self.context.encoder().write(247)?.write(offset)?;
 
-        self.context = f(Same1Writer::new(self.context)?)?.finish()?;
+        f(Same1Writer::new(&mut self.context)?)?.finish()?;
 
-        Ok(self)
+        Ok(())
     }
 
-    pub fn chop(mut self, label: LabelRef, count: u16) -> Result<Self, EncodeError> {
+    pub fn chop(&mut self, label: LabelRef, count: u16) -> Result<(), EncodeError> {
         if count == 0 || count > 3 {
             return Err(EncodeError::with_context(
                 EncodeErrorKind::TooManyItems,
@@ -110,12 +110,12 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
         self.increment_counter()?;
         self.context.encoder().write(251 - count)?.write(offset)?;
 
-        Ok(self)
+        Ok(())
     }
 
-    pub fn append<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
+    pub fn append<F>(&mut self, label: LabelRef, f: F) -> Result<(), EncodeError>
     where
-        F: FnOnce(AppendWriter<Ctx>) -> Result<AppendWriter<Ctx>, EncodeError>,
+        F: for<'ctx> FnOnce(AppendWriter<'ctx, Ctx>) -> Result<AppendWriter<'ctx, Ctx>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
@@ -127,28 +127,28 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
             .write(0)? // placeholder
             .write(offset)?;
 
-        let append_writer = f(AppendWriter::new(self.context)?)?;
+        let append_writer = f(AppendWriter::new(&mut self.context)?)?;
         let count = append_writer.count;
-        self.context = append_writer.finish()?;
+        append_writer.finish()?;
 
         self.context.encoder().replacing(type_offset).write(251 + count)?;
 
-        Ok(self)
+        Ok(())
     }
 
-    pub fn full<F>(mut self, label: LabelRef, f: F) -> Result<Self, EncodeError>
+    pub fn full<F>(&mut self, label: LabelRef, f: F) -> Result<(), EncodeError>
     where
-        F: FnOnce(
-            FullWriter<Ctx, FullWriterState::Locals>,
-        ) -> Result<FullWriter<Ctx, FullWriterState::End>, EncodeError>,
+        F: for<'ctx> FnOnce(
+            FullWriter<'ctx, Ctx, FullWriterState::Locals>,
+        ) -> Result<FullWriter<'ctx, Ctx, FullWriterState::End>, EncodeError>,
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
         self.context.encoder().write(255)?.write(offset)?;
 
-        self.context = f(FullWriter::new(self.context)?)?.finish()?;
+        f(FullWriter::new(&mut self.context)?)?.finish()?;
 
-        Ok(self)
+        Ok(())
     }
 
     fn get_label_offset(&self, label: LabelRef) -> Result<u16, EncodeError> {
@@ -180,13 +180,13 @@ impl<Ctx> fmt::Debug for StackMapTableWriter<Ctx> {
     }
 }
 
-pub struct VerificationTypeWriter<Ctx, State: VerificationTypeWriterState::State> {
-    context: CodeWriter<Ctx, CodeWriterState::Attributes>,
+pub struct VerificationTypeWriter<'ctx, Ctx, State: VerificationTypeWriterState::State> {
+    context: &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>,
     _marker: PhantomData<State>,
 }
 
-impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start> {
-    pub fn top(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+impl<'ctx, Ctx: EncoderContext> VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::Start> {
+    pub fn top(self) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.encoder().write(0u8)?;
 
         Ok(VerificationTypeWriter {
@@ -195,7 +195,7 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
         })
     }
 
-    pub fn integer(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    pub fn integer(self) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.encoder().write(1u8)?;
 
         Ok(VerificationTypeWriter {
@@ -204,7 +204,7 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
         })
     }
 
-    pub fn float(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    pub fn float(self) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.encoder().write(2u8)?;
 
         Ok(VerificationTypeWriter {
@@ -213,7 +213,7 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
         })
     }
 
-    pub fn double(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    pub fn double(self) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.encoder().write(3u8)?;
 
         Ok(VerificationTypeWriter {
@@ -222,7 +222,7 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
         })
     }
 
-    pub fn long(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    pub fn long(self) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.encoder().write(4u8)?;
 
         Ok(VerificationTypeWriter {
@@ -231,7 +231,7 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
         })
     }
 
-    pub fn null(mut self) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    pub fn null(self) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.encoder().write(5u8)?;
 
         Ok(VerificationTypeWriter {
@@ -241,8 +241,8 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
     }
 
     pub fn uninitialized_this(
-        mut self,
-    ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+        self,
+    ) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         self.context.encoder().write(6u8)?;
 
         Ok(VerificationTypeWriter {
@@ -252,14 +252,14 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
     }
 
     pub fn object<I>(
-        mut self,
+        self,
         class: I,
-    ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError>
+    ) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError>
     where
         I: cpool::Insertable<cpool::Class>,
     {
         self.context.encoder().write(7u8)?;
-        class.insert(&mut self.context)?;
+        class.insert(self.context)?;
 
         Ok(VerificationTypeWriter {
             context: self.context,
@@ -268,9 +268,9 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
     }
 
     pub fn uninitialized(
-        mut self,
+        self,
         label: LabelRef,
-    ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError> {
+    ) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError> {
         let offset = self.context.get_label_position(label)?;
         self.context.encoder().write(8u8)?.write(offset)?;
 
@@ -281,9 +281,11 @@ impl<Ctx: EncoderContext> VerificationTypeWriter<Ctx, VerificationTypeWriterStat
     }
 }
 
-impl<Ctx: EncoderContext> WriteAssembler for VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>;
+impl<'ctx, Ctx: EncoderContext> WriteAssembler
+    for VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::Start>
+{
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
+    type Disassembler = VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(VerificationTypeWriter {
@@ -293,15 +295,17 @@ impl<Ctx: EncoderContext> WriteAssembler for VerificationTypeWriter<Ctx, Verific
     }
 }
 
-impl<Ctx: EncoderContext> WriteDisassembler for VerificationTypeWriter<Ctx, VerificationTypeWriterState::End> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
+impl<'ctx, Ctx: EncoderContext> WriteDisassembler
+    for VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>
+{
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
     }
 }
 
-impl<Ctx, State: VerificationTypeWriterState::State> fmt::Debug for VerificationTypeWriter<Ctx, State> {
+impl<'ctx, Ctx, State: VerificationTypeWriterState::State> fmt::Debug for VerificationTypeWriter<'ctx, Ctx, State> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VerificationTypeWriter").finish()
     }
@@ -309,17 +313,17 @@ impl<Ctx, State: VerificationTypeWriterState::State> fmt::Debug for Verification
 
 enc_state!(pub mod VerificationTypeWriterState: Start, End);
 
-pub struct Same1Writer<Ctx, State: Same1WriterState::State> {
-    context: CodeWriter<Ctx, CodeWriterState::Attributes>,
+pub struct Same1Writer<'ctx, Ctx, State: Same1WriterState::State> {
+    context: &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>,
     _marker: PhantomData<State>,
 }
 
-impl<Ctx: EncoderContext> Same1Writer<Ctx, Same1WriterState::Start> {
-    pub fn stack_item<F>(mut self, f: F) -> Result<Same1Writer<Ctx, Same1WriterState::End>, EncodeError>
+impl<'ctx, Ctx: EncoderContext> Same1Writer<'ctx, Ctx, Same1WriterState::Start> {
+    pub fn stack_item<F>(mut self, f: F) -> Result<Same1Writer<'ctx, Ctx, Same1WriterState::End>, EncodeError>
     where
         F: FnOnce(
-            VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>,
-        ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError>,
+            VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::Start>,
+        ) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError>,
     {
         self.context = f(VerificationTypeWriter::new(self.context)?)?.finish()?;
 
@@ -330,9 +334,9 @@ impl<Ctx: EncoderContext> Same1Writer<Ctx, Same1WriterState::Start> {
     }
 }
 
-impl<Ctx: EncoderContext> WriteAssembler for Same1Writer<Ctx, Same1WriterState::Start> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = Same1Writer<Ctx, Same1WriterState::End>;
+impl<'ctx, Ctx: EncoderContext> WriteAssembler for Same1Writer<'ctx, Ctx, Same1WriterState::Start> {
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
+    type Disassembler = Same1Writer<'ctx, Ctx, Same1WriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(Same1Writer {
@@ -342,15 +346,15 @@ impl<Ctx: EncoderContext> WriteAssembler for Same1Writer<Ctx, Same1WriterState::
     }
 }
 
-impl<Ctx: EncoderContext> WriteDisassembler for Same1Writer<Ctx, Same1WriterState::End> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
+impl<'ctx, Ctx: EncoderContext> WriteDisassembler for Same1Writer<'ctx, Ctx, Same1WriterState::End> {
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
     }
 }
 
-impl<Ctx, State: Same1WriterState::State> fmt::Debug for Same1Writer<Ctx, State> {
+impl<'ctx, Ctx, State: Same1WriterState::State> fmt::Debug for Same1Writer<'ctx, Ctx, State> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Same1Writer").finish()
     }
@@ -358,17 +362,17 @@ impl<Ctx, State: Same1WriterState::State> fmt::Debug for Same1Writer<Ctx, State>
 
 enc_state!(pub mod Same1WriterState: Start, End);
 
-pub struct AppendWriter<Ctx> {
-    context: CodeWriter<Ctx, CodeWriterState::Attributes>,
+pub struct AppendWriter<'ctx, Ctx> {
+    context: &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>,
     count: u8,
 }
 
-impl<Ctx: EncoderContext> AppendWriter<Ctx> {
+impl<'ctx, Ctx: EncoderContext> AppendWriter<'ctx, Ctx> {
     pub fn local<F>(mut self, f: F) -> Result<Self, EncodeError>
     where
         F: FnOnce(
-            VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>,
-        ) -> Result<VerificationTypeWriter<Ctx, VerificationTypeWriterState::End>, EncodeError>,
+            VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::Start>,
+        ) -> Result<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>, EncodeError>,
     {
         if self.count >= 3 {
             return Err(EncodeError::with_context(
@@ -384,17 +388,17 @@ impl<Ctx: EncoderContext> AppendWriter<Ctx> {
     }
 }
 
-impl<Ctx: EncoderContext> WriteAssembler for AppendWriter<Ctx> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = AppendWriter<Ctx>;
+impl<'ctx, Ctx: EncoderContext> WriteAssembler for AppendWriter<'ctx, Ctx> {
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
+    type Disassembler = AppendWriter<'ctx, Ctx>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(AppendWriter { context, count: 0 })
     }
 }
 
-impl<Ctx: EncoderContext> WriteDisassembler for AppendWriter<Ctx> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
+impl<'ctx, Ctx: EncoderContext> WriteDisassembler for AppendWriter<'ctx, Ctx> {
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         if self.count > 0 {
@@ -408,22 +412,22 @@ impl<Ctx: EncoderContext> WriteDisassembler for AppendWriter<Ctx> {
     }
 }
 
-impl<Ctx> fmt::Debug for AppendWriter<Ctx> {
+impl<'ctx, Ctx> fmt::Debug for AppendWriter<'ctx, Ctx> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AppendWriter").finish()
     }
 }
 
-pub struct FullWriter<Ctx, State: FullWriterState::State> {
-    context: CodeWriter<Ctx, CodeWriterState::Attributes>,
+pub struct FullWriter<'ctx, Ctx, State: FullWriterState::State> {
+    context: &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>,
     _marker: PhantomData<State>,
 }
 
-impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Locals> {
-    pub fn locals<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::End>, EncodeError>
+impl<'ctx, Ctx: EncoderContext> FullWriter<'ctx, Ctx, FullWriterState::Locals> {
+    pub fn locals<F>(mut self, f: F) -> Result<FullWriter<'ctx, Ctx, FullWriterState::End>, EncodeError>
     where
         F: FnOnce(
-            &mut ManyWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+            &mut ManyWriter<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::Start>, u16>,
         ) -> Result<(), EncodeError>,
     {
         let mut builder = ManyWriter::new(self.context)?;
@@ -437,11 +441,11 @@ impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Locals> {
     }
 }
 
-impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Stack> {
-    pub fn stack<F>(mut self, f: F) -> Result<FullWriter<Ctx, FullWriterState::End>, EncodeError>
+impl<'ctx, Ctx: EncoderContext> FullWriter<'ctx, Ctx, FullWriterState::Stack> {
+    pub fn stack<F>(mut self, f: F) -> Result<FullWriter<'ctx, Ctx, FullWriterState::End>, EncodeError>
     where
         F: FnOnce(
-            &mut ManyWriter<VerificationTypeWriter<Ctx, VerificationTypeWriterState::Start>, u16>,
+            &mut ManyWriter<VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::Start>, u16>,
         ) -> Result<(), EncodeError>,
     {
         let mut builder = ManyWriter::new(self.context)?;
@@ -455,9 +459,9 @@ impl<Ctx: EncoderContext> FullWriter<Ctx, FullWriterState::Stack> {
     }
 }
 
-impl<Ctx: EncoderContext> WriteAssembler for FullWriter<Ctx, FullWriterState::Locals> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = FullWriter<Ctx, FullWriterState::End>;
+impl<'ctx, Ctx: EncoderContext> WriteAssembler for FullWriter<'ctx, Ctx, FullWriterState::Locals> {
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
+    type Disassembler = FullWriter<'ctx, Ctx, FullWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(FullWriter {
@@ -467,15 +471,15 @@ impl<Ctx: EncoderContext> WriteAssembler for FullWriter<Ctx, FullWriterState::Lo
     }
 }
 
-impl<Ctx: EncoderContext> WriteDisassembler for FullWriter<Ctx, FullWriterState::End> {
-    type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
+impl<'ctx, Ctx: EncoderContext> WriteDisassembler for FullWriter<'ctx, Ctx, FullWriterState::End> {
+    type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
 
     fn finish(self) -> Result<Self::Context, EncodeError> {
         Ok(self.context)
     }
 }
 
-impl<Ctx, State: FullWriterState::State> fmt::Debug for FullWriter<Ctx, State> {
+impl<'ctx, Ctx, State: FullWriterState::State> fmt::Debug for FullWriter<'ctx, Ctx, State> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("FullWriter").finish()
     }
