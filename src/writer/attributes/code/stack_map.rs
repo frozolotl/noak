@@ -60,7 +60,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
     pub fn same_extended(&mut self, label: LabelRef) -> Result<(), EncodeError> {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
-        self.context.encoder().write(251)?.write(offset)?;
+        self.context.encoder().write(251u8)?.write(offset)?;
         Ok(())
     }
 
@@ -91,7 +91,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
-        self.context.encoder().write(247)?.write(offset)?;
+        self.context.encoder().write(247u8)?.write(offset)?;
 
         f(Same1Writer::new(&mut self.context)?)?.finish()?;
 
@@ -124,7 +124,7 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
 
         self.context
             .encoder()
-            .write(0)? // placeholder
+            .write(0u8)? // placeholder for frame type
             .write(offset)?;
 
         let append_writer = f(AppendWriter::new(&mut self.context)?)?;
@@ -144,7 +144,8 @@ impl<Ctx: EncoderContext> StackMapTableWriter<Ctx> {
     {
         let offset = self.get_label_offset(label)?;
         self.increment_counter()?;
-        self.context.encoder().write(255)?.write(offset)?;
+
+        self.context.encoder().write(255u8)?.write(offset)?;
 
         f(FullWriter::new(&mut self.context)?)?.finish()?;
 
@@ -258,8 +259,8 @@ impl<'ctx, Ctx: EncoderContext> VerificationTypeWriter<'ctx, Ctx, VerificationTy
     where
         I: cpool::Insertable<cpool::Class>,
     {
-        self.context.encoder().write(7u8)?;
-        class.insert(self.context)?;
+        let index = class.insert(self.context)?;
+        self.context.encoder().write(7u8)?.write(index)?;
 
         Ok(VerificationTypeWriter {
             context: self.context,

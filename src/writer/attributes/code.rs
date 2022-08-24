@@ -128,7 +128,7 @@ impl<Ctx: EncoderContext> CodeWriter<Ctx, CodeWriterState::Attributes> {
 }
 
 impl<Ctx: EncoderContext, State: CodeWriterState::State> CodeWriter<Ctx, State> {
-    fn new_label(&mut self) -> Result<(Label, LabelRef), EncodeError> {
+    pub fn new_label(&mut self) -> Result<(Label, LabelRef), EncodeError> {
         let index = u32::try_from(self.label_positions.len())
             .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyItems, Context::Code))?;
         self.label_positions.push(None);
