@@ -195,12 +195,10 @@ impl<Ctx: InternalEncoderContext> EncoderContext for Ctx {}
 
 pub trait WriteAssembler: Sized {
     type Context: EncoderContext;
-    type Disassembler: WriteDisassembler<Context = Self::Context>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError>;
 }
 
-#[allow(unreachable_pub)]
 pub trait WriteDisassembler {
     type Context: EncoderContext;
 
@@ -221,7 +219,6 @@ where
     Count: Encode + Counter,
 {
     type Context = W::Context;
-    type Disassembler = Self;
 
     fn new(mut context: Self::Context) -> Result<Self, EncodeError> {
         let count_offset = context.encoder().position();
@@ -255,9 +252,10 @@ where
     W: WriteAssembler,
     Count: Encode + Counter,
 {
-    pub fn begin<F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
+    pub fn begin<D, F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
     where
-        F: FnOnce(W) -> Result<W::Disassembler, EncodeError>,
+        D: WriteDisassembler<Context = W::Context>,
+        F: FnOnce(W) -> Result<D, EncodeError>,
     {
         let context = self
             .context

@@ -163,7 +163,6 @@ impl<Ctx: EncoderContext, State: CodeWriterState::State> InternalEncoderContext 
 
 impl<Ctx: EncoderContext> WriteAssembler for CodeWriter<Ctx, CodeWriterState::MaxStack> {
     type Context = Ctx;
-    type Disassembler = CodeWriter<Ctx, CodeWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(CodeWriter {

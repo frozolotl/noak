@@ -76,7 +76,6 @@ impl MethodWriter<MethodWriterState::Attributes> {
 
 impl WriteAssembler for MethodWriter<MethodWriterState::AccessFlags> {
     type Context = ClassWriter<class::ClassWriterState::Methods>;
-    type Disassembler = MethodWriter<MethodWriterState::End>;
 
     fn new(class_writer: Self::Context) -> Result<Self, EncodeError> {
         Ok(MethodWriter {

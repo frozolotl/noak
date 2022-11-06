@@ -1276,7 +1276,6 @@ impl<Ctx: EncoderContext> InstructionWriter<Ctx> {
 
 impl<Ctx: EncoderContext> WriteAssembler for InstructionWriter<Ctx> {
     type Context = CodeWriter<Ctx, CodeWriterState::Instructions>;
-    type Disassembler = InstructionWriter<Ctx>;
 
     fn new(mut code_writer: Self::Context) -> Result<Self, EncodeError> {
         let start_offset = code_writer.encoder().position();

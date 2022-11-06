@@ -64,7 +64,6 @@ impl<'a, Ctx: EncoderContext> LookupSwitchWriter<'a, Ctx, LookupSwitchWriterStat
 
 impl<'a, Ctx: EncoderContext> WriteAssembler for LookupSwitchWriter<'a, Ctx, LookupSwitchWriterState::Default> {
     type Context = &'a mut InstructionWriter<Ctx>;
-    type Disassembler = LookupSwitchWriter<'a, Ctx, LookupSwitchWriterState::Jumps>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         let offset = context.current_offset();

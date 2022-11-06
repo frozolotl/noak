@@ -26,7 +26,6 @@ impl InterfaceWriter<InterfaceWriterState::Start> {
 
 impl WriteAssembler for InterfaceWriter<InterfaceWriterState::Start> {
     type Context = ClassWriter<class::ClassWriterState::Interfaces>;
-    type Disassembler = InterfaceWriter<InterfaceWriterState::End>;
 
     fn new(class_writer: Self::Context) -> Result<Self, EncodeError> {
         Ok(InterfaceWriter {

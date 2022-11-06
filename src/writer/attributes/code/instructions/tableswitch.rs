@@ -81,7 +81,6 @@ impl<'a, Ctx: EncoderContext> TableSwitchWriter<'a, Ctx, TableSwitchWriterState:
 
 impl<'a, Ctx: EncoderContext> WriteAssembler for TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Default> {
     type Context = &'a mut InstructionWriter<Ctx>;
-    type Disassembler = TableSwitchWriter<'a, Ctx, TableSwitchWriterState::Jumps>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         let offset = context.current_offset();

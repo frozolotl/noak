@@ -73,7 +73,6 @@ impl<Ctx: EncoderContext> EnclosingMethodWriter<Ctx, EnclosingMethodWriterState:
 
 impl<Ctx: EncoderContext> WriteAssembler for EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::Class> {
     type Context = Ctx;
-    type Disassembler = EnclosingMethodWriter<Ctx, EnclosingMethodWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(EnclosingMethodWriter {

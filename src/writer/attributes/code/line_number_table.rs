@@ -65,7 +65,6 @@ impl<Ctx: EncoderContext> LineNumberWriter<Ctx, LineNumberWriterState::LineNumbe
 
 impl<Ctx: EncoderContext> WriteAssembler for LineNumberWriter<Ctx, LineNumberWriterState::Start> {
     type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = LineNumberWriter<Ctx, LineNumberWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(LineNumberWriter {

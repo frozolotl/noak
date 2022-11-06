@@ -53,7 +53,6 @@ impl<Ctx: EncoderContext> AttributeWriter<Ctx, AttributeWriterState::Start> {
 
 impl<Ctx: EncoderContext> WriteAssembler for AttributeWriter<Ctx, AttributeWriterState::Start> {
     type Context = Ctx;
-    type Disassembler = AttributeWriter<Ctx, AttributeWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(AttributeWriter {

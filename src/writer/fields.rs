@@ -76,7 +76,6 @@ impl FieldWriter<FieldWriterState::Attributes> {
 
 impl WriteAssembler for FieldWriter<FieldWriterState::AccessFlags> {
     type Context = ClassWriter<class::ClassWriterState::Fields>;
-    type Disassembler = FieldWriter<FieldWriterState::End>;
 
     fn new(class_writer: Self::Context) -> Result<Self, EncodeError> {
         Ok(FieldWriter {

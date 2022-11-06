@@ -132,7 +132,6 @@ impl<Ctx: EncoderContext> LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterSt
 
 impl<Ctx: EncoderContext> WriteAssembler for LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::Start> {
     type Context = CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = LocalVariableTypeWriter<Ctx, LocalVariableTypeWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(LocalVariableTypeWriter {

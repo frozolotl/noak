@@ -286,7 +286,6 @@ impl<'ctx, Ctx: EncoderContext> WriteAssembler
     for VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::Start>
 {
     type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = VerificationTypeWriter<'ctx, Ctx, VerificationTypeWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(VerificationTypeWriter {
@@ -337,7 +336,6 @@ impl<'ctx, Ctx: EncoderContext> Same1Writer<'ctx, Ctx, Same1WriterState::Start> 
 
 impl<'ctx, Ctx: EncoderContext> WriteAssembler for Same1Writer<'ctx, Ctx, Same1WriterState::Start> {
     type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = Same1Writer<'ctx, Ctx, Same1WriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(Same1Writer {
@@ -391,7 +389,6 @@ impl<'ctx, Ctx: EncoderContext> AppendWriter<'ctx, Ctx> {
 
 impl<'ctx, Ctx: EncoderContext> WriteAssembler for AppendWriter<'ctx, Ctx> {
     type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = AppendWriter<'ctx, Ctx>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(AppendWriter { context, count: 0 })
@@ -462,7 +459,6 @@ impl<'ctx, Ctx: EncoderContext> FullWriter<'ctx, Ctx, FullWriterState::Stack> {
 
 impl<'ctx, Ctx: EncoderContext> WriteAssembler for FullWriter<'ctx, Ctx, FullWriterState::Locals> {
     type Context = &'ctx mut CodeWriter<Ctx, CodeWriterState::Attributes>;
-    type Disassembler = FullWriter<'ctx, Ctx, FullWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(FullWriter {

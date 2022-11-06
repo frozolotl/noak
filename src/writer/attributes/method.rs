@@ -45,7 +45,6 @@ impl<Ctx: EncoderContext> ExceptionWriter<Ctx, ExceptionWriterState::Start> {
 
 impl<Ctx: EncoderContext> WriteAssembler for ExceptionWriter<Ctx, ExceptionWriterState::Start> {
     type Context = Ctx;
-    type Disassembler = ExceptionWriter<Ctx, ExceptionWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(ExceptionWriter {

@@ -130,7 +130,6 @@ impl<Ctx: EncoderContext> InnerClassWriter<Ctx, InnerClassWriterState::InnerAcce
 
 impl<Ctx: EncoderContext> WriteAssembler for InnerClassWriter<Ctx, InnerClassWriterState::InnerClass> {
     type Context = Ctx;
-    type Disassembler = InnerClassWriter<Ctx, InnerClassWriterState::End>;
 
     fn new(context: Self::Context) -> Result<Self, EncodeError> {
         Ok(InnerClassWriter {
