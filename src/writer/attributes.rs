@@ -8,9 +8,7 @@ mod method;
 use std::fmt;
 use std::marker::PhantomData;
 
-pub use debug::*;
 pub use enclosing_method::*;
-pub use field::*;
 pub use inner_classes::*;
 pub use method::*;
 

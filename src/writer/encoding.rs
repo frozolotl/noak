@@ -226,7 +226,7 @@ where
     fn new(mut context: Self::Context) -> Result<Self, EncodeError> {
         let count_offset = context.encoder().position();
         let count = Count::zero();
-        context.encoder().write(&count)?;
+        context.encoder().write(count)?;
         Ok(ManyWriter {
             context: Some(context),
             count_offset,
@@ -268,7 +268,7 @@ where
         let mut context = f(W::new(context)?)?.finish()?;
 
         self.count.increment()?;
-        context.encoder().replacing(self.count_offset).write(&self.count)?;
+        context.encoder().replacing(self.count_offset).write(self.count)?;
         self.context = Some(context);
         Ok(self)
     }

@@ -166,12 +166,12 @@ impl<'a> MethodDescriptor<'a> {
             type Item = TypeDescriptor<'a>;
 
             fn next(&mut self) -> Option<TypeDescriptor<'a>> {
-                let ch = self.chars.next();
-                if ch == Some(')') || ch == None {
-                    self.chars = <&MStr>::default().chars_lossy();
-                    None
-                } else {
-                    Some(read_type(ch.unwrap(), &mut self.chars))
+                match self.chars.next() {
+                    Some(')') | None => {
+                        self.chars = <&MStr>::default().chars_lossy();
+                        None
+                    }
+                    Some(ch) => Some(read_type(ch, &mut self.chars)),
                 }
             }
         }

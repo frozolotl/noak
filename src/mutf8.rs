@@ -478,7 +478,7 @@ impl DerefMut for MString {
 impl Borrow<MStr> for MString {
     #[inline]
     fn borrow(&self) -> &MStr {
-        &**self
+        self
     }
 }
 
@@ -496,7 +496,7 @@ impl AsRef<[u8]> for MString {
 
 impl AsRef<MStr> for MString {
     fn as_ref(&self) -> &MStr {
-        &**self
+        self
     }
 }
 
@@ -531,7 +531,7 @@ impl fmt::Debug for MStr {
 
 impl fmt::Debug for MString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        (&**self).fmt(f)
+        MStr::fmt(self, f)
     }
 }
 
