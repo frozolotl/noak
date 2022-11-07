@@ -159,20 +159,8 @@ impl_decode! {
     u64 => 8, i64 => 8,
     // this will probably never be needed, but why not
     u128 => 16, i128 => 16,
-}
-
-impl<'input> Decode<'input> for f32 {
-    fn decode(decoder: &mut Decoder<'input>) -> Result<f32, DecodeError> {
-        let bits = decoder.read()?;
-        Ok(f32::from_bits(bits))
-    }
-}
-
-impl<'input> Decode<'input> for f64 {
-    fn decode(decoder: &mut Decoder<'input>) -> Result<f64, DecodeError> {
-        let bits = decoder.read()?;
-        Ok(f64::from_bits(bits))
-    }
+    f32 => 4,
+    f64 => 8,
 }
 
 /// Allows iteration over structures arranged in a contiguous array within the binary class file.
