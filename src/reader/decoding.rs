@@ -179,7 +179,7 @@ impl<'input> Decode<'input> for f64 {
 pub struct DecodeManyIter<'input, T, Count> {
     decoder: Decoder<'input>,
     remaining: Count,
-    marker: PhantomData<fn() -> T>,
+    _marker: PhantomData<fn() -> T>,
 }
 
 impl<'input, T, Count> Decode<'input> for DecodeManyIter<'input, T, Count>
@@ -199,7 +199,7 @@ where
         Ok(DecodeManyIter {
             decoder: old_decoder,
             remaining: count,
-            marker: PhantomData,
+            _marker: PhantomData,
         })
     }
 }
@@ -214,7 +214,7 @@ where
         Ok(DecodeManyIter {
             decoder,
             remaining,
-            marker: PhantomData,
+            _marker: PhantomData,
         })
     }
 }
@@ -250,7 +250,7 @@ impl<'input, T, Count: Countdown> Clone for DecodeManyIter<'input, T, Count> {
         DecodeManyIter {
             decoder: self.decoder.clone(),
             remaining: self.remaining,
-            marker: PhantomData,
+            _marker: PhantomData,
         }
     }
 }

@@ -145,7 +145,7 @@ impl<'a> Encoder for ReplacingEncoder<'a> {
 pub(crate) struct LengthWriter<Ctx> {
     /// The offset of the byte counter.
     length_offset: Offset,
-    marker: PhantomData<Ctx>,
+    _marker: PhantomData<Ctx>,
 }
 
 impl<Ctx: EncoderContext> LengthWriter<Ctx> {
@@ -154,7 +154,7 @@ impl<Ctx: EncoderContext> LengthWriter<Ctx> {
         context.encoder().write(0u32)?;
         Ok(LengthWriter {
             length_offset,
-            marker: PhantomData,
+            _marker: PhantomData,
         })
     }
 
@@ -210,7 +210,7 @@ pub struct ManyWriter<W: WriteAssembler, Count> {
     count_offset: Offset,
     context: Option<W::Context>,
     count: Count,
-    marker: PhantomData<W>,
+    _marker: PhantomData<W>,
 }
 
 impl<W, Count> WriteAssembler for ManyWriter<W, Count>
@@ -228,7 +228,7 @@ where
             context: Some(context),
             count_offset,
             count,
-            marker: PhantomData,
+            _marker: PhantomData,
         })
     }
 }
