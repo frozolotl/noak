@@ -1,348 +1,261 @@
-use crate::error::*;
-use std::fmt;
+pub mod array;
+
 use std::marker::PhantomData;
 
-use super::cpool;
+use crate::error::*;
 
-pub trait Encoder: Sized {
+pub use self::array::Array;
+
+/// Performs the necessary transitions to end up at a target state.
+///
+/// This combines two use cases:
+/// - A writer has written everything that was be explicitly specified. This trait
+///   would then help write everything that can be filled with defaults.
+/// - A structure is constructed before writing and the corresponding implementation
+///   writes data from the structure.
+pub trait Trans<S> {
+    type Target;
+
+    fn transition(self, storage: S) -> Result<S, EncodeError>;
+}
+
+/// A type declaring some data to have been written.
+#[derive(Debug)]
+pub struct Encoded<What: ?Sized> {
+    _marker: PhantomData<What>,
+}
+
+impl<What: ?Sized> Encoded<What> {
+    /// Creates a confirmation that an object has been written.
+    fn confirm() -> Encoded<What> {
+        Encoded { _marker: PhantomData }
+    }
+}
+
+/// A byte buffer backed storage that allows writing.
+#[doc(hidden)]
+pub trait Storage {
+    /// Write a sequence of bytes to the storage.
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError>;
 
-    fn write<T: Encode>(&mut self, value: T) -> Result<&mut Self, EncodeError> {
-        value.encode(self)?;
-        Ok(self)
+    /// Replaces bytes at a specified offset.
+    ///
+    /// # Panics
+    /// Panics if the current size of the storage is exceeded while writing.
+    fn replace(&mut self, offset: usize, bytes: &[u8]) -> Result<(), EncodeError>;
+
+    /// Returns the current offset into this storage.
+    /// Said offset is local to this storage.
+    fn offset(&self) -> usize;
+
+    /// Encode and write an object to the storage.
+    fn encode<'this, E>(&'this mut self, value: E) -> Result<Encoded<E>, EncodeError>
+    where
+        E: Trans<&'this mut Self, Target = Encoded<E>>,
+    {
+        value.transition(self)?;
+        Ok(Encoded::confirm())
     }
 }
 
-pub trait Encode {
-    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError>;
-}
+impl<S: Storage> Storage for &mut S {
+    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
+        (**self).write_bytes(bytes)
+    }
 
-impl<T: Encode> Encode for &T {
-    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        (*self).encode(encoder)
+    fn replace(&mut self, offset: usize, bytes: &[u8]) -> Result<(), EncodeError> {
+        (**self).replace(offset, bytes)
+    }
+
+    fn offset(&self) -> usize {
+        (**self).offset()
     }
 }
 
-impl Encode for &[u8] {
-    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        encoder.write_bytes(self)
-    }
+/// Storage with a heap allocated byte buffer as its backing storage.
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) struct BufStorage {
+    pub(crate) buf: Vec<u8>,
 }
 
-macro_rules! impl_encode {
-    ($($t:ty,)*) => {
-        $(
-            impl Encode for $t {
-                fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-                    encoder.write(self.to_be_bytes().as_ref())?;
-                    Ok(())
-                }
-            }
-        )*
-    }
-}
-
-impl_encode! {
-    u8, i8,
-    u16, i16,
-    u32, i32,
-    u64, i64,
-    // this will probably never be needed, but why not
-    u128, i128,
-}
-
-impl Encode for f32 {
-    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        encoder.write(self.to_bits().to_be_bytes().as_ref())?;
-        Ok(())
-    }
-}
-
-impl Encode for f64 {
-    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        encoder.write(self.to_bits().to_be_bytes().as_ref())?;
-        Ok(())
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Offset(usize);
-
-impl Offset {
-    pub const fn new(position: usize) -> Offset {
-        Offset(position)
-    }
-
-    pub const fn get(self) -> usize {
-        self.0
-    }
-
-    pub const fn offset(self, by: usize) -> Offset {
-        Offset(self.0 + by)
-    }
-
-    pub const fn sub(self, by: Offset) -> Offset {
-        Offset(self.0 - by.0)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct VecEncoder {
-    buf: Vec<u8>,
-}
-
-impl VecEncoder {
-    pub fn new(buf: Vec<u8>) -> VecEncoder {
-        VecEncoder { buf }
-    }
-
-    pub fn position(&self) -> Offset {
-        Offset::new(self.buf.len())
-    }
-
-    pub fn inner(&self) -> &[u8] {
-        &self.buf
-    }
-
-    pub fn into_inner(self) -> Vec<u8> {
-        self.buf
-    }
-
-    pub fn buf(&self) -> &[u8] {
-        &self.buf
-    }
-
-    pub fn replacing(&mut self, at: Offset) -> ReplacingEncoder<'_> {
-        ReplacingEncoder {
-            buf: &mut self.buf[at.0..],
-        }
-    }
-}
-
-impl Encoder for VecEncoder {
+impl Storage for BufStorage {
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
         self.buf.extend_from_slice(bytes);
         Ok(())
     }
-}
 
-#[derive(Debug)]
-pub struct ReplacingEncoder<'a> {
-    buf: &'a mut [u8],
-}
-
-impl<'a> Encoder for ReplacingEncoder<'a> {
-    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        assert!(bytes.len() <= self.buf.len(), "cannot replace bytes which do not exist");
-        let (a, b) = std::mem::take(&mut self.buf).split_at_mut(bytes.len());
-        a.copy_from_slice(bytes);
-        self.buf = b;
+    fn replace(&mut self, offset: usize, bytes: &[u8]) -> Result<(), EncodeError> {
+        self.buf[offset..offset + bytes.len()].copy_from_slice(bytes);
         Ok(())
     }
-}
 
-/// An encoder writing the amount of bytes written since its creation to the front.
-pub(crate) struct LengthWriter<Ctx> {
-    /// The offset of the byte counter.
-    length_offset: Offset,
-    _marker: PhantomData<Ctx>,
-}
-
-impl<Ctx: EncoderContext> LengthWriter<Ctx> {
-    pub(crate) fn new(context: &mut Ctx) -> Result<Self, EncodeError> {
-        let length_offset = context.encoder().position();
-        context.encoder().write(0u32)?;
-        Ok(LengthWriter {
-            length_offset,
-            _marker: PhantomData,
-        })
-    }
-
-    pub(crate) fn finish(self, context: &mut Ctx) -> Result<(), EncodeError> {
-        let length = context.encoder().position().sub(self.length_offset).sub(Offset(4)); // subtract the amount of bytes the length takes up
-        let length = u32::try_from(length.0)
-            .map_err(|_| EncodeError::with_context(EncodeErrorKind::TooManyBytes, Context::None))?;
-        context.encoder().replacing(self.length_offset).write(length)?;
-        Ok(())
+    fn offset(&self) -> usize {
+        self.buf.len()
     }
 }
 
-impl<E: Encoder> Encoder for &mut E {
-    fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), EncodeError> {
-        (*self).write_bytes(bytes)
-    }
-}
+#[allow(unused)]
+macro_rules! enc_structure {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $struct_name:ident<S>, $struct_writer_name:ident, $struct_writer_state:ident {
+        $(
+            $(#[doc = $doc_comment:literal])*
+            $field_name:ident : $field_type:ty
+        ),* $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        #[allow(non_camel_case_types)]
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        $vis struct $struct_name < $( $field_name , )* >
+        {
+        $(
+            $(#[doc = $doc_comment])*
+            $vis $field_name : $field_name,
+        )*
+        }
 
-pub trait InternalEncoderContext {
-    fn encoder(&mut self) -> &mut VecEncoder;
+        #[allow(non_camel_case_types)]
+        impl < S $( , $field_name )* > $crate::writer::encoding::Trans<S>
+        for $struct_name < $( $field_name , )* >
+        where
+            S: $crate::writer::encoding::Storage,
+        $(
+            $field_name : $crate::writer::encoding::Trans<S, Target = $field_type>,
+        )*
+        {
+            type Target = $struct_writer_name<S, $struct_writer_state::Finished>;
 
-    fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError>;
-}
-
-impl<'a, Ctx: InternalEncoderContext> InternalEncoderContext for &'a mut Ctx {
-    fn encoder(&mut self) -> &mut VecEncoder {
-        (**self).encoder()
-    }
-
-    fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
-        (**self).insert_constant(item)
-    }
-}
-
-pub trait EncoderContext: InternalEncoderContext {}
-
-impl<Ctx: InternalEncoderContext> EncoderContext for Ctx {}
-
-pub trait WriteAssembler: Sized {
-    type Context: EncoderContext;
-
-    fn new(context: Self::Context) -> Result<Self, EncodeError>;
-}
-
-pub trait WriteDisassembler {
-    type Context: EncoderContext;
-
-    fn finish(self) -> Result<Self::Context, EncodeError>;
-}
-
-pub struct ManyWriter<W: WriteAssembler, Count> {
-    /// The offset of the counter starting at the pool end.
-    count_offset: Offset,
-    context: Option<W::Context>,
-    count: Count,
-    _marker: PhantomData<W>,
-}
-
-impl<W, Count> WriteAssembler for ManyWriter<W, Count>
-where
-    W: WriteAssembler,
-    Count: Encode + Counter,
-{
-    type Context = W::Context;
-
-    fn new(mut context: Self::Context) -> Result<Self, EncodeError> {
-        let count_offset = context.encoder().position();
-        let count = Count::zero();
-        context.encoder().write(count)?;
-        Ok(ManyWriter {
-            context: Some(context),
-            count_offset,
-            count,
-            _marker: PhantomData,
-        })
-    }
-}
-
-impl<W, Count> WriteDisassembler for ManyWriter<W, Count>
-where
-    W: WriteAssembler,
-    Count: Encode + Counter,
-{
-    type Context = W::Context;
-
-    fn finish(mut self) -> Result<Self::Context, EncodeError> {
-        self.context
-            .take()
-            .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None))
-    }
-}
-
-impl<W, Count> ManyWriter<W, Count>
-where
-    W: WriteAssembler,
-    Count: Encode + Counter,
-{
-    pub fn begin<D, F>(&mut self, f: F) -> Result<&mut Self, EncodeError>
-    where
-        D: WriteDisassembler<Context = W::Context>,
-        F: FnOnce(W) -> Result<D, EncodeError>,
-    {
-        let context = self
-            .context
-            .take()
-            .ok_or_else(|| EncodeError::with_context(EncodeErrorKind::ErroredBefore, Context::None))?;
-        self.count.check()?;
-
-        let mut context = f(W::new(context)?)?.finish()?;
-
-        self.count.increment()?;
-        context.encoder().replacing(self.count_offset).write(self.count)?;
-        self.context = Some(context);
-        Ok(self)
-    }
-}
-
-impl<W: WriteAssembler, Count> fmt::Debug for ManyWriter<W, Count> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ManyWriter").finish()
-    }
-}
-
-pub trait Counter: Copy {
-    fn zero() -> Self;
-    fn check(self) -> Result<(), EncodeError>;
-    fn increment(&mut self) -> Result<(), EncodeError>;
-}
-
-macro_rules! impl_counter {
-    ($v:ident) => {
-        impl Counter for $v {
-            fn zero() -> $v {
-                0
-            }
-
-            fn check(self) -> Result<(), EncodeError> {
-                if self == $v::max_value() {
-                    Err(EncodeError::with_context(
-                        EncodeErrorKind::TooManyItems,
-                        Context::None,
-                    ))
-                } else {
-                    Ok(())
-                }
-            }
-
-            fn increment(&mut self) -> Result<(), EncodeError> {
-                match self.checked_add(1) {
-                    Some(i) => {
-                        *self = i;
-                        Ok(())
-                    }
-                    None => Err(EncodeError::with_context(
-                        EncodeErrorKind::TooManyItems,
-                        Context::None,
-                    )),
-                }
+            fn transition(self, storage: S) -> ::std::result::Result<S, $crate::error::EncodeError> {
+                Ok(
+                    $struct_writer_name { storage, _marker: ::std::marker::PhantomData }
+                    $(
+                        .$field_name(self.$field_name)?
+                    )*
+                        .storage
+                )
             }
         }
-    };
-}
 
-impl_counter!(u8);
-impl_counter!(u16);
+        #[derive(Debug)]
+        $vis struct $struct_writer_name<S, State: $struct_writer_state::State> {
+            storage: S,
+            _marker: ::std::marker::PhantomData<State>,
+        }
 
-macro_rules! enc_state {
-    ($vis:vis mod $mod:ident : $($state:ident),* $(,)?) => {
+        $crate::writer::encoding::enc_structure!(@transition_fn
+            $vis
+            $struct_writer_name $struct_writer_state
+            $($field_name $field_type,)*
+        );
+
         #[allow(non_snake_case)]
         #[doc(hidden)]
-        $vis mod $mod {
+        $vis mod $struct_writer_state {
             pub trait State: sealed::Sealed {}
 
             $(
-                #[derive(Debug)]
-                pub struct $state(std::convert::Infallible);
-                impl State for $state {}
+            #[derive(Debug)]
+            #[allow(non_camel_case_types)]
+            pub struct $field_name(::std::convert::Infallible);
+            impl State for $field_name {}
             )*
+
+            #[derive(Debug)]
+            pub struct Finished(::std::convert::Infallible);
+            impl State for Finished {}
 
             mod sealed {
                 pub trait Sealed {}
                 $(
-                    impl Sealed for super::$state {}
+                impl Sealed for super::$field_name {}
                 )*
+                impl Sealed for super::Finished {}
+            }
+        }
+    };
+    (@transition_fn
+        $vis:vis
+        $struct_writer_name:ident $struct_writer_state:ident
+        $current_field_name:ident $current_field_type:ty,
+        $next_field_name:ident $next_field_type:ty,
+        $( $field_name:ident $field_type:ty, )*
+    ) => {
+        impl<S> $struct_writer_name<S, $struct_writer_state::$current_field_name>
+        where
+            S: $crate::writer::encoding::Storage,
+        {
+            $vis fn $current_field_name<Tr>(
+                self,
+                $current_field_name : Tr,
+            ) -> ::std::result::Result<$struct_writer_name<S, $struct_writer_state::$next_field_name>, $crate::error::EncodeError>
+            where
+                Tr: $crate::writer::encoding::Trans<S, Target = $current_field_type>,
+            {
+                let storage = $crate::writer::encoding::Trans::transition($current_field_name, self.storage)?;
+                Ok($struct_writer_name { storage, _marker: ::std::marker::PhantomData })
+            }
+        }
+
+        $crate::writer::encoding::enc_structure!(@transition_fn
+            $vis
+            $struct_writer_name $struct_writer_state
+            $next_field_name $next_field_type,
+            $($field_name $field_type,)*
+        );
+    };
+    (@transition_fn
+        $vis:vis
+        $struct_writer_name:ident $struct_writer_state:ident
+        $current_field_name:ident $current_field_type:ty,
+    ) => {
+        impl<S> $struct_writer_name<S, $struct_writer_state::$current_field_name>
+        where
+            S: $crate::writer::encoding::Storage,
+        {
+            $vis fn $current_field_name<Tr>(
+                self,
+                $current_field_name : Tr,
+            ) -> ::std::result::Result<$struct_writer_name<S, $struct_writer_state::Finished>, $crate::error::EncodeError>
+            where
+                Tr: $crate::writer::encoding::Trans<S, Target = $current_field_type>,
+            {
+                let storage = $crate::writer::encoding::Trans::transition($current_field_name, self.storage)?;
+                Ok($struct_writer_name { storage, _marker: ::std::marker::PhantomData })
+            }
+        }
+    };
+    (@transition_fn
+        $vis:vis
+        $struct_writer_name:ident $struct_writer_state:ident
+    ) => {};
+}
+
+pub(crate) use enc_structure;
+
+macro_rules! impl_primitive {
+    ($prim:ty) => {
+        impl<S: Storage> Trans<S> for $prim {
+            type Target = Encoded<$prim>;
+
+            fn transition(self, mut storage: S) -> Result<S, EncodeError> {
+                storage.write_bytes(&self.to_be_bytes())?;
+                Ok(storage)
             }
         }
     };
 }
 
-#[allow(unused_imports)]
-pub(crate) use enc_state;
+impl_primitive!(u8);
+impl_primitive!(u16);
+impl_primitive!(u32);
+impl_primitive!(u64);
+impl_primitive!(u128);
+impl_primitive!(i8);
+impl_primitive!(i16);
+impl_primitive!(i32);
+impl_primitive!(i64);
+impl_primitive!(i128);
+impl_primitive!(f32);
+impl_primitive!(f64);
