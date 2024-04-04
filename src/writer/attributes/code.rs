@@ -155,7 +155,9 @@ impl<Ctx: EncoderContext, State: CodeWriterState::State> InternalEncoderContext 
     fn encoder(&mut self) -> &mut VecEncoder {
         self.context.encoder()
     }
+}
 
+impl<Ctx: EncoderContext, State: CodeWriterState::State> EncoderContext for CodeWriter<Ctx, State> {
     fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
         self.context.insert_constant(item)
     }

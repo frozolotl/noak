@@ -175,23 +175,23 @@ impl<E: Encoder> Encoder for &mut E {
 
 pub trait InternalEncoderContext {
     fn encoder(&mut self) -> &mut VecEncoder;
-
-    fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError>;
 }
 
 impl<'a, Ctx: InternalEncoderContext> InternalEncoderContext for &'a mut Ctx {
     fn encoder(&mut self) -> &mut VecEncoder {
         (**self).encoder()
     }
+}
 
+pub trait EncoderContext: InternalEncoderContext {
+    fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError>;
+}
+
+impl<'a, Ctx: EncoderContext> EncoderContext for &'a mut Ctx {
     fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
         (**self).insert_constant(item)
     }
 }
-
-pub trait EncoderContext: InternalEncoderContext {}
-
-impl<Ctx: InternalEncoderContext> EncoderContext for Ctx {}
 
 pub trait WriteAssembler: Sized {
     type Context: EncoderContext;

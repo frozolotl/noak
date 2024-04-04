@@ -231,7 +231,9 @@ impl<State: ClassWriterState::State> InternalEncoderContext for ClassWriter<Stat
     fn encoder(&mut self) -> &mut VecEncoder {
         &mut self.encoder
     }
+}
 
+impl<State: ClassWriterState::State> EncoderContext for ClassWriter<State> {
     fn insert_constant<I: Into<cpool::Item>>(&mut self, item: I) -> Result<cpool::Index<I>, EncodeError> {
         let index = self.pool.insert(item, &mut self.start_encoder)?;
         self.start_encoder
