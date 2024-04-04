@@ -101,10 +101,7 @@ impl<I> Index<I> {
 
 impl<I> Clone for Index<I> {
     fn clone(&self) -> Index<I> {
-        Index {
-            index: self.index,
-            _marker: PhantomData,
-        }
+        *self
     }
 }
 
@@ -120,7 +117,7 @@ impl<I> Eq for Index<I> {}
 
 impl<I> PartialOrd for Index<I> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.index.partial_cmp(&other.index)
+        Some(self.index.cmp(&other.index))
     }
 }
 

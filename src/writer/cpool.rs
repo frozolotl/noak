@@ -93,10 +93,7 @@ impl<I> Index<I> {
 
 impl<I> Clone for Index<I> {
     fn clone(&self) -> Index<I> {
-        Index {
-            index: self.index,
-            mark: PhantomData,
-        }
+        *self
     }
 }
 

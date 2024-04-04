@@ -4,7 +4,6 @@ mod type_annotation;
 pub use annotation::*;
 pub use type_annotation::*;
 
-use crate::reader::attributes::annotations::ElementValue;
 use crate::reader::decoding::*;
 use crate::{mutf8, MStr};
 
