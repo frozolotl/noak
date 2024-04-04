@@ -864,7 +864,7 @@ impl __private_MUtf8Literal<&'static str> {
         true
     }
 
-    pub const fn as_slice(self) -> &'static [u8] {
+    pub const fn as_bytes(self) -> &'static [u8] {
         self.0.as_bytes()
     }
 }
@@ -874,7 +874,7 @@ impl<const N: usize> __private_MUtf8Literal<&'static [u8; N]> {
         false
     }
 
-    pub const fn as_slice(self) -> &'static [u8] {
+    pub const fn as_bytes(self) -> &'static [u8] {
         self.0
     }
 }
@@ -1052,11 +1052,13 @@ macro_rules! mutf8 {
     ($s:literal) => {{
         // Ensure that the code is executed in a const context.
         const MSTR: &$crate::mutf8::MStr = {
-            const BYTES: &[u8] = $crate::mutf8::__private_MUtf8Literal($s).as_slice();
+            const BYTES: &[u8] = $crate::mutf8::__private_MUtf8Literal($s).as_bytes();
             if $crate::mutf8::__private_MUtf8Literal($s).is_str() {
-                let s = &$crate::mutf8::__private_utf8_to_mutf8::<
-                    { $crate::mutf8::__private_utf8_to_mutf8_length(BYTES) },
-                >(BYTES);
+                let s = const {
+                    &$crate::mutf8::__private_utf8_to_mutf8::<{ $crate::mutf8::__private_utf8_to_mutf8_length(BYTES) }>(
+                        BYTES,
+                    )
+                };
                 // SAFETY: The converted string is guaranteed to be valid modified UTF-8.
                 unsafe { $crate::mutf8::MStr::from_mutf8_unchecked(s) }
             } else {
