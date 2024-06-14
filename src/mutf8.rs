@@ -1053,7 +1053,7 @@ macro_rules! mutf8 {
         const {
             const BYTES: &[u8] = $crate::mutf8::__private_MUtf8Literal($s).as_bytes();
             // Decide whether the input is a normal string literal, in which case the input is re-encoded,
-            // or whether it is a byte-string, in which only checks are performed.
+            // or whether it is a byte-string, for which only validity checks are performed.
             if $crate::mutf8::__private_MUtf8Literal($s).is_str() {
                 let s = const {
                     &$crate::mutf8::__private_utf8_to_mutf8::<{ $crate::mutf8::__private_utf8_to_mutf8_length(BYTES) }>(
