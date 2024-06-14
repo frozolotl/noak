@@ -1040,7 +1040,7 @@ pub const fn __private_utf8_to_mutf8<const N: usize>(v: &[u8]) -> [u8; N] {
 ///
 /// The input has to be a either a string literal or a byte string literal.
 /// - A string literal is converted from UTF-8 to modified UTF-8.
-/// - A byte string literal is assumed to be valid modified UTF-8.
+/// - A byte string literal is asserted to be valid modified UTF-8.
 ///
 /// ```no_run
 /// use noak::{mutf8, MStr};
@@ -1049,10 +1049,11 @@ pub const fn __private_utf8_to_mutf8<const N: usize>(v: &[u8]) -> [u8; N] {
 /// ```
 #[macro_export]
 macro_rules! mutf8 {
-    ($s:literal) => {{
-        // Ensure that the code is executed in a const context.
-        const MSTR: &$crate::mutf8::MStr = {
+    ($s:literal) => {
+        const {
             const BYTES: &[u8] = $crate::mutf8::__private_MUtf8Literal($s).as_bytes();
+            // Decide whether the input is a normal string literal, in which case the input is re-encoded,
+            // or whether it is a byte-string, in which only checks are performed.
             if $crate::mutf8::__private_MUtf8Literal($s).is_str() {
                 let s = const {
                     &$crate::mutf8::__private_utf8_to_mutf8::<{ $crate::mutf8::__private_utf8_to_mutf8_length(BYTES) }>(
@@ -1068,9 +1069,8 @@ macro_rules! mutf8 {
                 // SAFETY: It was verified that the string is valid modified UTF-8.
                 unsafe { $crate::mutf8::MStr::from_mutf8_unchecked(BYTES) }
             }
-        };
-        MSTR
-    }};
+        }
+    };
 }
 
 #[cfg(test)]
