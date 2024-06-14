@@ -275,7 +275,7 @@ impl ops::Index<ops::RangeInclusive<usize>> for MStr {
 
     #[inline]
     fn index(&self, index: ops::RangeInclusive<usize>) -> &MStr {
-        if *index.end() == usize::max_value() {
+        if *index.end() == usize::MAX {
             panic!("cannot index mutf8 to maximum integer")
         } else {
             #[allow(clippy::range_plus_one)]
@@ -303,7 +303,7 @@ impl ops::Index<ops::RangeToInclusive<usize>> for MStr {
 
     #[inline]
     fn index(&self, index: ops::RangeToInclusive<usize>) -> &MStr {
-        if index.end == usize::max_value() {
+        if index.end == usize::MAX {
             panic!("cannot index mutf8 to maximum integer")
         } else {
             #[allow(clippy::range_plus_one)]

@@ -292,7 +292,7 @@ macro_rules! impl_counter {
             }
 
             fn check(self) -> Result<(), EncodeError> {
-                if self == $v::max_value() {
+                if self == $v::MAX {
                     Err(EncodeError::with_context(
                         EncodeErrorKind::TooManyItems,
                         Context::None,

@@ -209,7 +209,7 @@ pub enum SuperTypeIndex {
 impl<'input> Decode<'input> for SuperTypeIndex {
     fn decode(decoder: &mut Decoder<'input>) -> Result<Self, DecodeError> {
         let index = decoder.read()?;
-        if index == u16::max_value() {
+        if index == u16::MAX {
             Ok(SuperTypeIndex::Class)
         } else {
             Ok(SuperTypeIndex::Interface { index })

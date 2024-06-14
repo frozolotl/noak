@@ -28,7 +28,7 @@ impl ConstantPool {
         item: I,
         mut encoder: E,
     ) -> Result<Index<I>, EncodeError> {
-        if self.len == u16::max_value() {
+        if self.len == u16::MAX {
             return Err(EncodeError::with_context(
                 EncodeErrorKind::TooManyItems,
                 Context::ConstantPool,
